@@ -7,7 +7,8 @@
 - Hierarchical neural networks solve the recognition task from muscle spindle inputs.
 - Individual neural network units resemble neurons in primate somatosensory cortex, and networks make predictions for other areas along the proprioceptive pathway.
 
-### This repository contains code for the paper "Task-driven hierarchical deep neural networkmodels of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
+### This repository contains code for the paper "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
+Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1
 
 The code is organized as follows:
 1. Dataset Generation. (Proprioceptive Character Recognition Task = PCRT Dataset) Code can be found in `dataset`
