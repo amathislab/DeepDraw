@@ -16,7 +16,6 @@ import opensim as osim
 from pcr_data_utils import make_joint_config, make_muscle_config, compute_jerk
 
 PATH_TO_DATA = '/gpfs01/bethge/home/pmamidanna/deep_proprioception/data'
-PATH_TO_OSIM_MODEL = '/gpfs01/bethge/home/pmamidanna/deep_proprioception/data/dynamic_arm_model/'
 
 
 def resize(trajectory, size):
@@ -91,7 +90,7 @@ def main(args):
     char_trajectories = trajectories[char_idx]
 
     char_data = []
-    model = osim.Model(os.path.join(PATH_TO_OSIM_MODEL, 'MoBL_ARMS_module5_scaleIK.osim'))
+    model = osim.Model('./MoBL_ARMS_module5_scaleIK.osim')
 
     for traj in char_trajectories:
         traj = traj[:, np.all(~np.isnan(traj), axis=0)]
