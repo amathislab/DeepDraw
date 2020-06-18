@@ -81,7 +81,7 @@ class RunInfo(dict):
         return 'exp%d' %self.__dict__['expid']
     
     def resultsfolder(self, model, fset = None):
-        resultsfolder =  'exp%d/results/%s/%s/%s/' %(self.__dict__['expid'], model['base'], model['name'], self.planestring())
+        resultsfolder =  '%dexp%d/results/%s/%s/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], model['name'], self.planestring())
         if fset is not None:
             resultsfolder = os.path.join(resultsfolder, fset)
         return resultsfolder
