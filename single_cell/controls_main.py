@@ -27,19 +27,17 @@ except ModuleNotFoundError as e:
     print(e)
     print('proceeding without savelouts , this will only work if no data is being generated')
 from rowwise_neuron_curves_controls import main as tuningcurves_main
-from combined_violinquantiles_controls_ee import main as violin_main
-from combined_violinquantiles_controls_ee import comp_violin_main
+from combined_violinquantiles_controls import main as violin_main
+from combined_violinquantiles_controls import comp_violin_main
 from control_comparisons import main as comparisons_main
 from control_comparisons import generalizations_comparisons_main
 from control_comparisons import compare_all_types_main, invars_all_types_main
 from prefdir_controls import main as prefdir_main
-#from scorevsvar import scorevsvar
 from generalization import main as generalization_main
 from representational_similarity_analysis import main as rsa_main
 from representational_similarity_analysis import rsa_models_comp
 from polar_tcs import main as polar_tcs_main
 from polar_tcs import complete_muscle_set
-#from traj_reconstruction import main as decoding_main
 
 '''
 mnames = ['spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
