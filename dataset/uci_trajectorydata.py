@@ -2,7 +2,7 @@
 Script to modify the true UCI Machine Learning Repository's character trajectories dataset to
 generate the base dataset for the Proprioceptive Character Recognition task.
 
-The original dataset is available at : 
+The original dataset is available at : https://archive.ics.uci.edu/ml/datasets/Character+Trajectories
 
 """
 
