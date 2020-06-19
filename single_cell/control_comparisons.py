@@ -310,9 +310,7 @@ def pairedt_quantiles(df, model, runinfo):
     
     
     '''
-    
-    idx = pd.IndexSlice
-    
+        
     nlayers = model['nlayers'] +1
     
     layers = list(range(nlayers))
@@ -326,7 +324,6 @@ def pairedt_quantiles(df, model, runinfo):
     controlnamer = lambda i: modelbase + '_%dr' %i
     modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
     trainednames = [trainednamer(i) for i in np.arange(1,6)]
-    controlnames = [controlnamer(i) for i in np.arange(1,6)]
     
     from scipy.stats import ttest_rel
     for ilayer in layers:
@@ -357,9 +354,7 @@ def pairedt_comp(model, runinfo):
     
     nlayers = model['nlayers'] + 1
     modelbase = model['base']
-    
-    trials = list(np.arange(1,6))
-    
+        
     testtypes=['two-sided', 'less', 'greater']
     
     colnames = pd.MultiIndex.from_product((
@@ -422,7 +417,6 @@ def pairedt_comp(model, runinfo):
             for itc, tc in enumerate(tcnames):
                 #for testtype in testtypes:
                 testtype='two-sided'
-                from scipy.stats import ttest_rel
                 pv = ttest_rel(trainedlayerevals[itc].flatten(), controllayerevals[itc].flatten())[1]
                 df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'p-value')] = pv
                 df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'sl')] = pv_to_sl_code(pv)
@@ -453,9 +447,7 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     fig : plt.figure, TAD plot
     
     '''
-    
-    from scipy.stats import ttest_rel
-    
+        
     fig = plt.figure(figsize=(8,6),dpi=300)
     ax = fig.add_subplot(111)
         
@@ -486,9 +478,7 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     
     plt.plot(range(len(layers)), tmsmean, color=trainedmodel['color'], marker = 'D')
     plt.plot(range(len(layers)), cmsmean, color='grey', marker = 'D')
-    
-    t_corr = t.ppf(0.975, 4)
-    
+        
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
     plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
 
@@ -846,10 +836,6 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     columns = ['tmsmean', 'cmsmean', 'tmsstd', 'cmsstd', 'stddiff', 't stat', 'p value', 'Bonferroni', 'N for t']
     index = layers
     df = pd.DataFrame(index=index, columns=columns)
-    nlayers = trainedmodel['nlayers'] + 1
-    
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
-    t_corr = t.ppf(0.975, 4)
     
     n_tms = np.sum(~np.isnan(np.nanmean(np.abs(alltmdevmeans), axis=2)), axis=0)
     n_cms = np.sum(~np.isnan(np.nanmean(np.abs(allcmdevmeans), axis=2)), axis=0)
@@ -906,10 +892,7 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     for i in range(len(alltmdevmeans)):
         plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
         plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
-    
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
-    t_corr = t.ppf(0.975, 4)
-    
+        
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
     plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
 
@@ -962,12 +945,7 @@ def ind_neuron_invars_comp(model, runinfo):
         controlmodel = model.copy()
         controlmodel['name'] = mname + 'r'
             
-        zpos0 = uniquezs.index(0)
-        xpos0 = int(len(uniquexs)/2)
-        
-                    
-        ior = 0
-        orientation = 'hor'
+        zpos0 = uniquezs.index(0)        
         tmf = runinfo.generalizationfolder(trainedmodel, 'ind_neuron_invar_collapsed_beautified')
         tmdevmean_hor = pd.read_csv(os.path.join(tmf, 'ind_neuron_invar_hor_deviations_02.csv'), index_col = 0).values #mean absolute deviation over neurons saved here
         tmdevmean_vert = pd.read_csv(os.path.join(tmf, 'ind_neuron_invar_vert_deviations_02.csv'), index_col = 0).values
@@ -987,20 +965,10 @@ def ind_neuron_invars_comp(model, runinfo):
         
         allcontroldevsim_hor.append(cmdevmean_hor)
         allcontroldevsim_vert.append(cmdevmean_vert)
-        
-        fig_hor = plot_ind_neuron_invars_comp(list(range(nlayers)), tmdevmean_hor, cmdevmean_hor, trainedmodel)
-        fig_vert = plot_ind_neuron_invars_comp(list(range(nlayers)), tmdevmean_vert, cmdevmean_vert, trainedmodel)
-        
-        fig_hor.savefig(os.path.join(analysisfolder, trainedmodel['name'] + '_ind_neuron_dev_plot_hor_02.png'))
-        fig_vert.savefig(os.path.join(analysisfolder, trainedmodel['name'] + '_ind_neuron_dev_plot_vert_02.png'))
     
     figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
     figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     
-    fig_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_02.pdf'))
-    figeb_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_eb_02.pdf'))
-    fig_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_02.pdf'))
-    figeb_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_eb_02.pdf'))
     figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.pdf'))
     figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.pdf'))
     
@@ -1056,14 +1024,6 @@ def main(model, runinfo):
         
 def generalizations_comparisons_main(model, runinfo):
     """main for comparing features that describe all planes"""
-    
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'invars', False))):
-    #if(True):
-        print('analyzing siginifance of differences in preferred direction and generalization for %s models...' %model['base'])
-        invarcomp(model, runinfo)
-        print('Dataframe saved')
-    else:
-        print('pd invars already analyzed')
     
     if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False))):
     #if(True):
