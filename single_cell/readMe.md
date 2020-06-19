@@ -1,8 +1,5 @@
 **These folders contain the code for the analysis pipeline to extract and analyze the hidden layer activations.**  
 
-* `MakeSVMDatasets.ipynb` and `binarysvm.py` describe how SVMs were trained on the PCRT dataset and its augmentation suppressed counterparts.
-* `Figure3_MulticlassSVM` and `Figure3_PairwiseSVM` gather performance numbers from all SVM models and produce Figures 3B and 3C from the study.
-
 The pipeline is run from the controls_main.py script in the command line, e.g.
 ```
 python3 controls_main.py
