@@ -163,6 +163,18 @@ def convert_str_to_float(astr):
     return afl
 
 def sl_to_string(slgreater, sllesser = None):
+    ''' Formats a significance level int to string showing level by strings and 
+    
+    Arguments
+    ---------
+    slgreater : float, two-sided significance level or one-sided upper significance level
+    sllesser : float, one-sided significance level or one-sided lower significance level
+    
+    Returns
+    -------
+    slstring : formatted string showing significance level via symbols
+    '''
+    
     slstring = ''
     if(sllesser == None):
         for i in range(slgreater):
@@ -178,7 +190,14 @@ def sl_to_string(slgreater, sllesser = None):
 # %% COMPILE PANDAS
 
 def compile_comparisons_df(model, runinfo):
-    #f.write("TC\tMean\tMedian\tStd\tMax\tMin\t90% Quantile\t10% Quantile\n")
+    ''' Compiles and saves a pandas dataframe that brings together various different metrics 
+    for all model instantiations within a particular model type
+    
+    Arguments
+    ---------
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    '''
     
     nlayers = model['nlayers'] + 1
     
@@ -292,6 +311,17 @@ def compile_comparisons_df(model, runinfo):
     return df
 
 def pairedt_quantiles(df, model, runinfo):
+    ''' Saves a dataframe with results from paired ttest comapring 90 percent quantiles of different kinematic tuning curves
+    between trained and control models of a particular model type
+    
+    Arguments
+    ---------
+    df : pd.DataFrame matching output of compile_comparisons
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    
+    
+    '''
     
     idx = pd.IndexSlice
     
@@ -326,6 +356,17 @@ def pairedt_quantiles(df, model, runinfo):
     pt_df.to_csv(os.path.join(analysisfolder, model['base'] + '_pairedt_df.csv'))
     
 def pairedt_comp(model, runinfo):
+    ''' Saves a dataframe with results from paired ttest comapring individual test scores of different 
+    kinematic tuning curves between trained and control models of a particular model type
+    
+    Arguments
+    ---------
+    df : pd.DataFrame matching output of compile_comparisons
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    
+    '''
+    
     nlayers = model['nlayers'] + 1
     modelbase = model['base']
     
@@ -409,6 +450,21 @@ def pairedt_comp(model, runinfo):
     return df
 
 def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
+    ''' Plot TAD from uniformity of preferred directions (sum over bins of histogram)
+    in comparison between trained and control model instantations for a particular model type
+    
+    Arguments
+    ---------
+    layers : list of ints, different layer numbers
+    tmdevs : np.array [nr model instantiations, nr of bins], deviation scores for trained model instantiations
+    cmdevs : np.array [nr model instantiations, nr of bins], deviation scores for control model instantiations
+    trainedmodel : dict, information on the trained model
+    
+    Returns
+    -------
+    fig : plt.figure, TAD plot
+    
+    '''
     
     from scipy.stats import ttest_rel
     
@@ -465,47 +521,17 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     
     return fig
     
-def plot_pd_deviation_delta(layers, tmdevs, cmdevs, trainedmodel):
-    
-    from scipy.stats import ttest_rel
-    
-    fig = plt.figure(figsize=(8,6),dpi=300)
-    ax = fig.add_subplot(111)
-    
-    delta = cmdevs - tmdevs
-        
-    for i in range(len(tmdevs)):
-        plt.plot(layers, delta[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
-
-    t_corr = t.ppf(0.975, 4)
-    
-    tmsmean = np.nanmean(delta, axis=0)
-    errs_tmsmean = np.nanstd(delta, axis=0) / np.sqrt(5) * t_corr
-    
-    plt.plot(layers, tmsmean, color=trainedmodel['color'], marker = 'D')
-    
-    t_corr = t.ppf(0.975, 4)
-    
-    plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
-
-    plt.xticks(list(range(len(layers))))
-    plt.xlim((-0.3, len(layers)-0.7))
-    plt.xlabel('Layer')
-    plt.ylabel('Delta Total Absolute Deviation')
-    
-    ax = plt.gca()
-    format_axis(ax)
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    
-    plt.legend(handles[[0,5]], ['ind' , \
-                'mean'])
-    
-    plt.tight_layout()
-    
-    return fig
-    
 def pd_deviation(model, runinfo):
+    ''' Compare deviation in preferred directions for a particular model type between trained and controls.
+    Calls plotting functions and saves statistical significance to CSV file
+    
+    Arguments
+    ---------
+    model : dict, information about model type
+    runinfo : RunInfo (extension of dict)
+    
+    
+    '''
     nlayers = model['nlayers'] + 1
     
     layers = ['Sp.'] + ['L%d' %i for i in np.arange(1,nlayers)]
@@ -571,11 +597,6 @@ def pd_deviation(model, runinfo):
     fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot_normalized.pdf'))
     plt.close('all')
     
-    fig = plot_pd_deviation_delta(range(nlayers), trainedmodeldevs, controlmodeldevs, model)
-    fig.savefig(os.path.join(analysisfolder, 'pd_dev_delta_plot_normalized.pdf'))
-    plt.close('all')
-    
-    
     ##statistical tests
     trained_df = df.loc[trainednames, :]
     control_df = df.loc[controlnames, :]
@@ -605,6 +626,19 @@ def pd_deviation(model, runinfo):
 # %% PLOTS
 
 def colorselector(cmapname, tcf, ct = 0.4):
+    ''' Helper function to select color for kinematic tuning curve types and labels
+    
+    Arguments
+    ---------
+    cmapname : str, the name of the color map that is being used 
+    tcf : str, name of tuning feature that is being plotted
+    ct : int, opt, specifies range of colorbar that is used
+    
+    Returns
+    -------
+    color values
+    '''
+    
     tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels']
     nmods = len(tcnames)
     tci = tcnames.index(tcf)
@@ -614,6 +648,18 @@ def colorselector(cmapname, tcf, ct = 0.4):
     return cmap(cidx)
 
 def colorselector_ee(cmapname, tcf, ct = 0.4):
+     ''' Helper function to select color for positional tuning curve types and labels
+    
+    Arguments
+    ---------
+    cmapname : str, the name of the color map that is being used 
+    tcf : str, name of tuning feature that is being plotted
+    ct : int, opt, specifies range of colorbar that is used
+    
+    Returns
+    -------
+    color values
+    '''
     tcnames = ['ee', 'eepolar']
     nmods = len(tcnames)
     tci = tcnames.index(tcf)
@@ -622,52 +668,21 @@ def colorselector_ee(cmapname, tcf, ct = 0.4):
     cidx = tci*(1-ct)/(nmods-1)
     return cmap(cidx)
 
-def plotcomp(tcfdf, tcf, model):
-    fig = plt.figure(figsize=(14,6), dpi=200)   
-    
-    trainednamer = lambda i: model['base'] + '_%d' %i
-    trainednames = [trainednamer(i) for i in np.arange(1,6)]
-    
-    controlnamer = lambda i: model['base'] + '_%dr' %i
-    controlnames = [controlnamer(i) for i in np.arange(1,6)]
-    
-    trainedcolor = colorselector(model['cmap'], tcf)
-    controlcolor = colorselector('Greys_r', tcf)
-    colors = [trainedcolor, controlcolor]
-    
-    x = range(model['nlayers'] + 1)
-    
-    for (names, color) in zip([trainednames, controlnames], colors):
-        
-        medians = tcfdf.loc[names, 'median']
-        q90s = tcfdf.loc[names, 'q90']
-        
-        plt.plot(x, [medians.xs(i, level='layer')[1:].mean() for i in x], color=color, linestyle='-.', marker='D')
-        plt.plot(x, [q90s.xs(i, level='layer')[1:].mean() for i in x ], color=color, marker='D')
-        
-        alpha = 0.15
-        
-        for name in names:
-            
-            plt.plot(x, medians.xs(name, level='model'), color=color, alpha=alpha, linestyle='-.', marker='D')
-            plt.plot(x, q90s.xs(name, level='model'), color=color, alpha=alpha, marker='D')
-        
-        plt.title('%s tuning curve accuracies comparison for model and controls' %(tcf))
-        plt.ylabel('r2 score')
-        plt.xticks(x, ['spindles'] + ['layer %d' %i for i in np.arange(1,model['nlayers']+1)])
-        plt.ylim((-0.1,1))
-        
-    ax = plt.gca()
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    plt.legend(handles[[0,1,2,3,12,13,14,15]], ['mean of trained medians', 'mean of trained q90s', 'mean of control medians', \
-                'mean of control q90s', 'ind trained median', 'ind trained q90',
-                'ind control median', 'ind control q90',])
-
-    return fig
-
 def plotcomp_dir_accs(tcfdf, tcf, model):
-
+    ''' Plot comparisons between 90% quantiles for trained and control models for direction and acceleration 
+    on a single plot
+    
+    Arguments
+    ---------
+    tcfdf : pd.DataFrame, index and columns matching output of compile_comparisons
+    tcf : str, name of tuning feature
+    model : dict
+    
+    Returns
+    -------
+    fig : plt.figure
+    '''
+    
     fig = plt.figure(figsize=(12,5.5), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
@@ -725,7 +740,19 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     return fig
 
 def plotcomp_ees(tcfdf, model):
-
+    ''' Plot comparisons between 90% quantiles for trained and control models for endeffector position
+    
+    Arguments
+    ---------
+    tcfdf : pd.DataFrame, index and columns matching output of compile_comparisons
+    tcf : str, name of tuning feature
+    model : dict
+    
+    Returns
+    -------
+    fig : plt.figure
+    '''
+    
     fig = plt.figure(figsize=(12,5.5), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
@@ -783,6 +810,16 @@ def plotcomp_ees(tcfdf, model):
     return fig
 
 def tcctrlcompplots(df, model, runinfo):
+    ''' Saves plots comparing 90% quantiles for the model for various tuning feature types
+    
+    Arguments
+    ---------
+    df : pd.DataFrame matching output of compile_comparisons
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    
+    '''
+    
     folder = runinfo.sharedanalysisfolder(model,  'kindiffs_plots')
     os.makedirs(folder, exist_ok=True)
     tcf=None
@@ -799,315 +836,29 @@ def tcctrlcompplots(df, model, runinfo):
     plt.close('all')
         
 # %% COMPARE PREF DIR DIFFS AND GENERALIZATION
-        
-def pv_to_string(pv):
-    sl = 0
-    if(pv < 0.1):
-        sl = 1
-        if(pv < 0.05):
-            sl = 2
-            if(pv < 0.01):
-                sl = 3       
-    return sl
-
-def get_pds(model, runinfo, r2threshold = None):
-    """ Return heights including 'all' """
-    
-    modelname = model['name']
-    nlayers = model['nlayers'] + 1 #add 1 for spindles
-    base = model['base']
-    
-    fset = 'vel'
-    mmod = 'std'
-    
-    ##SAVE PDs & R2s
-    pds = []
-    for ilayer in range(nlayers):
-        pds.append([])
-        for ior3, orientation3 in enumerate(orientations):
-            pds[ilayer].append([])
-            
-            runinfo['orientation'] = orientation3
-            runinfo['height'] = 'all'
-            
-            resultsfolder = runinfo.resultsfolder(model)
-            expf = '%s%s/' %(resultsfolder, 'vel')
-            
-            testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
-            
-            if r2threshold is not None:
-                testevals = testevals[testevals[...,1,1] > r2threshold] #exclude those that fall below 0.2 threshold
-            dirtuning = testevals[...,1,3:5].reshape((-1,2))            
-            prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-            
-            """Create numpy for pref dirs with structure:
-                Ax 1: Height Index
-                Ax 2: Neurons
-            """
-            
-            pds[ilayer][ior3] = np.zeros((len(uniqueheights[ior3]) + 1, len(prefdirs)))
-            pds[ilayer][ior3][0] = prefdirs
-            
-            for iht, ht in enumerate(uniqueheights[ior3]):
-                runinfo['height'] = ht
-
-                testevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(runinfo.resultsfolder(model, 'vel'), ilayer, fset, mmod, runinfo.planestring()))
-                dirtuning = testevals[...,1,3:5].reshape((-1,2))  
-                prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                pds[ilayer][ior3][iht+1] = prefdirs
-                
-    return pds
-
-def getlpdcors(pds):
-    """args: preferred directions for all planes in a single layer"""
-     ## CALCULATE LAYER-WISE CORRELATIONS
-    nzs = len(uniquezs)
-    nxs = len(uniquexs)
-    zpos0 = uniquezs.index(0)
-    xpos0 = int(len(uniquexs)/2)
-    x0 = uniquexs[xpos0]
-    z0 = 0
-    
-    # HOR VS HOR
-    horvshor = np.zeros((nzs,))
-    for iz in range(nzs):
-        pd1 = pds[0][zpos0]
-        pd2 = pds[0][iz]
-        mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        horvshor[iz] = np.corrcoef(pd1[mask], pd2[mask])[0,1]
-            
-    # VERT VS VERT
-    vertvsvert = np.zeros((nxs,))
-    for ix in range(nxs):
-        pd1 = pds[1][xpos0]
-        pd2 = pds[1][ix]
-        mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        vertvsvert[ix] = np.corrcoef(pd1, pd2)[0,1]
-    
-    #  HOR VS VERT (compare one horizontal to all verticals)
-    horvsvert = np.zeros((nxs,))
-    for ix in range(nxs):
-        pd1 = pds[0][zpos0]
-        pd2 = pds[1][ix]
-        mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        horvsvert[ix] = np.corrcoef(pd1[mask], pd2[mask])[0,1]
-    
-    # VERT VS HOR (one vertical vs. all horizontals)
-    vertvshor = np.zeros((nzs,))
-    for iz in range(nzs):
-        pd1 = pds[1][xpos0]
-        pd2 = pds[0][iz]
-        mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        vertvshor[iz] = np.corrcoef(pd1[mask], pd2[mask])[0,1]
-        
-    return [horvshor, vertvsvert, horvsvert, vertvshor], pd1.size
-
-def get_r2s(model, runinfo, r2threshold  = 0.2):
-    modelname = model['name']    
-    nlayers = model['nlayers'] + 1 #add 1 for spindles
-    base = model['base']
-    
-    fset = 'vel'
-    mmod = 'std'
-        
-    ##SAVE R2s
-    r2s = []
-    for ilayer in range(nlayers):
-        r2s.append([])
-        for ior2, orientation2 in enumerate(orientations):
-            r2s[ilayer].append([])
-            
-            runinfo['orientation'] = orientation2
-            runinfo['height'] = uniqueheights[ior2][0]
-            
-            resultsfolder = runinfo.resultsfolder(model)
-            expf = '%s%s/' %(resultsfolder, 'vel')
-            
-            testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
-
-            r2 = testevals[...,1,1].reshape((-1))            
-            
-            """Create numpy for pref dirs with structure:
-                Ax 1: Height Index
-                Ax 2: Neurons
-            """
-            r2s[ilayer][ior2] = np.zeros((len(uniqueheights[ior2]), len(r2)))
-            
-            for iht, ht in enumerate(uniqueheights[ior2]):
-                runinfo['height'] = ht
-
-                testevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(runinfo.resultsfolder(model, 'vel'), ilayer, fset, mmod, runinfo.planestring()))
-                r2 = testevals[...,1,1].reshape((-1))            
-                r2s[ilayer][ior2][iht] = r2
-                
-    return r2s
-        
-def invarcomp(model, runinfo):    
-    
-    nlayers = model['nlayers'] + 1
-    modelbase = model['base']
-    modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
-    
-    corrtype = ['trained', 'control', 'z-test']    
-    
-    colnames=list(zip(['hor']*len(uniquezs)*3 + ['vert']*len(uniquexs)*3,
-                 np.concatenate((np.repeat(np.array(uniquezs),3), np.repeat(np.array(uniquexs),3))),
-                 corrtype*(len(uniquezs)+len(uniquexs))))
-    columns = pd.MultiIndex.from_tuples(colnames,
-                names=('orientation', 'height', 'type'))
-    
-    index = pd.MultiIndex.from_product((
-                modelnames,
-                list(range(nlayers)),
-                compors,
-                corrtypes),
-                names = ('model', 'layer', 'compor', 'corrtypes'))
-    
-    df = pd.DataFrame(index=index, columns=colnames)
-    
-    nlayers = model['nlayers'] + 1 #add 1 for spindles
-    
-    ##SAVE PDs & R2s
-    for im, mname in enumerate(modelnames):
-        
-        trainedmodel = model.copy()
-        trainedmodel['name'] = mname
-        trainedpds = get_pds(trainedmodel, runinfo)
-        
-        controlmodel = model.copy()
-        controlmodel['name'] = mname + 'r'
-        controlpds = get_pds(controlmodel, runinfo)
-            
-        zpos0 = uniquezs.index(0)
-        xpos0 = int(len(uniquexs)/2)
-        
-        for ilayer in np.arange(nlayers):
-            trained = trainedpds[ilayer]
-            #print(trained.shape)
-            trainedcorrs, ntrained = getlpdcors(trained)
-            #print(trainedcorrs[0].shape)
-            ctrl = controlpds[ilayer]
-            ctrlcorrs, ncorr = getlpdcors(ctrl)
-            assert ntrained == ncorr, 'Size of train and control not equal!!!!'
-            
-            ior = 0
-            orientation = 'hor'
-            for iht, ht in enumerate(uniqueheights[ior]):
-                hhtc = trainedcorrs[0][iht]
-                vhtc = trainedcorrs[3][iht]
-                hhcc = ctrlcorrs[0][iht]
-                vhcc = ctrlcorrs[3][iht]
-                df.loc[(mname, ilayer, compors[0], 'pd corr'), (orientation, ht, 'trained')] = hhtc
-                df.loc[(mname, ilayer, compors[0], 'pd corr'), (orientation, ht, 'control')] = hhcc
-                df.loc[(mname, ilayer, compors[0], 'pd corr'), (orientation, ht, 'z-test')] = independent_corr(hhtc, hhcc, ntrained)[1]
-                
-                df.loc[(mname, ilayer, compors[3], 'pd corr'), (orientation, ht, 'trained')] = vhtc
-                df.loc[(mname, ilayer, compors[3], 'pd corr'), (orientation, ht, 'control')] = vhcc
-                df.loc[(mname, ilayer, compors[3], 'pd corr'), (orientation, ht, 'z-test')] = independent_corr(vhtc, vhcc, ntrained)[1]
-            
-            ior = 1
-            orientation = 'vert'
-            for iht, ht in enumerate(uniqueheights[ior]):
-                vvtc = trainedcorrs[1][iht]
-                hvtc = trainedcorrs[2][iht]
-                vvcc = ctrlcorrs[1][iht]
-                hvcc = ctrlcorrs[2][iht]
-                df.loc[(mname, ilayer, compors[1], 'pd corr'), (orientation, ht, 'trained')] = vvtc
-                df.loc[(mname, ilayer, compors[1], 'pd corr'), (orientation, ht, 'control')] = vvcc
-                df.loc[(mname, ilayer, compors[1], 'pd corr'), (orientation, ht, 'z-test')] = independent_corr(vvtc, vvcc, ntrained)[1]
-                
-                df.loc[(mname, ilayer, compors[2], 'pd corr'), (orientation, ht, 'trained')] = hvtc
-                df.loc[(mname, ilayer, compors[2], 'pd corr'), (orientation, ht, 'control')] = hvcc
-                df.loc[(mname, ilayer, compors[2], 'pd corr'), (orientation, ht, 'z-test')] = independent_corr(hvtc, hvcc, ntrained)[1]
-            
-        trainedr2s = get_r2s(trainedmodel, runinfo)
-        
-        controlr2s = get_r2s(controlmodel, runinfo)
-            
-        zpos0 = uniquezs.index(0)
-        xpos0 = int(len(uniquexs)/2)
-        
-        for ilayer in np.arange(nlayers):
-            trained = trainedr2s[ilayer]
-            #print(trained.shape)
-            trainedcorrs, ntrained = getlpdcors(trained)
-            ctrl = controlr2s[ilayer]
-            ctrlcorrs, ncorr = getlpdcors(ctrl)
-            assert ntrained == ncorr, 'Size of train and control not equal!!!!'
-            
-            ior = 0
-            orientation = 'hor'
-            for iht, ht in enumerate(uniqueheights[ior]):
-                hhtc = trainedcorrs[0][iht]
-                vhtc = trainedcorrs[3][iht]
-                hhcc = ctrlcorrs[0][iht]
-                vhcc = ctrlcorrs[3][iht]
-                df.loc[(mname, ilayer, compors[0], 'r2 corr'), (orientation, ht, 'trained')] = hhtc
-                df.loc[(mname, ilayer, compors[0], 'r2 corr'), (orientation, ht, 'control')] = hhcc
-                if(ht != zpos0):
-                    df.loc[(mname, ilayer, compors[0], 'r2 corr'), (orientation, ht, 'z-test')] = independent_corr(hhtc, hhcc, ntrained)[1]
-                
-                df.loc[(mname, ilayer, compors[3], 'r2 corr'), (orientation, ht, 'trained')] = vhtc
-                df.loc[(mname, ilayer, compors[3], 'r2 corr'), (orientation, ht, 'control')] = vhcc
-                if(ht != zpos0):
-                    df.loc[(mname, ilayer, compors[3], 'r2 corr'), (orientation, ht, 'z-test')] = independent_corr(vhtc, vhcc, ntrained)[1]
-            
-            ior = 1
-            orientation = 'vert'
-            for iht, ht in enumerate(uniqueheights[ior]):
-                vvtc = trainedcorrs[1][iht]
-                hvtc = trainedcorrs[2][iht]
-                vvcc = ctrlcorrs[1][iht]
-                hvcc = ctrlcorrs[2][iht]
-                df.loc[(mname, ilayer, compors[1], 'r2 corr'), (orientation, ht, 'trained')] = vvtc
-                df.loc[(mname, ilayer, compors[1], 'r2 corr'), (orientation, ht, 'control')] = vvcc
-                if(ht != xpos0):
-                    df.loc[(mname, ilayer, compors[1], 'r2 corr'), (orientation, ht, 'z-test')] = independent_corr(vvtc, vvcc, ntrained)[1]
-                
-                df.loc[(mname, ilayer, compors[2], 'r2 corr'), (orientation, ht, 'trained')] = hvtc
-                df.loc[(mname, ilayer, compors[2], 'r2 corr'), (orientation, ht, 'control')] = hvcc
-                if(ht != xpos0):
-                    df.loc[(mname, ilayer, compors[2], 'r2 corr'), (orientation, ht, 'z-test')] = independent_corr(hvtc, hvcc, ntrained)[1]
-            
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'invars', sp= False)
-    os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, model['base'] + '_invars_df.csv'))
-        
-    return df    
-
-def plot_ind_neuron_invars_comp(layers, tmdevmean, cmdevmean, trainedmodel):
-    fig = plt.figure(dpi=300)
-    ax = fig.add_subplot(111)
-    
-    plt.plot(layers, np.sum(np.abs(tmdevmean), axis=1), color=trainedmodel['color'], marker = 'D')
-    plt.plot(layers, np.sum(np.abs(cmdevmean), axis=1), color='grey', marker = 'D')
-    
-    plt.legend(['trained', 'control'])
-    
-    plt.xlabel('Layer')
-    plt.ylabel('Total Absolute Deviation')
-    
-    plt.title('Total Absolute Deviation for All Tuned Neurons')
-    
-    return fig
 
 def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
+    '''Plot MAD from PD in central plane over all planes
+    Comparison between trained and control models
     
-    #swtiched everything to nanmean...
+    Arguments
+    ---------
+    layers : list of ints, specifying layer indices
+    alltmdevmeans : np.array [nr model instantiations, nr layers, nr planes], MAD scores for trained model
+    allcmdevmeans : np.array [nr model instantiations, nr layers, nr planes], MAD scores for control model
+    trainedmodel : dict
+        
+    Returns
+    -------
+    figboth : plt.figure
+    df : pd.DataFrame, statistics accompanying plot
+    '''
+    
     
     columns = ['tmsmean', 'cmsmean', 'tmsstd', 'cmsstd', 'stddiff', 't stat', 'p value', 'Bonferroni', 'N for t']
     index = layers
     df = pd.DataFrame(index=index, columns=columns)
     nlayers = trainedmodel['nlayers'] + 1
-    
-    from scipy.stats import ttest_rel
-    
-    fig = plt.figure(figsize=(8,6),dpi=300)
-        
-    for i in range(len(alltmdevmeans)):
-        assert np.nanmax(alltmdevmeans[i]) < np.pi, 'too large tmdevmean, model %d, value %f, pos %s ' %(i, np.nanmax(alltmdevmeans[i]), np.argmax(alltmdevmeans[i]))
-        plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
-        plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
     
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     t_corr = t.ppf(0.975, 4)
@@ -1115,22 +866,13 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     n_tms = np.sum(~np.isnan(np.nanmean(np.abs(alltmdevmeans), axis=2)), axis=0)
     n_cms = np.sum(~np.isnan(np.nanmean(np.abs(allcmdevmeans), axis=2)), axis=0)
     
-    print(n_tms)
-    print(n_cms)
-    
     trained_t_corr = np.array([t.ppf(0.975, n - 1) for n in n_tms])
     control_t_corr = np.array([t.ppf(0.975, n - 1) for n in n_cms])
     
-    print(trained_t_corr)
-    print(control_t_corr)
-        
     tmsmean = np.nanmean(np.nanmean(np.abs(alltmdevmeans), axis=2), axis=0)
     cmsmean = np.nanmean(np.nanmean(np.abs(allcmdevmeans), axis=2), axis=0)
     errs_tmsmean = np.nanstd(np.nanmean(np.abs(alltmdevmeans), axis=2), axis=0) / np.sqrt(n_tms) * trained_t_corr
     errs_cmsmean = np.nanstd(np.nanmean(np.abs(allcmdevmeans), axis=2), axis=0) / np.sqrt(n_cms) * control_t_corr
-    
-    print(alltmdevmeans.shape)
-    print(np.sum(np.abs(alltmdevmeans), axis=2).shape)
     
     df['tmsmean'] = tmsmean
     df['cmsmean'] = cmsmean
@@ -1168,42 +910,8 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
         if layer == 7:
             assert t_stats, print('L7 failed!', t_stats, tml, cml)
         
-        print(t_stats)
-        time.sleep(0.5)
-    
-    plt.plot(layers, tmsmean, color=trainedmodel['color'], marker = 'D', label='mean of trained')
-    plt.plot(layers, cmsmean, color='grey', marker = 'D', label='mean of controls')
-
-    plt.xticks(list(range(len(layers))), ['Sp.'] + ['L%d' %(i+1) for i in range(len(layers))])
-    plt.xlim((-0.3,len(layers)-0.7))
-    plt.xlabel('Layer')
-    plt.ylabel('Mean Absolute Deviation')
-    
-    ax = plt.gca()
-    format_axis(ax)
-    
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
-                'mean of trained', 'mean of controls'])
-    
-    plt.tight_layout()
-    
-    figeb = plt.figure(figsize=(8,6),dpi=300)
-    
-    plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0)
-    plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0)
-    
-    ax = plt.gca()
-    format_axis(ax)
-    
-    plt.xticks(list(range(len(layers))), ['Sp.'] + ['L%d' %(i+1) for i in range(len(layers))])
-    plt.xlabel('Layer')
-    plt.ylabel('Mean Absolute Deviation')
-    plt.xlim((-0.3, len(layers)-0.7))
-    
-    plt.legend(['trained', 'control'])
+        #print(t_stats)
+        #time.sleep(0.5)
     
     figboth = plt.figure(figsize=(8,6), dpi=300)
         
@@ -1230,10 +938,18 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
                 'mean of trained', 'mean of controls'])
     
-    return fig, figeb, figboth, df
+    return figboth, df
 
 
 def ind_neuron_invars_comp(model, runinfo):    
+    ''' Compare individual neuron invariance for a given model type
+    Save plots and statistics
+    
+    Arguments
+    ---------
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    '''
     
     nlayers = model['nlayers'] + 1
     modelbase = model['base']
@@ -1290,8 +1006,8 @@ def ind_neuron_invars_comp(model, runinfo):
         fig_hor.savefig(os.path.join(analysisfolder, trainedmodel['name'] + '_ind_neuron_dev_plot_hor_02.png'))
         fig_vert.savefig(os.path.join(analysisfolder, trainedmodel['name'] + '_ind_neuron_dev_plot_vert_02.png'))
     
-    fig_hor, figeb_hor, figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
-    fig_vert, figeb_vert, figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
+    figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
+    figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     
     fig_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_02.pdf'))
     figeb_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_eb_02.pdf'))
@@ -1304,168 +1020,6 @@ def ind_neuron_invars_comp(model, runinfo):
     df_vert.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_vert.csv'))
         
     print('plots saved')
-
-
-# %% COMPARE ALL MODEL TYPES ACROSS FEATURES
-    
-def tab_comp_tcn_allmodels(tcn, allmodels, runinfo):
-    
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    
-    layers = ['L%d' %i for i in np.arange(1,9)]
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials),
-                    names = ('modeltype', 'trial'))
-        
-    df = pd.DataFrame(index=index, columns=layers + ['total greater (alpha=0.05)', 'total lesser (alpha=0.05)', 'total'])
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'kindiffs')  
-        modelks = pd.read_csv(os.path.join(modelksfolder, 'ks.csv'), index_col=[0,1], header=[0,1,2],)
-        #print(modelks.columns)
-        for i in trials:
-            modelname = basemodel['base'] + '_%d' %i
-            
-            counterslless = 0
-            counterslgreater = 0,
-            for il in range(basemodel['nlayers']+1):
-                layer = 'L%d' %il
-                slless = modelks.loc[(modelname, tcn), (str(il), 'less', 'sl')]
-                slgreater = modelks.loc[(modelname, tcn), (str(il), 'greater', 'sl')]
-                
-                slstring = ''
-                for j in range(int(slless)):
-                    slstring = slstring + '+'
-                for j in range(int(slgreater)):
-                    slstring = slstring + '-'
-                df.loc[(basemodel['type'], i), layer] = slstring
-        
-                if(slless >= 2):
-                    counterslless = counterslless + 1
-                if(slgreater >= 2):
-                    counterslgreater = counterslgreater + 1
-                    
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'kindiffs')
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_%s_ks_slsums.csv' %tcn))
-    
-    return df    
-    
-def tab_comp_pds_allmodels(allmodels, runinfo):
-    
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    
-    layers = ['L%d' %i for i in np.arange(1,9)]
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials),
-                    names = ('modeltype', 'trial'))
-        
-    df = pd.DataFrame(index=index, columns=layers)
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'pddiffs')  
-        modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, 'pddiffs.csv'), index_col=[0,1], header=0)
-       
-        for i in trials:
-            modelname = basemodel['base'] + '_%d' %i
-            for il in range(basemodel['nlayers']+1):
-                layer = 'L%d' %il
-                pv = modelks.loc[(modelname, il), 'kuiper']
-                sl = pv_to_sl_code(convert_str_to_float(pv))
-                
-                df.loc[(basemodel['type'], i), layer] = ''.join(['*']*int(sl))
-                    
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'pddiffs')
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_pddiffs.csv'))
-    
-    return df
-
-def tab_comp_invars_allmodels(corrtype, allmodels, runinfo):
-    
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    
-    layers = ['L%d' %i for i in np.arange(1,9)]
-    planeranges = ['lower', 'middle', 'upper']
-    
-    columns = pd.MultiIndex.from_product((
-                    layers,
-                    planeranges),
-                    names = ('layers', 'planeranges'))
-        
-    planerangecutoffs = np.array([[-36, 21], #cutoffs are < center <=, lower <=, higher >
-                                  [15, 45]]) #row 1: horizontal vs. horizontal
-                                             #row 2: vertical vs. vertical
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials),
-                    names = ('modeltype', 'trial'))
-        
-    df = pd.DataFrame(index=index, columns=columns)
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'invars', sp=False)  
-        modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, '%s_invars_df.csv' %basemodel['base'] ), index_col=[0,1,2,3], header=0, )
-        #print(modelks.index)
-        #print(modelks.columns)
-        for i in trials:
-            modelname = basemodel['base'] + '_%d' %i
-            for il in range(basemodel['nlayers']+1):
-                layer = 'L%d' %il
-                for ior, orientation in enumerate(orientations):
-                    counterheights = 0
-                    counterslgreater = np.zeros((3,))
-                    countersllesser = np.zeros((3,))
-                    counterrange = 0
-                    for iht, ht in enumerate(uniqueheights[ior]):
-                        trained = modelks.loc[(modelname, il, compors[ior], corrtype), str((orientation, ht, 'trained'))]
-                        control = modelks.loc[(modelname, il, compors[ior], corrtype), str((orientation, ht, 'control'))]
-                        zscore = modelks.loc[(modelname, il, compors[ior], corrtype),str((orientation, ht, 'z-test'))]
-                        
-                        sl = pv_to_sl_code(zscore)
-
-                        if(sl):
-                            
-                            if(trained > control):
-                                for j in range(sl):
-                                    counterslgreater[j] = counterslgreater[j] + 1
-                            else:
-                                for j in range(sl):
-                                    counterslgreater[j] = counterslgreater[j] + 1
-                        
-                        counterheights = counterheights + 1
-                        
-                        if((iht == len(uniqueheights[ior]) - 1) or (counterrange < 2 and ht == planerangecutoffs[ior, counterrange])):
-                            morethanhalfgreater = np.where(counterslgreater >= counterheights/2.0)[0]
-                            morethanhalflesser = np.where(countersllesser >= counterheights/2.0)[0]
-                            
-                            assert ~((morethanhalfgreater.size > 0) and (morethanhalflesser.size > 0)), 'more than half can\'t both be greater and lesser!'
-                            
-                            if(morethanhalfgreater.size > 0):
-                                sl = morethanhalfgreater[len(morethanhalfgreater) -1] + 1
-                                df.loc[(basemodel['type'], i), (layer, planeranges[counterrange])] = ''.join(['+']*int(sl))
-                            elif(morethanhalflesser.size > 0):
-                                sl = morethanhalflesser[len(morethanhalflesser) -1] + 1
-                                df.loc[(basemodel['type'], i), (layer, planeranges[counterrange])] = ''.join(['-']*int(sl))
-                                
-                            counterheights = 0
-                            counterslgreater = np.zeros((3,))
-                            countersllesser = np.zeros((3,))
-                            counterrange = counterrange + 1
-                            
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'invars', sp=False)
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_invars_%s.csv' %corrtype))
-    
-    return df 
 
 # %% MAIN
 
@@ -1532,44 +1086,3 @@ def generalizations_comparisons_main(model, runinfo):
         print('ind neuron invars comps already run')
         
     plt.close('all')
-        
-def compare_all_types_main(allmodels, runinfo):
-    if(not os.path.exists(runinfo.allmodelfolder('kindiffs'))):
-    #if(True):
-        print('comparing all model types with their controls for kinematic tuning...')
-        for tcn in tcnames:
-            tab_comp_tcn_allmodels(tcn, allmodels, runinfo)
-        print('completed')
-    else:
-        print('joint comparison all model types and controls for kinematic tuning already completed')
-    
-    if(not os.path.exists(runinfo.allmodelfolder('pddiffs'))):
-    #if(True):
-        print('comparing pds for all model types and controls...')
-        tab_comp_pds_allmodels(allmodels, runinfo)
-    else:
-        print('joint comparison all model types and controls for PDs already completed')
-        
-    if(not os.path.exists(runinfo.allmodelfolder('pdvars'))):
-        print('comparing variance in PDs for all model types and controls...')
-        tab_comp_pdvars_allmodels(allmodels, runinfo)
-    else:
-        print('variance in PDs already compared for all model types and controls')
-        
-    if(not os.path.exists(runinfo.allmodelfolder('pddiffs_to_orig'))):
-    #if(True):
-        print('comparing all model types to original...')
-        tab_comp_pddiffs_to_orig_allmodels(allmodels, runinfo)
-        
-    if(not os.path.exists(runinfo.allmodelfolder('pddiffs_rayleigh'))):
-    #if(True):
-        print('comparing all models\' uniformity of PD distribution...')
-        tab_comp_pddiffs_rayleigh_allmodels(allmodels, runinfo)
-        
-def invars_all_types_main(allmodels, runinfo):
-    if(not os.path.exists(runinfo.allmodelfolder('invars', sp=False))):
-        for corrtype in corrtypes:
-            print('comparing all model types with their controls for kinematic tuning...')
-            tab_comp_invars_allmodels(corrtype, allmodels, runinfo)
-    else:
-        print('joint comparison all model types and controls for invariance already completed')
