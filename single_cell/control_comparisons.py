@@ -91,6 +91,16 @@ plt.rcParams.update(params)
 # %% UTILS
 
 def pv_to_sl_code(pv):
+    """ Return significance level corresponding to p-value
+    
+    Arguments
+    ---------
+    pv : float, p-value
+    
+    Returns
+    sl : int, significance level (0-3)
+    
+    """
     sl = 0
     if(pv < 0.1):
         sl = 1
@@ -101,17 +111,24 @@ def pv_to_sl_code(pv):
     return sl
 
 def get_pds_sp(model, runinfo, r2threshold =  None):
-    """ Get pds in a single plane """
+    """ Get pds in a single plane 
     
-    modelname = model['name']
+    Arguments
+    ---------
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    r2threshold : float, threshold above which test scores mean a neuron is directionally tuned
+
+    Returns
+    -------
+    pds : list [nr_layers] of np.array [height index for planes, nr_neurons]
+    """
+    
     nlayers = model['nlayers'] + 1 #add 1 for spindles
-    base = model['base']
     
     fset = 'vel'
     mmod = 'std'
     
-    ior3 = orientations.index(runinfo['orientation'])
-    orientation3 = runinfo['orientation']
     
     ##SAVE PDs & R2s
     pds = []

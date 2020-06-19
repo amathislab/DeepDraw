@@ -29,6 +29,15 @@ def cca(features_x, features_y):
     return np.linalg.norm(qx.T.dot(qy)) ** 2 / min(features_x.shape[1], features_y.shape[1])
 
 def main(trainedmodel, controlmodel, runinfo):
+    '''Calculate the CKA and CCA scores of a given trained and control model for every layer and save output
+    
+    Arguments
+    ---------
+    trainedmodel : dict, information on model
+    controlmodel : dict, information on model
+    runinfo : RunInfo (extension of dict)
+    
+    '''
     
     nlayers = trainedmodel['nlayers']
     
@@ -71,6 +80,13 @@ def main(trainedmodel, controlmodel, runinfo):
     plt.close('all')
     
 def rsa_models_comp(model, runinfo):
+    ''' Combine the saved RSA scores of all implementations into a single plot
+    
+    Arguments
+    ---------
+    model : dict, information on model
+    runinfo : RunInfo (extension of dict)
+    '''
     
     nlayers = model['nlayers'] + 1
     

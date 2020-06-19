@@ -23,7 +23,20 @@ muscle_order = ['CORB', 'DELT1', 'DELT2', 'DELT3', 'INFSP', 'LAT1', 'LAT2', 'LAT
 # %% POLAR TUNING CURVE PLOT
         
 def polartc(thetas, rs, ilayer, k, irow, r2, expf, fset='vel'):
-    """Plot polar directional tuning curve"""
+    """Plot polar directional tuning curve
+    
+    Arguments
+    ---------
+    thetas : np.array [nr_samples, ], theta values
+    rs : np.array [nr_samples,], r values
+    ilayer : index of current layer
+    k : index of current neuron (the which highest r2 score does it have)
+    irow : what row does the neuron belong to
+    r2 : r2 score of the neuron
+    expf : experimental folder
+    fset : kinematic tuning curve type
+    """
+    
     randsel = np.random.permutation(len(thetas))[:2000]
 
     fig = plt.figure(dpi=275)
@@ -31,16 +44,22 @@ def polartc(thetas, rs, ilayer, k, irow, r2, expf, fset='vel'):
     plt.title(str(r2))
     
     plt.savefig('%s/%s_l%d_%s_polar_r2_bl.pdf' %(expf, fset, ilayer + 1, k))
-    
-def carttc(thetas, rs, ilayer, k):
-    """Plot Cartesian directional tuning curve"""
-    plt.figure(dpi=275)
-    plt.scatter(thetas, rs)
-    plt.title('Directional Tuning for Node L%d ' %(ilayer, str(idx)))
-    plt.savefig('%s/l%d/%s_l%d_%s_cart.pdf' %(expf, ilayer + 1, fset, ilayer + 1, str(k)))
-        
+     
 def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
-    """Get matching thetas and activations (stored as Rs)    """
+    """Get matching thetas and activations (stored as Rs)
+    
+    Arguments
+    ---------
+    polar : np.array [nr_samples, nr_coords, nr_timesteps], 
+    acts : np.array [nr_samples, nr_rows, nr_timestamps] or [nr_samples, nr_rows, nr_timestamps, nr_feature maps]
+    rowidx : tuple of form (row) or (row, feature_map)
+    tcoff : int, amount of time points to drop at beginning and end of sequence
+    
+    Return
+    ------
+    thetas : np.array [nr_values,]
+    rs : np.array [nr_values,]
+    """
     
     print(rowidx, acts.shape)
     
@@ -78,6 +97,21 @@ def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
 # %% 3D PLOTS FOR DIR + VEL TUNING
 
 def dirvelplotpolar(thetas, vms, acts, ilayer, k, rowidx, r2, expf, fset='vel'):
+    """ Polar contour plot relating direction of movement, velocity, and neuron activation
+     
+    Arguments
+    ---------
+    thetas : np.array [nr_samples, ], theta values
+    vms : np.array [nr_samples,], velocity values
+    acts : np.array [nr_samples,], neuron activations
+    ilayer : index of current layer
+    k : index of current neuron (the which highest r2 score does it have)
+    irow : what row does the neuron belong to
+    r2 : r2 score of the neuron
+    expf : experimental folder
+    fset : kinematic tuning curve type
+    
+    """
     fig = plt.figure(dpi=275)
     ax = fig.add_subplot(111, projection='polar')
 
@@ -115,7 +149,21 @@ def dirvelplotpolar(thetas, vms, acts, ilayer, k, rowidx, r2, expf, fset='vel'):
     plt.close('all')
     
 def get_thetas_vms_rs_from_row(polar, acts, rowidx, tcoff=32):
-    """Get matching thetas and activations (stored as Rs)    """
+    """Get matching thetas and activations (stored as Rs)
+    
+    Arguments
+    ---------
+    polar : np.array [nr_samples, nr_coords, nr_timesteps], 
+    acts : np.array [nr_samples, nr_rows, nr_timestamps] or [nr_samples, nr_rows, nr_timestamps, nr_feature maps]
+    rowidx : tuple of form (row) or (row, feature_map)
+    tcoff : int, amount of time points to drop at beginning and end of sequence
+    
+    Returns
+    -------
+    thetas : np.array [nr_samples, ], theta values
+    vms : np.array [nr_samples,], velocity values
+    rs : np.array [nr_samples,], neuron activations 
+    """
     
     print(rowidx, acts.shape)
     
@@ -154,6 +202,14 @@ def get_thetas_vms_rs_from_row(polar, acts, rowidx, tcoff=32):
 # %% TRAINED MODEL
         
 def main(model, runinfo):
+    """ Finds most directionally tuned neurons in each layer and then plots polar scatter and contour plots for these 
+    
+    
+    Arguments
+    ---------
+    model : dict
+    runinfo : RunInfo (extension of dict)
+    """
     
     nlayers = model['nlayers'] + 1
     dirmi = []

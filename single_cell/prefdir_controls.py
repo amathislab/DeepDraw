@@ -16,6 +16,21 @@ import os
 # %% FIND PREFERRED DIRECTIONS
 
 def polarhist(dirs, ilayer, nbins=18, maxact = 14):
+    '''Plot polar histogram for preferred directions for a single layer
+    
+    Arguments
+    ---------
+    dirs : list of preferred directions
+    ilayer : index of current layer
+    nbins : number of bins to use in histogram
+    maxact : maximal activation value to which to normalize the color bars
+        
+    Returns
+    -------
+    fig : plt.figure, histogram
+    cbfig : colorbar
+    '''
+    
     if dirs != []:
         hist, binedges = np.histogram(dirs, bins=nbins, range=(-np.pi, np.pi))
         centers = [(binedges[i] + binedges[i + 1])/2 for i in range(nbins)]
@@ -42,6 +57,21 @@ def polarhist(dirs, ilayer, nbins=18, maxact = 14):
     return fig, cbfig
 
 def polarhistmean(dirs, ilayer, nbins=18, maxact = 14):
+    '''Plot polar histogram for preferred directions for a single layer
+    
+    Arguments
+    ---------
+    dirs : list of preferred directions
+    ilayer : index of current layer
+    nbins : number of bins to use in histogram
+    maxact : maximal activation value to which to normalize the color bars
+        
+    Returns
+    -------
+    fig : plt.figure, histogram
+    cbfig : colorbar
+    '''
+    
     if dirs != []:
         hist, binedges = np.histogram(dirs, bins=nbins, range=(-np.pi, np.pi))
         centers = [(binedges[i] + binedges[i + 1])/2 for i in range(nbins)]
@@ -75,6 +105,19 @@ def polarhistmean(dirs, ilayer, nbins=18, maxact = 14):
     return fig, cbfig
 
 def main(model, runinfo, r2threshold = 0.2):
+    '''Plot polar histogram for preferred directions for a single layer
+    
+    Arguments
+    ---------
+    model : dict, model information
+    runinfo : RunInfo (extension of dict)
+    r2thresold : float, r2 significance threshold (neurons with values above this are counted as significant)
+        
+    Returns
+    -------
+    fig : plt.figure, histogram
+    cbfig : colorbar
+    '''
     
     modelname = model['name']    
     nlayers = model['nlayers'] + 1 #add 1 for spindles
