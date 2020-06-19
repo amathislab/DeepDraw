@@ -15,7 +15,7 @@ from scipy.interpolate import interp1d
 import opensim as osim
 from pcr_data_utils import make_joint_config, make_muscle_config, compute_jerk
 
-PATH_TO_DATA = '/gpfs01/bethge/home/pmamidanna/deep_proprioception/data'
+PATH_TO_DATA = './' # Will be used to save data
 
 
 def resize(trajectory, size):

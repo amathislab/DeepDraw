@@ -23,7 +23,6 @@ from rowwise_neuron_curves_controls import main as tuningcurves_main
 from combined_violinquantiles_controls import comp_violin_main
 from control_comparisons import main as comparisons_main
 from control_comparisons import generalizations_comparisons_main
-from control_comparisons import compare_all_types_main, invars_all_types_main
 from prefdir_controls import main as prefdir_main
 from generalization import main as generalization_main
 from representational_similarity_analysis import main as rsa_main
@@ -209,7 +208,7 @@ runinfo = RunInfo({'expid': 102, #internal experiment id
                    'dirr2threshold': 0.2,
                    'verbose': 0,
                    'model_experiment_id': 4, #as per Pranav's model generation
-                   'basefolder': '' #specify location in which model weights and results are to be saved
+                   'basefolder': '/home/kai/Dropbox/DeepDrawData/analysis-data/' #specify location in which model weights and results are to be saved
                        # (trailing space)
             })
     
@@ -244,14 +243,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
             'cmap': 'Blues_r',
             'color': 'C0',
             'control_cmap': 'Purples_r'}),
-      dict({'type': 'T',
-            'base': 'temporal_spatial_4_16-16-32-64_64-64-64-64_5272',
-            'nlayers': 8,
-            'max_act': 14,
-            'control': False,
-            'cmap': 'Oranges_r',
-            'color': 'orange',
-            'control_cmap': 'Reds_r'}),
         dict({'type': 'ST',
               'base': 'spatiotemporal_4_8-8-32-64_7272',
               'nlayers': 4,
@@ -352,8 +343,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 if (i==5 and control):
                                     comparisons_main(model, runinfo)
                                     
-                                    if(imodel == 3):
-                                        compare_all_types_main(allmodels, runinfo)
                                         
                                     if(runinfo.planestring() == 'horall'):
                                         print('combining rsa results for all models')
@@ -370,8 +359,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                     #if(True):
                         generalizations_comparisons_main(model, runinfo)
                         
-    if(do_analysis):
-        invars_all_types_main(allmodels, runinfo)
 
 if __name__=='__main__':
     
@@ -380,7 +367,6 @@ if __name__=='__main__':
     parser.add_argument('--results', type=bool, default=False, help='Fit TCs?')
     parser.add_argument('--analysis', type=bool, default=False, help='Analyze fitted TCs?')
     parser.add_argument('--S', type=bool, default=False, help='Include Spatial_temporal models?')
-    parser.add_argument('--T', type=bool, default=False, help='Include Temporal_spatial models?')
     parser.add_argument('--ST', type=bool, default=False, help='Include SpatioTemporal models?')
     
     args = parser.parse_args()
@@ -388,8 +374,6 @@ if __name__=='__main__':
     include = []
     if args.S:
         include.append('S')
-    if args.T:
-        include.append('T')
     if args.ST:
         include.append('ST')
     if (include == []):
