@@ -45,7 +45,7 @@ basefolder = '/home/kai/Dropbox/DeepDrawData/analysis-data/' #specify location i
 
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
-fsets = ['vel', 'acc', 'labels', 'ee']
+fsets = ['vel', 'acc', 'labels']
 decoding_fsets = ['ee', 'vel']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,

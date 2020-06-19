@@ -36,7 +36,7 @@ fset = 'vel'
 mmod = 'std'
 tcoff = 32
 
-tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels', 'ee', 'eepolar']
+tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels']#, 'ee', 'eepolar']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
                      21.,  24.,  27.,  30.]).astype(int))
@@ -194,7 +194,7 @@ def compile_comparisons_df(model, runinfo):
     
     nlayers = model['nlayers'] + 1
     
-    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10', 'ee', 'eepolar']
+    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     
@@ -213,7 +213,7 @@ def compile_comparisons_df(model, runinfo):
     labelstats_index = [trainednames]  #for label 8 auROC score
     labelstats_df = pd.DataFrame(index=labelstats_index, columns=['median', 'max', 'median auROC', 'max auROC', 'n'])    
     
-    
+    '''
     eestats_columns = pd.MultiIndex.from_product((
             ['ee', 'eepolar'],
             ['median','max','q90','n']
@@ -224,6 +224,7 @@ def compile_comparisons_df(model, runinfo):
             ['L%d' %i for i in range(nlayers)]),
             names = ('model', 'layer'))
     eestats_df = pd.DataFrame(index=eestats_index, columns = eestats_columns)
+    '''
     
     for im, mname in enumerate(modelnames):
         
@@ -272,7 +273,8 @@ def compile_comparisons_df(model, runinfo):
                     labelstats_df.loc[mname, 'median auROC'] = np.median(labelscores/2 + 0.5)
                     labelstats_df.loc[mname, 'max auROC'] = (labelscores/2 + 0.5).max()              
                     labelstats_df.loc[mname, 'n'] = labelscores.size
-                    
+            
+                '''
                 if(tcname == 'ee'):
                     eescores = layerevals[j].reshape((-1,))
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('ee', 'median')] = np.median(eescores)
@@ -287,6 +289,7 @@ def compile_comparisons_df(model, runinfo):
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'max')] = eescores.max()     
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'q90')] = np.quantile(eescores, 0.9)             
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'n')] = eescores.size
+                '''
     
     analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
     os.makedirs(analysisfolder, exist_ok=True)
@@ -294,7 +297,7 @@ def compile_comparisons_df(model, runinfo):
     
     labelstats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_labelstats_df.csv'))
     
-    eestats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_eestats_df.csv'))
+    #eestats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_eestats_df.csv'))
     
     return df
 
