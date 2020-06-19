@@ -359,25 +359,25 @@ def tune_row_label(X, Y, node):
 # %% TUNE
         
 def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
-   ''' Makes calls to tuning curves for individual rows using multiprocessing
-   
-   Arguments
-   ---------
-   X : np.array
-   fset : string, name of kinematic feature
-   Y : hidden layer activations to be fitted 
-   centers : np.array of ints, mask for downsampling that contains the integer positions for temporal dimension that correspond to units in hidden layers
-   nmods : number of different types of models that will be tested for this kinematic feature
-   nmets : number of metrics to be used (usually 3 to correspond to output of compute_metrics)
-   mmod : modifier for the kinematic feature type (default 'std')
-   
-   Returns
-   -------
-   trainevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
-   testevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
-   
-   '''    
-    
+    ''' Makes calls to tuning curves for individual rows using multiprocessing
+       
+       Arguments
+       ---------
+       X : np.array
+       fset : string, name of kinematic feature
+       Y : hidden layer activations to be fitted 
+       centers : np.array of ints, mask for downsampling that contains the integer positions for temporal dimension that correspond to units in hidden layers
+       nmods : number of different types of models that will be tested for this kinematic feature
+       nmets : number of metrics to be used (usually 3 to correspond to output of compute_metrics)
+       mmod : modifier for the kinematic feature type (default 'std')
+       
+       Returns
+       -------
+       trainevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
+       testevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
+       
+        '''    
+        
     Yshape = Y.shape
     if len(Yshape) == 3:
         ravelshape = (Y.shape[1], nmods, nmets)

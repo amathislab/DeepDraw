@@ -19,17 +19,10 @@ import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use('agg')
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from rowwise_neuron_curves_controls import *
-import pickle
 import os
-from scipy.interpolate import griddata
-from scipy.stats import ks_2samp, f, t, ttest_rel
-import pycircstat
-from corrstats import independent_corr
-import astropy.stats
+from scipy.stats import t, ttest_rel
 from matplotlib.ticker import FormatStrFormatter
 
 import time
@@ -260,11 +253,6 @@ def compile_comparisons_df(model, runinfo):
             layerevals.append(labevals[...,0]) #labels
             layerevals.append(eeevals[...,0,1]) #ee
             layerevals.append(eeevals[...,3,1]) #eepolar
-            
-            
-            print(eeevals[...,0,1])
-            print(eeevals[...,3,1])
-            
             
             for j, tcname in enumerate(tcnames):
                 df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
@@ -648,7 +636,7 @@ def colorselector(cmapname, tcf, ct = 0.4):
     return cmap(cidx)
 
 def colorselector_ee(cmapname, tcf, ct = 0.4):
-     ''' Helper function to select color for positional tuning curve types and labels
+    ''' Helper function to select color for positional tuning curve types and labels
     
     Arguments
     ---------
@@ -1029,8 +1017,8 @@ def main(model, runinfo):
     print('comparing kinetic differences for model %s ...' %model['base'])
     df = None
     
-    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
-    if(True):
+    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
+    #if(True):
         print('compiling dataframe for comparions...')
         df = compile_comparisons_df(model, runinfo)
         
