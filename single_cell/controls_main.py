@@ -37,6 +37,11 @@ def format_axis(ax):
     ax.get_yaxis().tick_left()
     ax.xaxis.set_tick_params(size=6)
     ax.yaxis.set_tick_params(size=6)
+    
+# %% CONFIGURATION OPTIONS
+basefolder = '/home/kai/Dropbox/DeepDrawData/analysis-data/' #specify location in which model weights and results are to be saved
+                       # (trailing space)
+    ## CHANGE THIS TO MATCH THE LOCATION OF THE 'analysis-data/' FOLDER ON DROPBOX
 
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
@@ -63,7 +68,7 @@ class RunInfo(dict):
         return self.__dict__['orientation'] + str(self.__dict__['height'])
     
     def experimentfolder(self):
-        return 'exp%d' %self.__dict__['expid']
+        return '%dexp%d' %(self.__dict__['basefolder'], self.__dict__['expid'])
     
     def resultsfolder(self, model, fset = None):
         ''' Returns the formatting string specifying the folder name in which the tuning curve fit test scores are saved.
@@ -208,8 +213,7 @@ runinfo = RunInfo({'expid': 102, #internal experiment id
                    'dirr2threshold': 0.2,
                    'verbose': 0,
                    'model_experiment_id': 4, #as per Pranav's model generation
-                   'basefolder': '/home/kai/Dropbox/DeepDrawData/analysis-data/' #specify location in which model weights and results are to be saved
-                       # (trailing space)
+                   'basefolder': basefolder
             })
     
 # %% SAVE OUTPUTS AND RUN ANALYSIS
