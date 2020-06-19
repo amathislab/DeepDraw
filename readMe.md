@@ -7,16 +7,36 @@
 - Hierarchical neural networks solve the recognition task from muscle spindle inputs.
 - Individual neural network units resemble neurons in primate somatosensory cortex, and networks make predictions for other areas along the proprioceptive pathway.
 
-### This repository contains code for the paper "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
-Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1
+### This repository contains code for the manuscript "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
+Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v2
+
+
+### Structure of the code
 
 The code is organized as follows:
+
 1. Dataset Generation. (Proprioceptive Character Recognition Task = PCRT Dataset) Code can be found in `dataset`
 2. Solving the PCRT Dataset using binary SVMs. Code can be found in `svm-analysis`
 3. Solving the PCRT Dataset using various network models. Code in `nn-training`
 4. Representational Similarity of the models. Code in `repr-analysis`
-5. Single Unit tuning curves. Code in (WIP)
+5. Single Unit tuning curves. Code in `single_cell`
 
 `code` contains classes and helper functions used at one/more places in the analyses.
 
-A Docker container with OpenSim binaries is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+
+
+### Installation, software & requirements
+
+Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [Tensorflow](https://www.tensorflow.org/). To easily reproduce our environment we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+
+For the rest of the analysis, we are sharing a conda environment that has the dependencies. It can be installed by:
+
+```
+conda env create -f environment.yml
+source activate DeepDraw
+```
+
+It was exported on an ubuntu system, where all the analyses were done.
+```
+conda env export > environment.yml
+```

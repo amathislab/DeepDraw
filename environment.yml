@@ -1,4 +1,9 @@
-name: base
+# Conda environment for data analysis of DeepDraw project
+#
+# install: conda env create -f environment.yml
+# update:  conda env update -f environment.yml
+
+name: DeepDraw
 channels:
   - conda-forge
   - defaults
@@ -338,5 +343,3 @@ dependencies:
     - tensorboard==2.0.1
     - termcolor==1.1.0
     - tifffile==2019.5.30
-prefix: /home/kai/anaconda3
-
