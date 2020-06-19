@@ -1,4 +1,4 @@
-# DeepDraw <img src="https://images.squarespace-cdn.com/content/v1/57f6d51c9f74566f55ecf271/1588528588264-C0AX88HTUWZIUZDBCMVY/ke17ZwdGBToddI8pDm48kI8xML9w6WVF-A8Fd6Xh7CFZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7RyFOMTxaKexDScLPdXmhUBUGoFwIJWq0ElUUZM0MaiSl578qHjAUVYQjaMp75n45A/deepdraw-01.png?format=300w" width="350" title="DLC-Utils" alt="DLC Utils" align="right" vspace = "50">
+# DeepDraw <img src="https://images.squarespace-cdn.com/content/v1/57f6d51c9f74566f55ecf271/1588528588264-C0AX88HTUWZIUZDBCMVY/ke17ZwdGBToddI8pDm48kI8xML9w6WVF-A8Fd6Xh7CFZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7RyFOMTxaKexDScLPdXmhUBUGoFwIJWq0ElUUZM0MaiSl578qHjAUVYQjaMp75n45A/deepdraw-01.png?format=300w" width="350" title="DeepDraw" alt="DLC Utils" align="right" vspace = "50">
 
 
 
@@ -17,6 +17,6 @@ The code is organized as follows:
 4. Representational Similarity of the models. Code in `repr-analysis`
 5. Single Unit tuning curves. Code in (WIP)
 
-Note: `code` contains all code as `.py` files used at one/more places in the analyses.
+`code` contains classes and helper functions used at one/more places in the analyses.
 
 A Docker container with OpenSim binaries is available here: https://hub.docker.com/r/pranavm19/opensim/tags
