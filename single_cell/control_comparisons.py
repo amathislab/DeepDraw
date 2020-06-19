@@ -213,7 +213,6 @@ def compile_comparisons_df(model, runinfo):
     labelstats_index = [trainednames]  #for label 8 auROC score
     labelstats_df = pd.DataFrame(index=labelstats_index, columns=['median', 'max', 'median auROC', 'max auROC', 'n'])    
     
-    '''
     eestats_columns = pd.MultiIndex.from_product((
             ['ee', 'eepolar'],
             ['median','max','q90','n']
@@ -224,7 +223,6 @@ def compile_comparisons_df(model, runinfo):
             ['L%d' %i for i in range(nlayers)]),
             names = ('model', 'layer'))
     eestats_df = pd.DataFrame(index=eestats_index, columns = eestats_columns)
-    '''
     
     for im, mname in enumerate(modelnames):
         
@@ -274,7 +272,6 @@ def compile_comparisons_df(model, runinfo):
                     labelstats_df.loc[mname, 'max auROC'] = (labelscores/2 + 0.5).max()              
                     labelstats_df.loc[mname, 'n'] = labelscores.size
             
-                '''
                 if(tcname == 'ee'):
                     eescores = layerevals[j].reshape((-1,))
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('ee', 'median')] = np.median(eescores)
@@ -289,15 +286,14 @@ def compile_comparisons_df(model, runinfo):
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'max')] = eescores.max()     
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'q90')] = np.quantile(eescores, 0.9)             
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('eepolar', 'n')] = eescores.size
-                '''
-    
+                    
     analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
     os.makedirs(analysisfolder, exist_ok=True)
     df.to_csv(os.path.join(analysisfolder, model['base'] + '_comparisons_df.csv'))
     
     labelstats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_labelstats_df.csv'))
     
-    #eestats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_eestats_df.csv'))
+    eestats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_eestats_df.csv'))
     
     return df
 

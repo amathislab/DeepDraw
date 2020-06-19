@@ -336,7 +336,7 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     
     print('figure saved')
     
-    '''
+    
     trainedmodevals_ee = get_modevals_ee(trainedmodel, runinfo)
     controlmodevals_ee = get_modevals_ee(controlmodel, runinfo)
     
@@ -345,7 +345,6 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_violin/comp_violin_v2_ee_notypo_legcols_splitviolin.pdf' %(ff))
-    '''
     
     print('figure saved')
     
