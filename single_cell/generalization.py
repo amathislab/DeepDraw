@@ -77,8 +77,6 @@ def plot_ind_neuron_invar_collapsed_beautified(pds, hts, layer, orientation):
     
     """
     
-    
-    nns = len(pds[0])
     fig = plt.figure(figsize=(8,6),dpi=300)
     
     if orientation == 'hor':
@@ -131,10 +129,8 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
     runinfo : RunInfo (extension of dict)
     r2threshold : float, threshold above which test scores mean a neuron is directionally tuned
        
-    '''
-    modelname = model['name']    
+    '''  
     nlayers = model['nlayers'] + 1 #add 1 for spindles
-    base = model['base']
     
     fset = 'vel'
     mmod = 'std'
@@ -200,16 +196,10 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
 
 def main(model, runinfo, r2threshold = 0.2):        
     print('creating individual neuron generalization plot for model %s ...' %model['name'])
-    if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar'))):
-    #if(True):
-        ind_neuron_invar(model, runinfo)
-        print('plots saved')
-    else:
-        print('individual neuron invariance plot already created')
                 
     if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified'))):
     #if(True):
-        ind_neuron_invar_collapsed(model, runinfo)
+        ind_neuron_invar_collapsed(model, runinfo, r2threshold)
         print('plots saved')
     else:
         print('individual neuron collapsed invariance plot already created')

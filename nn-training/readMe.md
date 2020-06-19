@@ -6,3 +6,5 @@
 * `ConvSearchResults` and `ConvSearchResults-AnalyzedModels` contain code to gather performance numbers from all networks. 
 
 In order to train networks, please make sure that you use the provided docker container and that your host system has CUDA and CudNN specifications met.
+
+Each folder in `experiment_1` and `experiment_4` contain configurations and weights corresponding to a single network. To look at the configurations (hyperparameter settings) of the network, browse the `config.yaml` file inside each sub-folder. To load the model, use `load_model` from `kinematics_decoding.py`.

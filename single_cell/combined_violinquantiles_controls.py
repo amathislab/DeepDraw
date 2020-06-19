@@ -96,6 +96,9 @@ def clip(vp, lr):
        
            
 def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
+    ''' Plot the comparison violin plot showing the distribution of tuning strengths
+    
+    '''
        
     nlayers = trainedmodel['nlayers'] + 1
     

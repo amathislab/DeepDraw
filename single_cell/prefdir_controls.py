@@ -119,9 +119,7 @@ def main(model, runinfo, r2threshold = 0.2):
     cbfig : colorbar
     '''
     
-    modelname = model['name']    
     nlayers = model['nlayers'] + 1 #add 1 for spindles
-    base = model['base']
     
     fset = 'vel'
     mmod = 'std'
