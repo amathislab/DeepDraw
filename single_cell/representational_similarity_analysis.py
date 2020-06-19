@@ -74,9 +74,6 @@ def rsa_models_comp(model, runinfo):
     
     nlayers = model['nlayers'] + 1
     
-    #layers = ['L%d' %i for i in np.arange(1,nlayers)]
-
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     trainednamer = lambda i: modelbase + '_%d' %i
     modelnames = [trainednamer(i) for i in np.arange(1,6)]

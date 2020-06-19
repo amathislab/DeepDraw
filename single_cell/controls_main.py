@@ -4,13 +4,6 @@
 Created on Thu Aug 29 13:06:05 2019
 
 @author: kai
-
-v6: wrapped in main, included abililty to process data/results/analysis separately
-v5: change naming scheme to match with before/after controls
-v4: dynamic checks if folder/files exist to see if should recalculate
-v3: include individual planes
-v2: restructured subfolders, expanded analysis
-
 """
 
 import argparse
@@ -27,7 +20,6 @@ except ModuleNotFoundError as e:
     print(e)
     print('proceeding without savelouts , this will only work if no data is being generated')
 from rowwise_neuron_curves_controls import main as tuningcurves_main
-from combined_violinquantiles_controls import main as violin_main
 from combined_violinquantiles_controls import comp_violin_main
 from control_comparisons import main as comparisons_main
 from control_comparisons import generalizations_comparisons_main
@@ -37,14 +29,6 @@ from generalization import main as generalization_main
 from representational_similarity_analysis import main as rsa_main
 from representational_similarity_analysis import rsa_models_comp
 from polar_tcs import main as polar_tcs_main
-from polar_tcs import complete_muscle_set
-
-'''
-mnames = ['spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
-    'temporal_spatial_4_16-16-32-64_64-64-64-64_5272',
-    'spatiotemporal_4_8-8-32-64_7292'
-    ]
-'''
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -56,11 +40,8 @@ def format_axis(ax):
 
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
-#fsets = ['vel', 'acc', 'eepolar', 'labels', 'ang']
 fsets = ['vel', 'acc', 'labels', 'ee']
 decoding_fsets = ['ee', 'vel']
-#expid = 100
-
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
@@ -70,6 +51,10 @@ uniquexs = list(np.array([ 6.,  9., 12., 15., 18., 21., 24., 27., 30., 33., 36.,
 uniqueplanes=[uniquezs, uniquexs]
 
 class RunInfo(dict):
+    ''' This class is an extension of the dictionary storing info about the current experimental run.
+    It includes methods that return formatted strings specifying the various folders in which the analysis is saved. 
+    '''
+    
     def __init__(self, *args, **kwargs):
         super(RunInfo, self).__init__(*args, **kwargs)
         self.__dict__ = self
@@ -81,47 +66,133 @@ class RunInfo(dict):
         return 'exp%d' %self.__dict__['expid']
     
     def resultsfolder(self, model, fset = None):
-        resultsfolder =  '%dexp%d/results/%s/%s/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], model['name'], self.planestring())
+        ''' Returns the formatting string specifying the folder name in which the tuning curve fit test scores are saved.
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        fset : string, tuning curve type
+        
+        Returns
+        -------
+        resultsfolder : string, folder in which tuning curve fit test scores are saved
+        '''
+        
+        resultsfolder =  '%sexp%d/results/%s/%s/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], model['name'], self.planestring())
         if fset is not None:
             resultsfolder = os.path.join(resultsfolder, fset)
         return resultsfolder
     
     def sharedanalysisfolder(self, model, analysis = None, sp=True):
+        ''' Returns the formatting string specifying the folder name in which analysis are stored that are about
+        all five model instantiations within a given type
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        analysis : string, name of analysis that is being run
+        sp : bool, are we computing the results for a single plane
+        
+        Returns
+        -------
+        sharedanalysisfolder : string, folder name in which analyses are stored that are about all five model 
+        instantiations within a given type
+        '''
+        
         if sp:
-            sharedanalysisfolder = 'exp%d/analysis/%s/comparison/%s/' %(self.__dict__['expid'], model['base'], self.planestring())
+            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], self.planestring())
         else:
-            sharedanalysisfolder = 'exp%d/analysis/%s/comparison/' %(self.__dict__['expid'], model['base'])
+            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'])
         if analysis is not None:
             sharedanalysisfolder = os.path.join(sharedanalysisfolder, analysis)
         return sharedanalysisfolder
     
     def baseanalysisfolder(self, model, analysis=None):
-        baseanalysisfolder = 'exp%d/analysis/%s/%s/' %(self.__dict__['expid'], model['base'], model['name'])
+        ''' Helper function that returns the main analysis folder for an individual model instantiation
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        analysis : string, name of analysis that is being run
+        
+        Returns
+        -------
+        baseanalysisfolder : string, main analysis folder for an individual model instantiation
+        '''
+        
+        baseanalysisfolder = '%sexp%d/analysis/%s/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], model['name'])
         if analysis is not None:
             baseanalysisfolder = os.path.join(baseanalysisfolder, analysis)
         return baseanalysisfolder
     
     def analysisfolder(self, model, analysis=None):
+        ''' Returns the formatting string specifying the folder name in which the analysis is stored
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        analysis : string, name of analysis that is being run
+        
+        Returns
+        -------
+        analysisfolder : string, folder in which analysis is stored
+        '''
+        
         baseanalysisfolder = self.baseanalysisfolder(model)
-        analysisfolder = os.path.join(baseanalysisfolder, self.planestring())
+        analysisfolder = os.path.join(self.__dict__['basefolder'], baseanalysisfolder, self.planestring())
         if analysis is not None:
             analysisfolder = os.path.join(analysisfolder, analysis)
         return analysisfolder
     
     def generalizationfolder(self, model, analysis=None):
-        generalizationfolder = os.path.join(self.baseanalysisfolder(model), 'generalization')
+        ''' Returns the formatting string specifying the folder name in which an analysis of generalizational capacity can be stored
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        analysis : string, name of analysis that is being run
+        
+        Returns
+        -------
+        generalizationfolder : string
+        '''
+        
+        generalizationfolder = os.path.join(self.__dict__['basefolder'], self.baseanalysisfolder(model), 'generalization')
         if analysis is not None:
             generalizationfolder = os.path.join(generalizationfolder, analysis)
         return generalizationfolder
     
     def datafolder(self, model = None):
-        datafolder = 'exp%d/data/' %self.__dict__['expid']
+        ''' Returns the formatted string specifying the folder name in which the hidden layer activations are stored
+        
+        Arguments
+        ---------
+        model : dict, information about the model run
+        
+        Returns
+        -------
+        datafolder : string
+        '''
+        
+        datafolder = '%sexp%d/data/' %(self.__dict__['basefolder'], self.__dict__['expid'])
         if model is not None:
             datafolder = os.path.join(datafolder , model['base'], model['name'])
         return datafolder
     
     def allmodelfolder(self, analysis = None, sp=True):
-        allmodelfolder = 'exp%d/analysis/combined/' %self.__dict__['expid']
+        ''' Returns the formatted string specifying the folder name in which analyses are stored that compare several model types
+        
+        Arguments
+        ---------
+        analysis : string, name of analysis that is being run
+        sp : bool, are we computing the results for a single plane        
+
+        Returns
+        -------
+        datafolder : string
+        '''
+        
+        allmodelfolder = '%sexp%d/analysis/combined/' %(self.__dict__['basefolder'], self.__dict__['expid'])
         if sp:
             allmodelfolder = os.path.join(allmodelfolder, self.planestring())
         if analysis is not None:
@@ -136,20 +207,23 @@ runinfo = RunInfo({'expid': 102, #internal experiment id
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 0,
-                   'model_experiment_id': 4 #as per Pranav's model generation
+                   'model_experiment_id': 4, #as per Pranav's model generation
+                   'basefolder': '' #specify location in which model weights and results are to be saved
+                       # (trailing space)
             })
-    
-"""
-experimental log:
-expid: 100
-    - datafraction 1/10
-expid: 101
-    - datafraction 0.2
-"""
     
 # %% SAVE OUTPUTS AND RUN ANALYSIS
 
 def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T','ST']):
+    ''' Calls the analyses that need to be run for all model types and instantiations
+    
+    Parameters
+    ----------
+    do_data : bool, should hidden layer activations be extracted
+    do_results : bool, should the tuning curves be fitted
+    do_analysis : bool, should we fit the analysis strengths
+    include : list of strings, short names of different model types for which the functions are supposed to runs
+    '''
     
     matplotlib.pyplot.rcParams.update({'legend.title_fontsize':40})
     
@@ -163,7 +237,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
         
     allmodels = [dict({'type': 'S',
             'base': 'spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
-            #'name': 'spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
             'nlayers': 8,
             'max_act': 14,
             'control': False,
@@ -172,7 +245,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
             'control_cmap': 'Purples_r'}),
       dict({'type': 'T',
             'base': 'temporal_spatial_4_16-16-32-64_64-64-64-64_5272',
-            #'name': 'temporal_spatial_4_16-16-32-64_64-64-64-64_5272',
             'nlayers': 8,
             'max_act': 14,
             'control': False,
@@ -181,24 +253,18 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
             'control_cmap': 'Reds_r'}),
         dict({'type': 'ST',
               'base': 'spatiotemporal_4_8-8-32-64_7272',
-            #  'name': 'spatiotemporal_4_8-8-32-64_7292',
-            'nlayers': 4,
-            'max_act': 14,
-            'control': False,
-            'cmap': 'Greens_r',
-            'color': 'green',
-            'control_cmap': 'Greys_r'})]
+              'nlayers': 4,
+              'max_act': 14,
+              'control': False,
+              'cmap': 'Greens_r',
+              'color': 'green',
+              'control_cmap': 'Greys_r'})]
 
     models = [model for model in allmodels if (model['type'] in include)]
-    #print(models)
-
-    
+        
     for imodel, model in enumerate(models):
         
         for i in np.arange(1, 6):
-            
-            #runinfo['orientation'] = 'hor'
-            #runinfo['height'] = 'all'
     
             modelname = model['base'] + '_%d' %i            
             model['name'] = modelname
@@ -226,7 +292,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                         
                         for height in (['all'] + uniqueplanes[ior]):
                             runinfo['height'] = height
-                            #print(height)
                             
                             runinfo_to_analyse = copy.copy((runinfo))
                          
@@ -236,7 +301,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 for fset in fsets:
                                     
                                     if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-                                        #or fset == 'labels'):
                                         
                                         print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                         tuningcurves_main(fset,
@@ -247,38 +311,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                     else:
                                         print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))
                             
-                            """
-                            print('running decoding analysis for model %s plane %s...' %(modelname, runinfo.planestring()))
-                            
-                            for fset in decoding_fsets:
-                                #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, 'decoding_%s' %fset))):
-            
-                                if(True):
-                                   print('running %s decoding analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
-                                   tuningcurves_main(fset,
-                                                      runinfo_to_analyse,
-                                                      model_to_analyse,
-                                                      mmod='decoding'
-                                                      )
-                                else:
-                                    print('decoding analysis already completed')
-                            """
-                            
                             if(do_analysis):
                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'joint'))):
-                                #if(True):
-                                    violin_main(model_to_analyse, runinfo_to_analyse)
-                                else:
-                                    print('violin plot already exists')
-                                
-                                """
-                                print('generating scores vs var plot for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'scorevsvar'))):
-                                    scorevsvar(model_to_analyse, runinfo_to_analyse)
-                                else:
-                                    print('scores vs var plot already exists')
-                                """
                                 
                                 print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
                                 if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
@@ -287,41 +321,12 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 else:
                                     print('polar tc plots already exist')
                                 
-                                '''
-                                print('making complete muscle set of tuning curves...')
-                                if(not control and i == 1 and model_to_analyse['type'] == 'S'):
-                                    complete_muscle_set(model_to_analyse, runinfo_to_analyse)
-                                '''
-                                
-                                #print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
+                                print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
                                 if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
                                 #if(True):
                                     prefdir_main(model_to_analyse, runinfo_to_analyse)
                                 else:
                                     print('pref dir plots already exist')
-                                
-                                '''
-                                print('generating tuning curve plots for optimal neurons for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
-                                    polar_tcs_main(model_to_analyse, runinfo_to_analyse)
-                                else:
-                                    print('polar tc plots already exist')
-                                '''
-                                
-                                """
-                                print('decoding trajectories for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                #if(not np.all(np.array([os.path.exists(runinfo.analysisfolder(model_to_analyse, '%s_decoding')) for fset in decfsets])):
-                                if(True):
-                                    decoding_main(model_to_analyse, runinfo_to_analyse)
-                                else:
-                                    print('decoding analysis already completed')
-                                """
-                                
-                                """
-                                if control:
-                                     #if(not np.all(np.array([os.path.exists(runinfo.analysisfolder(model, '1v1comp')) for fset in decfsets])):
-                                     1v1comp
-                                """
                                 
                                 if(control):
                                     if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
@@ -330,12 +335,11 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                         comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                     else:
                                         print('comparison violin plot already saved')
-                                    # if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'kindiffs_plots'))):
                                     
                                     if(runinfo.planestring() == 'horall'):
                                         if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
                                         #if(True):
-                                            print('computing rsa for model %s plane %s ... ' %(modelname, runinfo.planestring()))
+                                            print('computing representational similarity analysis for model %s plane %s ... ' %(modelname, runinfo.planestring()))
                                             rsa_main(trainedmodel, model_to_analyse, runinfo)
                                        
                                         else:
@@ -344,7 +348,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 if (i==5 and control):
                                     comparisons_main(model, runinfo)
                                     
-                                    #if(imodel == len(models) - 1):
                                     if(imodel == 3):
                                         compare_all_types_main(allmodels, runinfo)
                                         
@@ -356,7 +359,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                             print('rsa models comp already completed')
     
                 if(do_analysis):
-                    #if(not os.path.exists(runinfo.generalizationfolder(model))):
                     print('launching analysis of nodes\' generalizational capacity...')
                     generalization_main(model_to_analyse, runinfo)
                     

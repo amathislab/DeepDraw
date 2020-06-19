@@ -4,23 +4,12 @@
 Created on Fri May 31 17:57:21 2019
 
 @auhor: kai
-
-===CONTROLS LOG===
-v4: with line through mean
-v3: individual planes
-
-===ROWWISE LOG===
-v3: implemented subsampling and alpha for tuning curves,
-    performed interpolation for contours in cartesian space (dir + vel tuning curves)
-v2: separate training and test set
 """
 
-#from pyglmnet import GLM
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-#from dir_tuning_alllayers_mp import *
 from rowwise_neuron_curves_controls import *
 import os
 
@@ -40,16 +29,8 @@ def polarhist(dirs, ilayer, nbins=18, maxact = 14):
     fig = plt.figure( dpi=200)
     ax = plt.subplot(111, projection='polar')
     bars = ax.bar(centers, hist, width=width, color=colors)
-    
-    #cbar = fig.colorbar(plt.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=0, vmax=maxact), cmap=plt.cm.viridis), ax=ax)
-
-    #cbar.set_ticks([(r/maxact) for r in range(maxact)])
-    #cbar.set_yticklabels([r for r in range(maxact)])
-    plt.title('Preferred Direction for Individual Neuron TCs L%d' %(ilayer), pad = 15)
-    #plt.savefig('figs/%sl%d/l%d_prefdir_0%d_samecb.png' %(expf, ilayer, ilayer, int(r2threshold*10)))
-    
+    plt.title('Preferred Direction for Individual Neuron TCs L%d' %(ilayer), pad = 15)    
     cbfig, cbax = plt.subplots(figsize=(1, 6))
-    #cbfig.subplots_adjust(bottom=0.5)
     
     cmap = matplotlib.cm.viridis
     norm = matplotlib.colors.Normalize(vmin=0, vmax=maxact)
@@ -57,8 +38,6 @@ def polarhist(dirs, ilayer, nbins=18, maxact = 14):
     cb1 = matplotlib.colorbar.ColorbarBase(cbax, cmap=cmap,
                                     norm=norm,
                                     )
-                                    #orientation='horizontal')
-    #cbfig.savefig('figs/%sl%d/prefdir_0%d_colorbar_shared.png' %(expf, ilayer, int(r2threshold*10)))
         
     return fig, cbfig
 
@@ -76,16 +55,9 @@ def polarhistmean(dirs, ilayer, nbins=18, maxact = 14):
     fig = plt.figure( dpi=200)
     ax = plt.subplot(111, projection='polar')
     bars = ax.bar(centers, hist, width=width, color=colors)
-    
-    #cbar = fig.colorbar(plt.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=0, vmax=maxact), cmap=plt.cm.viridis), ax=ax)
-
-    #cbar.set_ticks([(r/maxact) for r in range(maxact)])
-    #cbar.set_yticklabels([r for r in range(maxact)])
     plt.title('Preferred Direction for Individual Neuron TCs L%d' %(ilayer), pad = 15)
-    #plt.savefig('figs/%sl%d/l%d_prefdir_0%d_samecb.png' %(expf, ilayer, ilayer, int(r2threshold*10)))
     
     cbfig, cbax = plt.subplots(figsize=(1, 6))
-    #cbfig.subplots_adjust(bottom=0.5)
     
     cmap = matplotlib.cm.viridis
     norm = matplotlib.colors.Normalize(vmin=0, vmax=maxact)
@@ -93,17 +65,13 @@ def polarhistmean(dirs, ilayer, nbins=18, maxact = 14):
     cb1 = matplotlib.colorbar.ColorbarBase(cbax, cmap=cmap,
                                     norm=norm,
                                     )
-                                    #orientation='horizontal')
-    #cbfig.savefig('figs/%sl%d/prefdir_0%d_colorbar_shared.png' %(expf, ilayer, int(r2threshold*10)))
     
     meanheight = np.nanmean(hist)
     theta =  np.arange(0, 2*np.pi, 0.01)
     r = [meanheight]*len(theta)
     
     ax.plot(theta, r, color='red', linewidth=5)    
-    
-    #plt.axis('off')
-        
+            
     return fig, cbfig
 
 def main(model, runinfo, r2threshold = 0.2):

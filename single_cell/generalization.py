@@ -13,7 +13,6 @@ import pandas as pd
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-#from dir_tuning_alllayers_mp import *
 from rowwise_neuron_curves_controls import *
 import os
 
@@ -85,8 +84,6 @@ def prefdirgen(model, runinfo, r2threshold = 0.2):
             expf = '%s%s/' %(resultsfolder, 'vel')
             
             testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
-            #sds = sigdirs(testevals, r2threshold) 
-            #NOTE: Currently not excluding insignificant dirs because this could lead to length mismatches
             dirtuning = testevals[...,1,3:5].reshape((-1,2))            
             prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
             
@@ -94,9 +91,6 @@ def prefdirgen(model, runinfo, r2threshold = 0.2):
                 Ax 1: Height Index
                 Ax 2: Neurons
             """
-            
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             pds[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(prefdirs)))
             
             for iht, ht in enumerate(uniqueheights[ior]):
@@ -105,14 +99,10 @@ def prefdirgen(model, runinfo, r2threshold = 0.2):
                 testevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(runinfo.resultsfolder(model, 'vel'), ilayer, fset, mmod, runinfo.planestring()))
                 dirtuning = testevals[...,1,3:5].reshape((-1,2))            
                 prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                #prefdirs[:10]
-
-                #print(pds[ilayer][ior])
                 pds[ilayer][ior][iht] = prefdirs
             
     prefdirgenfolder = runinfo.generalizationfolder(model, 'prefdirgen')    
     os.makedirs(prefdirgenfolder,exist_ok=True )
-    #print(pds[0][0][0], pds[0][0][15])
             
     ## CALCULATE LAYER-WISE CORRELATIONS
     nzs = len(uniquezs)
@@ -121,23 +111,17 @@ def prefdirgen(model, runinfo, r2threshold = 0.2):
     xpos0 = int(len(uniquexs)/2)
     x0 = uniquexs[xpos0]
     z0 = 0
-    #zfrompos0 = uniquezs
-    #xfrompos0 = [x - xpos0 for x in uniquexs]
     
     # HOR VS HOR
     r2s = pds
     horvshor = np.zeros((nlayers, nzs))
     for ilayer in range(nlayers):
         for iz in range(nzs):
-            #print(pds[ilayer][0][zpos0].shape, pds[ilayer][0][iz].shape)
             r20 = r2s[ilayer][0][zpos0]
             r2c = r2s[ilayer][0][iz]
-            #print(r20, r2c, zpos0, iz)
             mask = np.logical_and(np.invert(np.isnan(r20)), np.invert(np.isnan(r2c)))
             horvshor[ilayer, iz] = np.corrcoef(r20[mask], r2c[mask])[0,1]
 
-    #print(horvshor[0])
-    #print(horvshor, model, runinfo, uniquezs)
     fig = pdgenplot(uniquezs, horvshor, model, 'horizontal planes and plane at z=0')
     fig.savefig(os.path.join(prefdirgenfolder, 'prefdircomp_horvshor.png'))
     plt.close('all')
@@ -214,16 +198,6 @@ def r2gen(model, runinfo, r2threshold = 0.2):
     fset = 'vel'
     mmod = 'std'
     
-    """
-    #Create Pandas DF
-    colnames = ['prefdir']
-    index = pd.MultiIndex.from_product((
-                modelnames,
-                list(range(nlayers)),
-                tcnames),
-                names = ('model', 'layer', 'tc'))
-    """
-    
     ##SAVE R2s
     r2s = []
     for ilayer in range(nlayers):
@@ -245,9 +219,6 @@ def r2gen(model, runinfo, r2threshold = 0.2):
                 Ax 1: Height Index
                 Ax 2: Neurons
             """
-            
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             r2s[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(r2)))
             
             for iht, ht in enumerate(uniqueheights[ior]):
@@ -267,14 +238,11 @@ def r2gen(model, runinfo, r2threshold = 0.2):
     xpos0 = int(len(uniquexs)/2)
     x0 = uniquexs[xpos0]
     z0 = 0
-    #zfrompos0 = uniquezs
-    #xfrompos0 = [x - xpos0 for x in uniquexs]
     
     # HOR VS HOR
     horvshor = np.zeros((nlayers, nzs))
     for ilayer in range(nlayers):
         for iz in range(nzs):
-            #print(pds[ilayer][0][zpos0].shape, pds[ilayer][0][iz].shape)
             r20 = r2s[ilayer][0][zpos0]
             r2c = r2s[ilayer][0][iz]
             mask = np.logical_and(np.invert(np.isnan(r20)), np.invert(np.isnan(r2c)))
@@ -314,7 +282,6 @@ def r2gen(model, runinfo, r2threshold = 0.2):
     vertvshor = np.zeros((nlayers, nzs))
     for ilayer in range(nlayers):
         for iz in range(nzs):
-            #print(pds[ilayer][1][xpos0].shape, pds[ilayer][0][iz].shape)
             r20 = r2s[ilayer][1][xpos0]
             r2c = r2s[ilayer][0][iz]
             mask = np.logical_and(np.invert(np.isnan(r20)), np.invert(np.isnan(r2c)))   
@@ -333,8 +300,6 @@ def plot_ind_neuron_invar(pds, hts, layer, orientation):
     
     
     for neuron in range(len(pds[0])):
-        #print(hts)
-        #print(pds[0][neuron]/(2*np.pi))
         plt.plot(hts, [pds[i][neuron]/(2*np.pi) + neuron for i in range(len(hts))], alpha = 0.5)
     
     plt.yticks(range(nns))
@@ -374,8 +339,6 @@ def plot_ind_neuron_invar_collapsed_beautified(pds, hts, layer, orientation):
 
     neuronpds = np.vstack(neuronpds).astype('float64')
     
-    #print(neuronpds.shape)
-    
     plt.plot(hts, np.nanmean(neuronpds,axis=0), linewidth=3, color='red')
     
     plt.ylim((-np.pi, np.pi))
@@ -385,14 +348,11 @@ def plot_ind_neuron_invar_collapsed_beautified(pds, hts, layer, orientation):
     else:
         plt.xlim((3, 57))
         
-    #plt.title('PD Change at an Individual Neuron Level over Heights for L%d %s' %(layer, orientation))
     plt.xlabel('Plane Height')
-    #plt.ylabel('Preferred Directions [Normalized Through %s]' %hstr)
     plt.ylabel('Deviation from Plane at %s' %hstr)
     
     format_axis(plt.gca())
     
-    #fig.tight_layout()
     deviations= np.nanmean(np.abs(neuronpds),axis=0)
     
     #set all planes where only a single neuron is directionally tuned to np.nan
@@ -427,8 +387,6 @@ def ind_neuron_invar(model, runinfo, r2threshold = 0.2):
             expf = '%s%s/' %(resultsfolder, 'vel')
             
             testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
-            #sds = sigdirs(testevals, r2threshold) 
-            #NOTE: Currently not excluding insignificant dirs because this could lead to length mismatches
             dirtuning = testevals[...,1,3:5].reshape((-1,2))            
             prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
             
@@ -436,9 +394,6 @@ def ind_neuron_invar(model, runinfo, r2threshold = 0.2):
                 Ax 1: Height Index
                 Ax 2: Neurons
             """
-            
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             pds[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(prefdirs)))
             
             for iht, ht in enumerate(uniqueheights[ior]):
@@ -448,9 +403,6 @@ def ind_neuron_invar(model, runinfo, r2threshold = 0.2):
                 dirtuning = testevals[...,1,3:5].reshape((-1,2))
                         
                 prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                #prefdirs[:10]
-
-                #print(pds[ilayer][ior])
                 pds[ilayer][ior][iht] = prefdirs
     
     ffolder = runinfo.generalizationfolder(model, 'ind_neuron_invar')
@@ -493,9 +445,6 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
                 Ax 1: Height Index
                 Ax 2: Neurons
             """
-            
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             pds[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(prefdirs)))
             
             for iht, ht in enumerate(uniqueheights[ior]):
@@ -503,23 +452,17 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
 
                 testevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(runinfo.resultsfolder(model, 'vel'), ilayer, fset, mmod, runinfo.planestring()))
                 dirtuning = testevals[...,1,3:5].reshape((-1,2))
-                
-                
+    
                 #apply r2threshold
                 for neuron, score in enumerate(testevals[...,1,1].flatten()):
                     if score < r2threshold:
                         dirtuning[neuron] = np.nan
                 
                 prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                
-                #prefdirs[:10]
-                #print(pds[ilayer][ior])
                 pds[ilayer][ior][iht] = prefdirs
     
     ffolder = runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified')
     os.makedirs(ffolder, exist_ok=True)
-    
-    #print(pds[2][0])
     
     for ior, orientation in enumerate(orientations):
         indinvars_index = range(nlayers)

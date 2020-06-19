@@ -13,14 +13,8 @@ Created on Wed Jun 26 15:23:52 2019
 
 @author: kai
 
-v8: endeffectors
-v7: labelstats, eestats
-v6: normalization of planes
-v3: plots for individual kinematic features
-v2: individual planes
 """
 
-#from pyglmnet import GLM
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -28,7 +22,6 @@ matplotlib.use('agg')
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-#from dir_tuning_alllayers_mp import *
 from rowwise_neuron_curves_controls import *
 import pickle
 import os
@@ -42,9 +35,6 @@ from matplotlib.ticker import FormatStrFormatter
 import time
 
 # %% PARS AND FIRST OVERVIEW
-
-# GLOBAL PARS
-#t_kernelsize = 7
 t_stride = 2
 ntime=320
 metrics = ['RMSE', 'r2', 'PCC']
@@ -54,10 +44,6 @@ mmod = 'std'
 tcoff = 32
 
 tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels', 'ee', 'eepolar']
-
-#temporal spatial model
-
-
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
                      21.,  24.,  27.,  30.]).astype(int))
@@ -75,14 +61,11 @@ def format_axis(ax):
     ax.spines['right'].set_visible(False)
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
-    ax.xaxis.set_tick_params(size=6)#, labelsize='large')
-    ax.yaxis.set_tick_params(size=6)#, labelsize='large')
+    ax.xaxis.set_tick_params(size=6)
+    ax.yaxis.set_tick_params(size=6)
     
     
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    #matplotlib.rcParams.update({'font.size': 300})
-    #plt.rcParams['font.size']=30
-    #plt.rcParams.update({'legend.title_fontsize':'large'})
 
 # %% rcParams and Settings
 
@@ -138,8 +121,6 @@ def get_pds_sp(model, runinfo, r2threshold =  None):
         expf = '%s%s/' %(resultsfolder, 'vel')
         
         testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
-        #sds = sigdirs(testevals, r2threshold) 
-        #Excluding insignificant neurons
         if r2threshold is not None:
             testevals = testevals[testevals[...,1,1] > r2threshold] 
         if testevals.size > 0:
@@ -152,8 +133,6 @@ def get_pds_sp(model, runinfo, r2threshold =  None):
             Ax 2: Neurons
         """
         
-        #print(ilayer, ior)
-        #print(len(pds), len(pds[ilayer]), len(uniqueheights))
         pds.append(prefdirs)
         
     return pds
@@ -250,15 +229,8 @@ def compile_comparisons_df(model, runinfo):
             print(eeevals[...,0,1])
             print(eeevals[...,3,1])
             
-            """
-            if(mname[-1] == 'r'):
-                trained.append(layerevals)
-            """
             
             for j, tcname in enumerate(tcnames):
-                #print(tcname)
-                #if ilayer == 0:
-                #    print(layerevals[j].size)
                 df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
                 df.loc[(mname, ilayer, tcname), 'median'] = np.median(layerevals[j])
                 df.loc[(mname, ilayer, tcname), 'std'] = layerevals[j].mean()               
@@ -267,13 +239,6 @@ def compile_comparisons_df(model, runinfo):
                 df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(layerevals[j], 0.9)
                 df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(layerevals[j], 0.10)
                 
-                """
-                if(mname[-1] == 'r'):                    
-                    #print(ilayer, j, trained[ilayer)
-                    #print(layerevals[j].shape)
-                    #print(trained[ilayer][j].shape)
-                    df.loc[(mname, ilayer, tcname), 'kolm_pv'] = ks_2samp(layerevals[j].flatten(), trained[ilayer][j].flatten())[1]
-                """    
                 
                 if(ilayer == nlayers - 1 and tcname == 'labels'):
                     #print('recording label stats')
@@ -285,10 +250,6 @@ def compile_comparisons_df(model, runinfo):
                     labelstats_df.loc[mname, 'n'] = labelscores.size
                     
                 if(tcname == 'ee'):
-                    #print('recording label stats')
-                    #print((mname, 'L%d' %ilayer))
-                    #print(eestats_df.columns)
-                    #print(eestats_df.index)
                     eescores = layerevals[j].reshape((-1,))
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('ee', 'median')] = np.median(eescores)
                     eestats_df.loc[(mname, 'L%d' %ilayer), ('ee', 'max')] = eescores.max()             
@@ -347,98 +308,8 @@ def pairedt_quantiles(df, model, runinfo):
     analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
     pt_df.to_csv(os.path.join(analysisfolder, model['base'] + '_pairedt_df.csv'))
     
-
-def ks_comp(model, runinfo):
-    nlayers = model['nlayers'] + 1
-    
-    #colnames = ['trained']
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
-    modelbase = model['base']
-    
-    trials = list(np.arange(1,6))
-    
-    testtypes=['two-sided', 'less', 'greater']
-    
-    colnames = pd.MultiIndex.from_product((
-            list(range(nlayers)),
-            testtypes,
-            ['p-value', 'sl']),
-        names=('layer', 'testtype', 'sig_measure'))
-    #trainednamer = lambda i: modelbase + '_%d' %i
-    #controlnamer = lambda i: modelbase + '_%dr' %i
-    #modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
-    modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
-    
-    index = pd.MultiIndex.from_product((
-                modelnames,
-                #list(range(nlayers)),
-                tcnames),
-                names = ('model', 'tc'))
-    
-    df = pd.DataFrame(index=index, columns=colnames)
-    
-    for trial, mname in enumerate(modelnames):
-        
-        trainedmodel = model.copy()
-        trainedmodel['name'] = mname
-        controlmodel = model.copy()
-        controlmodel['name'] = mname + 'r'
-        #resultsfolder = runinfo.resultsfolder(model_to_analyse)
-        
-        trainedexpf={
-              'vel': runinfo.resultsfolder(trainedmodel, 'vel'),
-              'acc': runinfo.resultsfolder(trainedmodel, 'acc'),
-              'labels': runinfo.resultsfolder(trainedmodel, 'labels')
-        }
-        
-        controlexpf={
-              'vel': runinfo.resultsfolder(controlmodel, 'vel'),
-              'acc': runinfo.resultsfolder(controlmodel, 'acc'),
-              'labels': runinfo.resultsfolder(controlmodel, 'labels')
-        }
-        
-        for ilayer in np.arange(0,nlayers):
-            
-            dvevals = np.load(os.path.join(trainedexpf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'vel', mmod, runinfo.planestring())))
-            accevals = np.load(os.path.join(trainedexpf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
-            labevals = np.load(os.path.join(trainedexpf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
-            
-            trainedlayerevals = []
-            trainedlayerevals.append(dvevals[...,1,1]) #dir
-            trainedlayerevals.append(dvevals[...,2,1]) #vel
-            trainedlayerevals.append(dvevals[...,3,1]) #dir + vel
-            trainedlayerevals.append(accevals[...,2,1]) #acc
-            trainedlayerevals.append(labevals[...,0]) #labels    
-
-            dvevals = np.load(os.path.join(controlexpf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'vel', mmod, runinfo.planestring())))
-            accevals = np.load(os.path.join(controlexpf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
-            labevals = np.load(os.path.join(controlexpf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
-            
-            controllayerevals = []
-            controllayerevals.append(dvevals[...,1,1]) #dir
-            controllayerevals.append(dvevals[...,2,1]) #vel
-            controllayerevals.append(dvevals[...,3,1]) #dir + vel
-            controllayerevals.append(accevals[...,2,1]) #acc
-            controllayerevals.append(labevals[...,0]) #labels    
-            
-            for itc, tc in enumerate(tcnames):
-                for testtype in testtypes:
-                    pv = ks_2samp(trainedlayerevals[itc].flatten(), controllayerevals[itc].flatten(), alternative=testtype)[1]
-                    df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'p-value')] = pv
-                    df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'sl')] = pv_to_sl_code(pv)
-    
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')  
-    os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, 'ks.csv'))
-    
-    return df
-
-
 def pairedt_comp(model, runinfo):
     nlayers = model['nlayers'] + 1
-    
-    #colnames = ['trained']
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     
     trials = list(np.arange(1,6))
@@ -450,14 +321,10 @@ def pairedt_comp(model, runinfo):
             testtypes,
             ['p-value', 'sl']),
         names=('layer', 'testtype', 'sig_measure'))
-    #trainednamer = lambda i: modelbase + '_%d' %i
-    #controlnamer = lambda i: modelbase + '_%dr' %i
-    #modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
     modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
     
     index = pd.MultiIndex.from_product((
                 modelnames,
-                #list(range(nlayers)),
                 tcnames),
                 names = ('model', 'tc'))
     
@@ -469,7 +336,6 @@ def pairedt_comp(model, runinfo):
         trainedmodel['name'] = mname
         controlmodel = model.copy()
         controlmodel['name'] = mname + 'r'
-        #resultsfolder = runinfo.resultsfolder(model_to_analyse)
         
         trainedexpf={
               'vel': runinfo.resultsfolder(trainedmodel, 'vel'),
@@ -525,119 +391,12 @@ def pairedt_comp(model, runinfo):
     
     return df
 
-
-
-
-def pd_diffs(model, runinfo):
-    nlayers = model['nlayers'] + 1
-    
-    colnames = ['kuiper', 'ww', 'R_trained', 'R_control', 'Var_trained', 'Var_control', 'F_stat', 'F_sl_greater', 'F_sl_less']
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
-    modelbase = model['base']
-    
-    modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
-    
-    index = pd.MultiIndex.from_product((
-                modelnames,
-                list(range(nlayers))),
-                names = ('model', 'layer'))
-    
-    df = pd.DataFrame(index=index, columns=colnames)
-
-    for mname in modelnames:
-        trainedmodel = model.copy()
-        trainedmodel['name'] = mname
-        controlmodel = model.copy()
-        controlmodel['name'] = mname + 'r'
-        
-        trainedpds = get_pds_sp(trainedmodel, runinfo)
-        controlpds = get_pds_sp(controlmodel, runinfo)
-        
-        for ilayer in range(nlayers):
-            tlpdnmask = ~np.isnan(trainedpds[ilayer])
-            #print('sum tlpdnmask: %d' %sum(tlpdnmask))
-            tlpds = trainedpds[ilayer][tlpdnmask]
-            
-            ctrlpdnmask = ~np.isnan(controlpds[ilayer])
-            #print('sum ctrlpdnmask: %d' %sum(ctrlpdnmask))
-            ctrlpds = controlpds[ilayer][ctrlpdnmask]
-            #print(trainedpds, len(trainedpds))
-            #df.loc[(mname, ilayer), 'kuiper'] = pycircstat.tests.kuiper(trainedpds[ilayer], controlpds[ilayer])[0][0]
-            df.loc[(mname, ilayer), 'kuiper'] = astropy.stats.kuiper_two(tlpds, ctrlpds)[1]
-            #df.loc[(mname, ilayer), 'ww'] = pycircstat.tests.watson_williams((trainedpds, controlpds))[0]
-            R_trained = pycircstat.descriptive.resultant_vector_length(np.array(tlpds))
-            R_control = pycircstat.descriptive.resultant_vector_length(np.array(ctrlpds))
-            df.loc[(mname, ilayer), 'R_trained'] = R_trained
-            df.loc[(mname, ilayer), 'R_control'] = R_control
-            
-            Var_trained = 1 - R_trained
-            Var_control = 1 - R_control
-            df.loc[(mname, ilayer), 'Var_trained'] = Var_trained
-            df.loc[(mname, ilayer), 'Var_control'] = Var_control
-            
-            F_stat = Var_trained / Var_control
-            df.loc[(mname, ilayer), 'F_stat'] = F_stat
-            
-            sl_greater = 0
-            sl_lesser = 0
-            for alpha in [0.9, 0.95, 0.99]:
-                cv_greater = f.ppf(q=alpha, dfn = tlpds.size, dfd = ctrlpds.size)
-                if(F_stat >= cv_greater):
-                    sl_greater = sl_greater + 1
-                    
-                cv_lesser = f.ppf(q = 1 - alpha, dfn = tlpds.size, dfd = ctrlpds.size)
-                if( F_stat <= cv_lesser):
-                    sl_lesser = sl_lesser + 1
-                    
-            df.loc[(mname, ilayer), 'F_sl_greater'] = sl_greater
-            df.loc[(mname, ilayer), 'F_sl_less'] = sl_lesser
-    
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'pddiffs')  
-    os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, 'pddiffs.csv'))
-    
-    
-def pd_diffs_to_orig(model, runinfo):
-    nlayers = model['nlayers'] + 1
-    
-    layers = ['L%d' %i for i in np.arange(1,nlayers)]
-
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
-    modelbase = model['base']
-    trainednamer = lambda i: modelbase + '_%d' %i
-    controlnamer = lambda i: modelbase + '_%dr' %i
-    modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
-    
-    df = pd.DataFrame(index=modelnames, columns=layers)
-
-    for mname in modelnames:
-        model = model.copy()
-        model['name'] = mname
-        pds = get_pds_sp(model, runinfo, r2threshold = 0.2)
-        spindlepds = pds[0]
-        spmask = ~np.isnan(spindlepds)
-        spindlepds = spindlepds[spmask]
-        
-        for ilayer, layer in enumerate(layers):
-            layerpds = pds[ilayer]
-            if (layerpds != []):
-                layermask = ~np.isnan(layerpds)
-                layerpds = layerpds[layermask]
-            
-            if (spindlepds != [] and layerpds != []):
-                df.loc[mname, layer] = astropy.stats.kuiper_two(spindlepds, layerpds)[1]
-    
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'pddiffs_to_orig')  
-    os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, 'pddiffs_to_orig.csv'))
-    
 def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     
     from scipy.stats import ttest_rel
     
     fig = plt.figure(figsize=(8,6),dpi=300)
     ax = fig.add_subplot(111)
-    #ax = fig.add_subplot(111)
         
     for i in range(len(tmdevs)):
         plt.plot(range(len(layers)), tmdevs[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
@@ -646,13 +405,8 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     #t_corr = t.ppf(0.975, 4)
     
-    tmsmean = np.nanmean(tmdevs, axis=0)
-    #print('l8 tmdevs : %s ; l8 tmsmean : %f ' %(tmdevs[:,8], tmsmean[8]))
-    
+    tmsmean = np.nanmean(tmdevs, axis=0)    
     cmsmean = np.nanmean(cmdevs, axis=0)
-    
-    #print(tmdevs.shape) #axis 0: models, axis1: layers
-    #print(tmsmean.shape)
     
     n_tms = np.sum(~np.isnan(tmdevs), axis=0)
     n_cms = np.sum(~np.isnan(cmdevs), axis=0)
@@ -681,13 +435,10 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     plt.xlim((-0.3, len(layers)-0.7))
     plt.xlabel('Layer')
     plt.ylabel('Total Absolute Deviation from Uniformity')
-    
-    #plt.title('Total Absolute Deviation in PD Distribution from Uniformity', fontsize=20)
-    
+        
     ax = plt.gca()
     format_axis(ax)
     handles, _ = ax.get_legend_handles_labels()
-    #print(handles)
     handles = np.array(handles)
     
     plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
@@ -696,7 +447,6 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     plt.tight_layout()
     
     return fig
-
     
 def plot_pd_deviation_delta(layers, tmdevs, cmdevs, trainedmodel):
     
@@ -704,41 +454,31 @@ def plot_pd_deviation_delta(layers, tmdevs, cmdevs, trainedmodel):
     
     fig = plt.figure(figsize=(8,6),dpi=300)
     ax = fig.add_subplot(111)
-    #ax = fig.add_subplot(111)
     
     delta = cmdevs - tmdevs
         
     for i in range(len(tmdevs)):
         plt.plot(layers, delta[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
-        #plt.plot(layers, cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
-    
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
+
     t_corr = t.ppf(0.975, 4)
     
     tmsmean = np.nanmean(delta, axis=0)
-    #cmsmean = np.nanmean(cmdevs, axis=0)
     errs_tmsmean = np.nanstd(delta, axis=0) / np.sqrt(5) * t_corr
-    #errs_cmsmean = np.nanstd(cmdevs, axis=0) / np.sqrt(5) * t_corr
     
     plt.plot(layers, tmsmean, color=trainedmodel['color'], marker = 'D')
-    #plt.plot(layers, cmsmean, color='grey', marker = 'D')
     
     t_corr = t.ppf(0.975, 4)
     
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
-    #plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
 
     plt.xticks(list(range(len(layers))))
     plt.xlim((-0.3, len(layers)-0.7))
     plt.xlabel('Layer')
     plt.ylabel('Delta Total Absolute Deviation')
     
-    #plt.title('Total Absolute Deviation in PD Distribution from Uniformity', fontsize=20)
-    
     ax = plt.gca()
     format_axis(ax)
     handles, _ = ax.get_legend_handles_labels()
-    #print(handles)
     handles = np.array(handles)
     
     plt.legend(handles[[0,5]], ['ind' , \
@@ -753,7 +493,6 @@ def pd_deviation(model, runinfo):
     
     layers = ['Sp.'] + ['L%d' %i for i in np.arange(1,nlayers)]
 
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     trainednamer = lambda i: modelbase + '_%d' %i
     controlnamer = lambda i: modelbase + '_%dr' %i
@@ -773,7 +512,6 @@ def pd_deviation(model, runinfo):
     
     imodel = 0
     for mname in modelnames:
-        #print(imodel)
         model = model.copy()
         model['name'] = mname
         pds = get_pds_sp(model, runinfo, r2threshold = 0.2)
@@ -788,10 +526,6 @@ def pd_deviation(model, runinfo):
                 ndirtuned = len(layerpds)
             
                 hist, binedges = np.histogram(layerpds, bins=18, range=(-np.pi, np.pi))
-                
-                #print(layerpds)
-                
-                #hist, binedges = np.histogram(layerpds, bins=18)
                 
                 histmean = np.nanmean(hist)
                 layerdev = np.abs(hist - histmean).sum()
@@ -808,8 +542,6 @@ def pd_deviation(model, runinfo):
                     trainedmodeldevs[imodel, ilayer] = layerdev
                 else:
                     controlmodeldevs[imodel, ilayer] = layerdev     
-                    
-                #print(trainedmodeldevs)
         
         if mname[-1] == 'r':
             imodel += 1
@@ -829,23 +561,13 @@ def pd_deviation(model, runinfo):
     
     ##statistical tests
     trained_df = df.loc[trainednames, :]
-    #print(trainednames)
-    #print(trained_df)
     control_df = df.loc[controlnames, :]
-    #print(controlnames)
-    #print(control_df)
     n_comparisons = len(layers) - 1
     
     statsig_df = pd.DataFrame(index=['t stat', 'p-value', 'Bonferroni', 'n'], columns=layers)
     for layer in layers:
         traineddevs = trained_df[layer].values.astype(float)
         controldevs = control_df[layer].values.astype(float)
-        #print(traineddevs, controldevs)
-        
-        #print(traineddevs)
-        #print(controldevs)
-        
-        #print(type(traineddevs))
         
         trained_nanmask = ~np.isnan(traineddevs)
         control_nanmask = ~np.isnan(controldevs)
@@ -863,39 +585,6 @@ def pd_deviation(model, runinfo):
         statsig_df.loc['n', layer] = sum(nanmask)
     statsig_df.to_csv(os.path.join(analysisfolder, 'statsig_df.csv'))
     
-def pd_diffs_rayleigh(model, runinfo):
-    nlayers = model['nlayers'] + 1
-    
-    layers = ['L%d' %i for i in np.arange(0,nlayers)]
-
-    #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
-    modelbase = model['base']
-    trainednamer = lambda i: modelbase + '_%d' %i
-    controlnamer = lambda i: modelbase + '_%dr' %i
-    modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
-    
-    df = pd.DataFrame(index=modelnames, columns=layers)
-
-    for mname in modelnames:
-        model = model.copy()
-        model['name'] = mname
-        pds = get_pds_sp(model, runinfo, r2threshold = 0.2)
-        
-        for ilayer, layer in enumerate(layers):
-            layerpds = pds[ilayer]
-            if (layerpds != []):
-                layermask = ~np.isnan(layerpds)
-                layerpds = layerpds[layermask]
-                try:
-                    df.loc[mname, layer] = pycircstat.raospacing(layerpds)[0]
-                except AssertionError:
-                    print('Too few samples!')
-                    df.loc[mname, layer] = 1
-    
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'pddiffs_rayleigh')  
-    os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, 'pddiffs_rayleigh.csv'))
-
 # %% PLOTS
 
 def colorselector(cmapname, tcf, ct = 0.4):
@@ -917,10 +606,7 @@ def colorselector_ee(cmapname, tcf, ct = 0.4):
     return cmap(cidx)
 
 def plotcomp(tcfdf, tcf, model):
-
     fig = plt.figure(figsize=(14,6), dpi=200)   
-    
-    #color = colorselector(model['cmap'], tcf)
     
     trainednamer = lambda i: model['base'] + '_%d' %i
     trainednames = [trainednamer(i) for i in np.arange(1,6)]
@@ -936,9 +622,7 @@ def plotcomp(tcfdf, tcf, model):
     
     for (names, color) in zip([trainednames, controlnames], colors):
         
-        #medians = tcfdf['median'].xs(tuple(names), level='model')
         medians = tcfdf.loc[names, 'median']
-        #q90s = tcfdf['q90'].xs(tuple(names), level='model')
         q90s = tcfdf.loc[names, 'q90']
         
         plt.plot(x, [medians.xs(i, level='layer')[1:].mean() for i in x], color=color, linestyle='-.', marker='D')
@@ -959,203 +643,9 @@ def plotcomp(tcfdf, tcf, model):
     ax = plt.gca()
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
     plt.legend(handles[[0,1,2,3,12,13,14,15]], ['mean of trained medians', 'mean of trained q90s', 'mean of control medians', \
                 'mean of control q90s', 'ind trained median', 'ind trained q90',
                 'ind control median', 'ind control q90',])
-
-    return fig
-
-
-def plotcomp_errbars(tcfdf, tcf, model):
-
-    fig = plt.figure(figsize=(14,6), dpi=200)   
-    
-    #color = colorselector(model['cmap'], tcf)
-    
-    trainednamer = lambda i: model['base'] + '_%d' %i
-    trainednames = [trainednamer(i) for i in np.arange(1,6)]
-    
-    controlnamer = lambda i: model['base'] + '_%dr' %i
-    controlnames = [controlnamer(i) for i in np.arange(1,6)]
-    
-    trainedcolor = colorselector(model['cmap'], tcf)
-    controlcolor = colorselector('Greys_r', tcf)
-    #colors = [trainedcolor, controlcolor]
-    
-    nlayers = model['nlayers']
-    
-    x = range(nlayers + 1)
-        
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
-    t_corr = t.ppf(0.975, 4)
-    
-    #trainedmedians = [tcfdf['median'].xs((name, i), level=('model', 'layer')).mean() for (name, i) in zip(trainednames, np.arange(nlayers+1))]
-    trainedmedians = [tcfdf.loc[(trainednames, i), 'median'].mean() for i in np.arange(nlayers+1)]
-    controlmedians = [tcfdf.loc[(controlnames, i), 'median'].mean() for i in np.arange(nlayers+1)]
-    errs_trainedmedians = [tcfdf.loc[(trainednames, i), 'median'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controlmedians = [tcfdf.loc[(controlnames, i), 'median'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    trainedq90s = [tcfdf.loc[(trainednames, i), 'q90'].mean() for i in np.arange(nlayers+1)]
-    controlq90s = [tcfdf.loc[(controlnames, i), 'q90'].mean() for i in np.arange(nlayers+1)]
-    errs_trainedq90s = [tcfdf.loc[(trainednames, i), 'q90'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controlq90s = [tcfdf.loc[(controlnames, i), 'q90'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    #print(errs_trainedmedians)
-    
-    plt.errorbar(x, trainedmedians, yerr=errs_trainedmedians, color=trainedcolor, linestyle='-.', marker='D', capsize=1.0)
-    plt.errorbar(x, controlmedians, yerr=errs_controlmedians, color=controlcolor, linestyle='-.', marker='D', capsize=1.0)
-    plt.errorbar(x, trainedq90s, yerr=errs_trainedq90s, color=trainedcolor, marker='D', capsize=1.0)
-    plt.errorbar(x, controlq90s, yerr=errs_controlq90s, color=controlcolor, marker='D', capsize=1.0)
-        
-    plt.title('%s tuning curve accuracies comparison for model and controls' %(tcf))
-    plt.ylabel('r2 score')
-    plt.xticks(x, ['spindles'] + ['layer %d' %i for i in np.arange(1,model['nlayers']+1)])
-    plt.ylim((-0.1,1))
-    
-    ax = plt.gca()
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
-    plt.legend(['mean of trained medians', 'mean of trained q90s', 'mean of control medians', \
-                'mean of control q90s'])
-
-    return fig
-
-def plotcomp_dir_labels(tcfdf, tcf, model):
-
-    fig = plt.figure(figsize=(12,5.5), dpi=300)   
-    ax = fig.add_subplot(111)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    #ax.spines['left'].set_visible(False)  #allows turning off spines... i.e. top and right is good :)
-    ax.get_xaxis().tick_bottom()
-    ax.tick_params(axis='x', direction='in')
-    #ax.tick_params(axis='y', length = 4.5, width=50)
-    ax.get_yaxis().tick_left()
-    
-    #ax.tick_params(axis='y', length=0)
-    # offset the spines
-    #for spine in ax.spines.values():
-    #  spine.set_position(('outward', 5))
-    # put the grid behind
-    ax.set_axisbelow(True)
-    
-    #color = colorselector(model['cmap'], tcf)
-    
-    trainednamer = lambda i: model['base'] + '_%d' %i
-    trainednames = [trainednamer(i) for i in np.arange(1,6)]
-    
-    controlnamer = lambda i: model['base'] + '_%dr' %i
-    controlnames = [controlnamer(i) for i in np.arange(1,6)]
-    
-    #trainedcolor = colorselector(model['cmap'], tcf)
-    #controlcolor = colorselector('Greys_r', tcf)
-    #colors = [trainedcolor, controlcolor]
-    
-    nlayers = model['nlayers']
-    
-    x = range(nlayers + 1)
-        
-    
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
-    t_corr = t.ppf(0.975, 4)
-    
-    #trainedmedians = [tcfdf['median'].xs((name, i), level=('model', 'layer')).mean() for (name, i) in zip(trainednames, np.arange(nlayers+1))]
-    traineddirs = [tcfdf.loc[(trainednames, i, 'dir')].mean() for i in np.arange(nlayers+1)]
-    controldirs = [tcfdf.loc[(controlnames, i, 'dir')].mean() for i in np.arange(nlayers+1)]
-    errs_traineddirs = [tcfdf.loc[(trainednames, i, 'dir')].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controldirs = [tcfdf.loc[(controlnames, i, 'dir')].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    trainedlabels = [tcfdf.loc[(trainednames, i, 'labels')].mean() for i in np.arange(nlayers+1)]
-    controllabels = [tcfdf.loc[(controlnames, i, 'labels')].mean() for i in np.arange(nlayers+1)]
-    errs_trainedlabels = [tcfdf.loc[(trainednames, i, 'labels')].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controllabels = [tcfdf.loc[(controlnames, i, 'labels')].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    print(traineddirs)
-    print(errs_traineddirs)
-    
-    plt.errorbar(x, traineddirs, yerr=errs_traineddirs, color=colorselector(model['cmap'], 'dir'), marker='D', capsize=3.0)
-    plt.errorbar(x, controldirs, yerr=errs_controldirs, color=colorselector('Greys_r', 'dir'), marker='D', capsize=3.0)
-    plt.errorbar(x, trainedlabels, yerr=errs_trainedlabels, color=colorselector(model['cmap'], 'labels'), linestyle='-.',marker='D', capsize=3.0)
-    plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector('Greys_r', 'labels'), linestyle='-.', marker='D', capsize=3.0)
-        
-    plt.title('Comparison With Controls')
-    plt.ylabel('R2 Score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
-    plt.ylim((-0.1,1))
-    
-    #ax = plt.gca()
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
-    plt.legend(['mean 90% quantile (n=5) direction tuning trained', 'mean 90% quantile (n=5) direction tuning controls', \
-                'mean 90% quantile (n=5) labels tuning trained', 'mean 90% quantile (n=5) labels tuning controls'])
-    
-    plt.tight_layout()
-
-    return fig
-
-
-
-def plotcomp_errbars(tcfdf, tcf, model):
-
-    fig = plt.figure(figsize=(14,6), dpi=200)   
-    
-    #color = colorselector(model['cmap'], tcf)
-    
-    trainednamer = lambda i: model['base'] + '_%d' %i
-    trainednames = [trainednamer(i) for i in np.arange(1,6)]
-    
-    controlnamer = lambda i: model['base'] + '_%dr' %i
-    controlnames = [controlnamer(i) for i in np.arange(1,6)]
-    
-    trainedcolor = colorselector(model['cmap'], tcf)
-    controlcolor = colorselector('Greys_r', tcf)
-    #colors = [trainedcolor, controlcolor]
-    
-    nlayers = model['nlayers']
-    
-    x = range(nlayers + 1)
-        
-    
-    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
-    t_corr = t.ppf(0.975, 4)
-    
-    #trainedmedians = [tcfdf['median'].xs((name, i), level=('model', 'layer')).mean() for (name, i) in zip(trainednames, np.arange(nlayers+1))]
-    trainedmedians = [tcfdf.loc[(trainednames, i), 'median'].mean() for i in np.arange(nlayers+1)]
-    controlmedians = [tcfdf.loc[(controlnames, i), 'median'].mean() for i in np.arange(nlayers+1)]
-    errs_trainedmedians = [tcfdf.loc[(trainednames, i), 'median'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controlmedians = [tcfdf.loc[(controlnames, i), 'median'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    trainedq90s = [tcfdf.loc[(trainednames, i), 'q90'].mean() for i in np.arange(nlayers+1)]
-    controlq90s = [tcfdf.loc[(controlnames, i), 'q90'].mean() for i in np.arange(nlayers+1)]
-    errs_trainedq90s = [tcfdf.loc[(trainednames, i), 'q90'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    errs_controlq90s = [tcfdf.loc[(controlnames, i), 'q90'].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
-    
-    #print(errs_trainedmedians)
-    
-    plt.errorbar(x, trainedmedians, yerr=errs_trainedmedians, color=trainedcolor, linestyle='-.', marker='D', capsize=1.0)
-    plt.errorbar(x, controlmedians, yerr=errs_controlmedians, color=controlcolor, linestyle='-.', marker='D', capsize=1.0)
-    plt.errorbar(x, trainedq90s, yerr=errs_trainedq90s, color=trainedcolor, marker='D', capsize=1.0)
-    plt.errorbar(x, controlq90s, yerr=errs_controlq90s, color=controlcolor, marker='D', capsize=1.0)
-        
-    plt.title('%s tuning curve accuracies comparison for model and controls' %(tcf))
-    plt.ylabel('r2 score')
-    plt.xticks(x, ['spindles'] + ['layer %d' %i for i in np.arange(1,model['nlayers']+1)])
-    plt.ylim((-0.1,1))
-    
-    ax = plt.gca()
-    handles, _ = ax.get_legend_handles_labels()
-    handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
-    plt.legend(['mean of trained medians', 'mean of trained q90s', 'mean of control medians', \
-                'mean of control q90s'])
 
     return fig
 
@@ -1165,20 +655,9 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    #ax.spines['left'].set_visible(False)  #allows turning off spines... i.e. top and right is good :)
     ax.get_xaxis().tick_bottom()
-    #ax.tick_params(axis='x', direction='in')
-    #ax.tick_params(axis='y', length = 4.5, width=50)
     ax.get_yaxis().tick_left()
-    
-    #ax.tick_params(axis='y', length=0)
-    # offset the spines
-    #for spine in ax.spines.values():
-    #  spine.set_position(('outward', 5))
-    # put the grid behind
     ax.set_axisbelow(True)
-    
-    #color = colorselector(model['cmap'], tcf)
     
     trainednamer = lambda i: model['base'] + '_%d' %i
     trainednames = [trainednamer(i) for i in np.arange(1,6)]
@@ -1186,21 +665,15 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     controlnamer = lambda i: model['base'] + '_%dr' %i
     controlnames = [controlnamer(i) for i in np.arange(1,6)]
     
-    #trainedcolor = colorselector(model['cmap'], tcf)
-    #controlcolor = colorselector('Greys_r', tcf)
-    #colors = [trainedcolor, controlcolor]
-    
     nlayers = model['nlayers']
     
     x = range(nlayers + 1)
-        
-    
+
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     t_corr = t.ppf(0.975, 4)
     
     print(tcfdf.head())
     
-    #trainedmedians = [tcfdf['median'].xs((name, i), level=('model', 'layer')).mean() for (name, i) in zip(trainednames, np.arange(nlayers+1))]
     traineddirs = [tcfdf.loc[(trainednames, i, 'dir')].mean() for i in np.arange(nlayers+1)]
     controldirs = [tcfdf.loc[(controlnames, i, 'dir')].mean() for i in np.arange(nlayers+1)]
     errs_traineddirs = [tcfdf.loc[(trainednames, i, 'dir')].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
@@ -1218,20 +691,13 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     plt.errorbar(x, controldirs, yerr=errs_controldirs, color=colorselector('Greys_r', 'dir'), marker='D', capsize=3.0)
     plt.errorbar(x, trainedlabels, yerr=errs_trainedlabels, color=colorselector(model['cmap'], 'acc'), linestyle='-.',marker='D', capsize=3.0)
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector('Greys_r', 'acc'), linestyle='-.', marker='D', capsize=3.0)
-        
-    #plt.title('Comparison With Controls')
     plt.ylabel('r2 score')
     plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
                horizontalalignment = 'right')
     plt.ylim((-0.1,1))
     
-    #ax = plt.gca()
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
-    #plt.legend(['mean 90% quantile (n=5) direction tuning trained', 'mean 90% quantile (n=5) direction tuning controls', \
-    #            'mean 90% quantile (n=5) acc tuning trained', 'mean 90% quantile (n=5) acc tuning controls'])
     plt.legend(['Dir Trained', 'Dir Controls', \
                 'Acc Trained', 'Acc Controls'])
     
@@ -1247,20 +713,9 @@ def plotcomp_ees(tcfdf, model):
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    #ax.spines['left'].set_visible(False)  #allows turning off spines... i.e. top and right is good :)
     ax.get_xaxis().tick_bottom()
-    #ax.tick_params(axis='x', direction='in')
-    #ax.tick_params(axis='y', length = 4.5, width=50)
     ax.get_yaxis().tick_left()
-    
-    #ax.tick_params(axis='y', length=0)
-    # offset the spines
-    #for spine in ax.spines.values():
-    #  spine.set_position(('outward', 5))
-    # put the grid behind
     ax.set_axisbelow(True)
-    
-    #color = colorselector(model['cmap'], tcf)
     
     trainednamer = lambda i: model['base'] + '_%d' %i
     trainednames = [trainednamer(i) for i in np.arange(1,6)]
@@ -1268,21 +723,14 @@ def plotcomp_ees(tcfdf, model):
     controlnamer = lambda i: model['base'] + '_%dr' %i
     controlnames = [controlnamer(i) for i in np.arange(1,6)]
     
-    #trainedcolor = colorselector(model['cmap'], tcf)
-    #controlcolor = colorselector('Greys_r', tcf)
-    #colors = [trainedcolor, controlcolor]
-    
     nlayers = model['nlayers']
     
     x = range(nlayers + 1)
         
-    
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     t_corr = t.ppf(0.975, 4)
     
     print(tcfdf.head())
-    
-    #trainedmedians = [tcfdf['median'].xs((name, i), level=('model', 'layer')).mean() for (name, i) in zip(trainednames, np.arange(nlayers+1))]
     traineddirs = [np.nanmean(tcfdf.loc[(trainednames, i, 'ee')]) for i in np.arange(nlayers+1)]
     controldirs = [np.nanmean(tcfdf.loc[(controlnames, i, 'ee')]) for i in np.arange(nlayers+1)]
     errs_traineddirs = [np.nanstd(tcfdf.loc[(trainednames, i, 'ee')])/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
@@ -1301,19 +749,13 @@ def plotcomp_ees(tcfdf, model):
     plt.errorbar(x, trainedlabels, yerr=errs_trainedlabels, color=colorselector_ee(model['cmap'], 'eepolar'), linestyle='-.',marker='D', capsize=3.0)
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector_ee('Greys_r', 'eepolar'), linestyle='-.', marker='D', capsize=3.0)
         
-    #plt.title('Comparison With Controls')
     plt.ylabel('r2 score')
     plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
                horizontalalignment = 'right')
     plt.ylim((-0.1,1))
     
-    #ax = plt.gca()
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
-    #print(handles)
-    #print(handles.shape)
-    #plt.legend(['mean 90% quantile (n=5) direction tuning trained', 'mean 90% quantile (n=5) direction tuning controls', \
-    #            'mean 90% quantile (n=5) acc tuning trained', 'mean 90% quantile (n=5) acc tuning controls'])
     plt.legend(['Cart Trained', 'Cart Controls', \
                 'Polar Trained', 'Polar Controls'])
     
@@ -1327,22 +769,6 @@ def tcctrlcompplots(df, model, runinfo):
     folder = runinfo.sharedanalysisfolder(model,  'kindiffs_plots')
     os.makedirs(folder, exist_ok=True)
     tcf=None
-    '''for tcf in tcnames:
-        tcdf = df[['median', 'q90']].xs(tcf, level='tc')
-        fig = plotcomp(tcdf, tcf, model)
-        fig.savefig(os.path.join(folder, 'tcctrlcomp_%s.png' %tcf))
-        plt.close('all')
-        
-        fig = plotcomp_errbars(tcdf, tcf, model)
-        fig.savefig(os.path.join(folder, 'tcctrlcomp_%s_errbars.png' %tcf))
-        plt.close('all')
-        
-    #tcdf = df[['q90']].xs(('dir', 'labels'), level='tc')
-    tcdf = df.loc[(slice(None), slice(None), ['dir', 'labels']), 'q90']#.reset_index(level=2, drop=True)
-    #print(tcdf)
-    fig = plotcomp_dir_labels(tcdf, tcf, model)
-    fig.savefig(os.path.join(folder, 'tcctrlcomp_dir_labels.png'))
-    '''
     tcdf = df.loc[(slice(None), slice(None), ['dir', 'acc']), 'q90']#.reset_index(level=2, drop=True)
     
     fig = plotcomp_dir_accs(tcdf, tcf, model)
@@ -1402,8 +828,6 @@ def get_pds(model, runinfo, r2threshold = None):
                 Ax 2: Neurons
             """
             
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             pds[ilayer][ior3] = np.zeros((len(uniqueheights[ior3]) + 1, len(prefdirs)))
             pds[ilayer][ior3][0] = prefdirs
             
@@ -1411,14 +835,8 @@ def get_pds(model, runinfo, r2threshold = None):
                 runinfo['height'] = ht
 
                 testevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(runinfo.resultsfolder(model, 'vel'), ilayer, fset, mmod, runinfo.planestring()))
-                dirtuning = testevals[...,1,3:5].reshape((-1,2))   
-                #print(dirtuning.shape)
-                #if(np.any(np.isnan(dirtuning))):
-                #    print("WE HAVE NANS 1")
+                dirtuning = testevals[...,1,3:5].reshape((-1,2))  
                 prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                #if(np.any(np.isnan(prefdirs))):
-                #    print(dirtuning)
-                #print(pds[ilayer][ior])
                 pds[ilayer][ior3][iht+1] = prefdirs
                 
     return pds
@@ -1432,14 +850,10 @@ def getlpdcors(pds):
     xpos0 = int(len(uniquexs)/2)
     x0 = uniquexs[xpos0]
     z0 = 0
-    #zfrompos0 = uniquezs
-    #xfrompos0 = [x - xpos0 for x in uniquexs]
     
     # HOR VS HOR
     horvshor = np.zeros((nzs,))
-    #for ilayer in range(nlayers):
     for iz in range(nzs):
-        #print(pds[ilayer][0][zpos0].shape, pds[ilayer][0][iz].shape)
         pd1 = pds[0][zpos0]
         pd2 = pds[0][iz]
         mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
@@ -1447,33 +861,26 @@ def getlpdcors(pds):
             
     # VERT VS VERT
     vertvsvert = np.zeros((nxs,))
-    #for ilayer in range(nlayers):
     for ix in range(nxs):
         pd1 = pds[1][xpos0]
         pd2 = pds[1][ix]
         mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        
-        #print(pds[ilayer][0][zpos0].shape, pds[ilayer][0][iz].shape)
         vertvsvert[ix] = np.corrcoef(pd1, pd2)[0,1]
     
     #  HOR VS VERT (compare one horizontal to all verticals)
     horvsvert = np.zeros((nxs,))
-    #for ilayer in range(nlayers):
     for ix in range(nxs):
         pd1 = pds[0][zpos0]
         pd2 = pds[1][ix]
         mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        #print(pds[ilayer][0][zpos0].shape, pds[ilayer][1][ix].shape)
         horvsvert[ix] = np.corrcoef(pd1[mask], pd2[mask])[0,1]
     
     # VERT VS HOR (one vertical vs. all horizontals)
     vertvshor = np.zeros((nzs,))
-    #for ilayer in range(nlayers):
     for iz in range(nzs):
         pd1 = pds[1][xpos0]
         pd2 = pds[0][iz]
         mask = np.logical_and(np.invert(np.isnan(pd1)), np.invert(np.isnan(pd2)))
-        #print(pds[ilayer][1][xpos0].shape, pds[ilayer][0][iz].shape)
         vertvshor[iz] = np.corrcoef(pd1[mask], pd2[mask])[0,1]
         
     return [horvshor, vertvsvert, horvsvert, vertvshor], pd1.size
@@ -1485,17 +892,7 @@ def get_r2s(model, runinfo, r2threshold  = 0.2):
     
     fset = 'vel'
     mmod = 'std'
-    
-    """
-    #Create Pandas DF
-    colnames = ['prefdir']
-    index = pd.MultiIndex.from_product((
-                modelnames,
-                list(range(nlayers)),
-                tcnames),
-                names = ('model', 'layer', 'tc'))
-    """
-    
+        
     ##SAVE R2s
     r2s = []
     for ilayer in range(nlayers):
@@ -1517,9 +914,6 @@ def get_r2s(model, runinfo, r2threshold  = 0.2):
                 Ax 1: Height Index
                 Ax 2: Neurons
             """
-            
-            #print(ilayer, ior)
-            #print(len(pds), len(pds[ilayer]), len(uniqueheights))
             r2s[ilayer][ior2] = np.zeros((len(uniqueheights[ior2]), len(r2)))
             
             for iht, ht in enumerate(uniqueheights[ior2]):
@@ -1680,8 +1074,6 @@ def plot_ind_neuron_invars_comp(layers, tmdevmean, cmdevmean, trainedmodel):
     
     return fig
 
-
-
 def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     
     #swtiched everything to nanmean...
@@ -1693,30 +1085,9 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     
     from scipy.stats import ttest_rel
     
-    #print('alltmdevmeans')
-    #print(alltmdevmeans)
-    #print(alltmdevmeans.shape) #axis 0: models, axis 1: layers, axis 2: # planes
-    
-    '''
-    ###Make corrections for number of sig planes < 10:
-    cutoff = 10
-    for im in range(len(alltmdevmeans)):
-        for il in range(len(alltmdevmeans[im])):
-            if (np.count_nonzero(~np.isnan(alltmdevmeans[im,il]))) < cutoff:
-                alltmdevmeans[im,il,:] = np.nan
-    for im in range(len(allcmdevmeans)):
-        for il in range(len(allcmdevmeans[im])):
-            if (np.count_nonzero(~np.isnan(allcmdevmeans[im,il]))) < cutoff:
-                allcmdevmeans[im,il,:] = np.nan
-    '''
-    
     fig = plt.figure(figsize=(8,6),dpi=300)
-    #ax = fig.add_subplot(111)
         
     for i in range(len(alltmdevmeans)):
-        #modeltmad = np.empty((nlayers,))
-        #modeltmad[:] = np.nan
-        #modeltmad[:] = np.nanmean(np.abs(alltmdevmeans[i]), axis=1)[:]
         assert np.nanmax(alltmdevmeans[i]) < np.pi, 'too large tmdevmean, model %d, value %f, pos %s ' %(i, np.nanmax(alltmdevmeans[i]), np.argmax(alltmdevmeans[i]))
         plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
         plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
@@ -1733,17 +1104,11 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     trained_t_corr = np.array([t.ppf(0.975, n - 1) for n in n_tms])
     control_t_corr = np.array([t.ppf(0.975, n - 1) for n in n_cms])
     
-    #errs_tmsmean = np.nanstd(tmdevs, axis=0) / np.sqrt(n_tms) * trained_t_corr
-    #errs_cmsmean = np.nanstd(cmdevs, axis=0) / np.sqrt(n_cms) * control_t_corr
-    
     print(trained_t_corr)
     print(control_t_corr)
-    #time.sleep(0.5)
         
     tmsmean = np.nanmean(np.nanmean(np.abs(alltmdevmeans), axis=2), axis=0)
     cmsmean = np.nanmean(np.nanmean(np.abs(allcmdevmeans), axis=2), axis=0)
-    #errs_tmsmean = np.nanstd(np.nanmean(np.abs(alltmdevmeans), axis=2), axis=0) / np.sqrt(n_tms) * t_corr
-    #errs_cmsmean = np.nanstd(np.nanmean(np.abs(allcmdevmeans), axis=2), axis=0) / np.sqrt(n_cms) * t_corr
     errs_tmsmean = np.nanstd(np.nanmean(np.abs(alltmdevmeans), axis=2), axis=0) / np.sqrt(n_tms) * trained_t_corr
     errs_cmsmean = np.nanstd(np.nanmean(np.abs(allcmdevmeans), axis=2), axis=0) / np.sqrt(n_cms) * control_t_corr
     
@@ -1797,13 +1162,10 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     plt.xlabel('Layer')
     plt.ylabel('Mean Absolute Deviation')
     
-    #plt.title('Total Absolute Deviation in PD for All Tuned Neurons', fontsize=10)
-    
     ax = plt.gca()
     format_axis(ax)
     
     handles, _ = ax.get_legend_handles_labels()
-    #print(handles)
     handles = np.array(handles)
     
     plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
@@ -1824,14 +1186,9 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     plt.ylabel('Mean Absolute Deviation')
     plt.xlim((-0.3, len(layers)-0.7))
     
-    #plt.title('Total Absolute Deviation in PD for All Tuned Neurons', fontsize=10)
-    
     plt.legend(['trained', 'control'])
     
-   # plt.tight_layout()
-    
     figboth = plt.figure(figsize=(8,6), dpi=300)
-    #ax = fig.add_subplot(111)
         
     for i in range(len(alltmdevmeans)):
         plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
@@ -1848,18 +1205,13 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     plt.xlabel('Layer')
     plt.ylabel('Mean Absolute Deviation')
     
-    #plt.title('Mean Absolute Deviation in PD for All Tuned Neurons', fontsize=10)
-    
     ax = plt.gca()
     format_axis(ax)
     handles, _ = ax.get_legend_handles_labels()
-    #print(handles)
     handles = np.array(handles)
     
     plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
                 'mean of trained', 'mean of controls'])
-    
-    #plt.tight_layout()
     
     return fig, figeb, figboth, df
 
@@ -1898,12 +1250,9 @@ def ind_neuron_invars_comp(model, runinfo):
         tmf = runinfo.generalizationfolder(trainedmodel, 'ind_neuron_invar_collapsed_beautified')
         tmdevmean_hor = pd.read_csv(os.path.join(tmf, 'ind_neuron_invar_hor_deviations_02.csv'), index_col = 0).values #mean absolute deviation over neurons saved here
         tmdevmean_vert = pd.read_csv(os.path.join(tmf, 'ind_neuron_invar_vert_deviations_02.csv'), index_col = 0).values
-        #print(tmdevmean_hor.shape)
         
-        #print(mname, np.nanmin(tmdevmean_hor), np.shape(tmdevmean_hor))
         tmdevmean_hor[:,zpos0] = np.nan
         tmdevmean_vert[:,zpos0] = np.nan
-        #print(mname, np.nanmin(tmdevmean_hor), np.shape(tmdevmean_hor))
         
         alltraineddevsim_hor.append(tmdevmean_hor)
         alltraineddevsim_vert.append(tmdevmean_vert)
@@ -1912,11 +1261,9 @@ def ind_neuron_invars_comp(model, runinfo):
         cmdevmean_hor = pd.read_csv(os.path.join(cmf, 'ind_neuron_invar_hor_deviations_02.csv'), index_col = 0).values
         cmdevmean_vert = pd.read_csv(os.path.join(cmf, 'ind_neuron_invar_vert_deviations_02.csv'), index_col = 0).values    
         
-        #print(mname + 'r', np.nanmin(cmdevmean_hor), np.shape(cmdevmean_vert))
         cmdevmean_hor[:,zpos0] = np.nan
         cmdevmean_vert[:,zpos0] = np.nan
-        #print(mname + 'r', np.nanmin(cmdevmean_hor), np.shape(cmdevmean_vert))
-
+        
         allcontroldevsim_hor.append(cmdevmean_hor)
         allcontroldevsim_vert.append(cmdevmean_vert)
         
@@ -1972,34 +1319,17 @@ def tab_comp_tcn_allmodels(tcn, allmodels, runinfo):
                 slless = modelks.loc[(modelname, tcn), (str(il), 'less', 'sl')]
                 slgreater = modelks.loc[(modelname, tcn), (str(il), 'greater', 'sl')]
                 
-                #print(slless, slgreater)
-                #assert ~((slless != 0) and (slgreater != 0)), 'slless or slgreater can\t both be greater than 0!'
-                
-               # print('hellohellohello')
-                
                 slstring = ''
                 for j in range(int(slless)):
                     slstring = slstring + '+'
                 for j in range(int(slgreater)):
                     slstring = slstring + '-'
                 df.loc[(basemodel['type'], i), layer] = slstring
-
-                '''
-                if(slgreater > 0 and slless > 0):
-                    print('slless and slgreater both greater than 0!')
-                    df.loc[(basemodel['type'], i), layer] = '*****'
-                if (slless > 0):
-                    df.loc[(basemodel['type'], i), layer] = ''.join(['-']*int(slless))
-                elif (slgreater > 0):
-                    df.loc[(basemodel['type'], i), layer] = ''.join(['+']*int(slgreater))
-                '''
-                
+        
                 if(slless >= 2):
                     counterslless = counterslless + 1
                 if(slgreater >= 2):
                     counterslgreater = counterslgreater + 1
-            
-            
                     
     allmodelfolder = runinfo.allmodelfolder(analysis = 'kindiffs')
     os.makedirs(allmodelfolder, exist_ok=True)
@@ -2024,7 +1354,7 @@ def tab_comp_pds_allmodels(allmodels, runinfo):
     for basemodel in allmodels:
         modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'pddiffs')  
         modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, 'pddiffs.csv'), index_col=[0,1], header=0)
-       # print(modelks.index)
+       
         for i in trials:
             modelname = basemodel['base'] + '_%d' %i
             for il in range(basemodel['nlayers']+1):
@@ -2039,116 +1369,6 @@ def tab_comp_pds_allmodels(allmodels, runinfo):
     df.to_csv(os.path.join(allmodelfolder, 'allmodels_pddiffs.csv'))
     
     return df
-
-def tab_comp_pddiffs_to_orig_allmodels(allmodels, runinfo):
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    control = ['T', 'R']
-    
-    layers = ['L%d' %i for i in np.arange(1,9)]
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials,
-                    control),
-                    names = ('modeltype', 'trial', 'control'))
-        
-    df = pd.DataFrame(index=index, columns=layers)
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'pddiffs_to_orig')  
-        modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, 'pddiffs__to_orig.csv'), index_col=0, header=0)
-        print(modelks.columns)
-        for i in trials:
-            for c in control:
-                modelname = basemodel['base'] + '_%d' %i
-                if c == 'R':
-                    modelname = modelname + 'r'
-                for il in np.arange(1,basemodel['nlayers']+1):
-                    #print(layer)
-                    layer = 'L%d' %il
-                    pv = modelks.loc[modelname, layer]
-                    sl = pv_to_sl_code(convert_str_to_float(pv))
-                    
-                    df.loc[(basemodel['type'], i, c), layer] = ''.join(['*']*int(sl))
-                    
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'pddiffs_to_orig')
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_pddiffs_to_orig.csv'))
-    
-    return df
-
-def tab_comp_pddiffs_rayleigh_allmodels(allmodels, runinfo):
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    control = ['T', 'R']
-    
-    layers = ['L%d' %i for i in np.arange(0,9)]
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials,
-                    control),
-                    names = ('modeltype', 'trial', 'control'))
-        
-    df = pd.DataFrame(index=index, columns=layers)
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'pddiffs_rayleigh')  
-        modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, 'pddiffs_rayleigh.csv'), index_col=0, header=0)
-        print(modelks.columns)
-        for i in trials:
-            for c in control:
-                modelname = basemodel['base'] + '_%d' %i
-                if c == 'R':
-                    modelname = modelname + 'r'
-                for il in np.arange(0,basemodel['nlayers']+1):
-                    #print(layer)
-                    layer = 'L%d' %il
-                    pv = modelks.loc[modelname, layer]
-                    sl = pv_to_sl_code(convert_str_to_float(pv))
-                    
-                    df.loc[(basemodel['type'], i, c), layer] = ''.join(['*']*int(sl))
-                    
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'pddiffs_rayleigh')
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_pddiffs_rayleigh.csv'))
-    
-    return df
-
-def tab_comp_pdvars_allmodels(allmodels, runinfo):
-    
-    modeltypes = [model['type'] for model in allmodels]
-    trials = np.arange(1,6)
-    
-    layers = ['L%d' %i for i in np.arange(1,9)]
-    
-    index = pd.MultiIndex.from_product((
-                    modeltypes,
-                    trials),
-                    names = ('modeltype', 'trial'))
-        
-    df = pd.DataFrame(index=index, columns=layers)
-    
-    for basemodel in allmodels:
-        modelksfolder = runinfo.sharedanalysisfolder(basemodel, 'pddiffs')  
-        modelks = pd.DataFrame.from_csv(os.path.join(modelksfolder, 'pddiffs.csv'), index_col=[0,1], header=0)
-        print(modelks.index)
-        for i in trials:
-            modelname = basemodel['base'] + '_%d' %i
-            for il in range(basemodel['nlayers']+1):
-                layer = 'L%d' %il
-                sl_greater = modelks.loc[(modelname, il), 'F_sl_greater']
-                sl_less = modelks.loc[(modelname, il), 'F_sl_less']
-                
-                df.loc[(basemodel['type'], i), layer] = sl_to_string(sl_greater, sl_less)
-                    
-    allmodelfolder = runinfo.allmodelfolder(analysis = 'pdvars')
-    os.makedirs(allmodelfolder, exist_ok=True)
-    df.to_csv(os.path.join(allmodelfolder, 'allmodels_pdvars.csv'))
-    
-    return df    
-    
 
 def tab_comp_invars_allmodels(corrtype, allmodels, runinfo):
     
@@ -2243,24 +1463,6 @@ def main(model, runinfo):
         print('compiling dataframe for comparions...')
         df = compile_comparisons_df(model, runinfo)
         
-        """
-        print('finding differences...')
-        diffs_to_all = find_diffs_to_all(df, model, runinfo)
-        print(diffs_to_all)
-        print('creating comparison plots for individual tuning features...')
-        tcctrlcompplots(df, model, runinfo)
-        print('plots saved')
-        """
-        '''
-        print('running ks...')
-        ks_comp(model, runinfo)
-        print('ks analysis saved')
-        
-        print('running next level paired t')
-        pairedt_quantiles(df, model, runinfo)
-        print('next level paired t saved')
-        '''
-        
     else:
         print('kinetic and label embeddings already analyzed')
         
@@ -2285,22 +1487,6 @@ def main(model, runinfo):
     else:
         print('kindiffs plots already made')
         
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pddiffs'))):
-    #if(True):
-        print('analyzing differences in preferred direction...')
-        pd_diffs(model, runinfo)
-        print('df saved')
-    else:
-        print('preferred direction comparisons already made')
-        
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pddiffs_to_orig'))):
-    #if(True):
-        print('comparing preferred directions to original...')
-        pd_diffs_to_orig(model, runinfo)
-        print('df saved')
-    else:
-        print('pds already compared to spindles')
-        
     if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pd_deviation'))):
     #if(True):
         print('computing deviation measure for PDs')
@@ -2309,13 +1495,6 @@ def main(model, runinfo):
     else:
         print('pd deviation measure already saved')
         
-    if(False):
-        print('checking for uniformity...')
-        pd_diffs_rayleigh(model, runinfo)
-        print('df saved')
-    else:
-        print('pds already compared to spindles')
-    
 def generalizations_comparisons_main(model, runinfo):
     """main for comparing features that describe all planes"""
     
