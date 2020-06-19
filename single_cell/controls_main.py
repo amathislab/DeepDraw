@@ -29,6 +29,7 @@ from generalization import main as generalization_main
 from representational_similarity_analysis import main as rsa_main
 from representational_similarity_analysis import rsa_models_comp
 from polar_tcs import main as polar_tcs_main
+from tsne import main as tsne_main
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -344,6 +345,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                        
                                         else:
                                             print('rsa already saved')
+                                        
+                                        if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
+                                            print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                 
                                 if (i==5 and control):
                                     comparisons_main(model, runinfo)
