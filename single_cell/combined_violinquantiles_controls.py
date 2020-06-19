@@ -98,6 +98,15 @@ def clip(vp, lr):
 def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     ''' Plot the comparison violin plot showing the distribution of tuning strengths
     
+    Arguments
+    ---------
+    trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
+    controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
+    trainedmodel : dict
+    
+    Returns
+    -------
+    fig : plt.figure, comparison violin plot
     '''
        
     nlayers = trainedmodel['nlayers'] + 1
@@ -174,6 +183,19 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     return fig
 
 def get_modevals_ee(model, runinfo):
+    ''' Read in tuning curve fits for endeffector positional input from saved numpy files
+    
+    Arguments
+    ---------
+    model : dict, information about current model
+    runinfo : RunInfo (extension of dict), information about experimental run
+    
+    Returns
+    -------
+    modevals : list of lists containing tuning curve test r2 strengths for five different model types to be plotted
+        Outer list: layers; Inner list: Model types, containing np.array of r2 strengths
+        
+    '''
     
     expf={
           'ee': runinfo.resultsfolder(model, 'ee'),
@@ -197,6 +219,18 @@ def get_modevals_ee(model, runinfo):
 
 
 def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
+    ''' Plot the comparison violin plot showing the distribution of tuning strengths
+    
+    Arguments
+    ---------
+    trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
+    controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
+    trainedmodel : dict
+    
+    Returns
+    -------
+    fig : plt.figure, comparison violin plot
+    '''
     
     nlayers = trainedmodel['nlayers'] + 1
     
@@ -277,6 +311,18 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     return fig
         
 def comp_violin_main(trainedmodel, controlmodel, runinfo):
+    """Saves the violin plots comparing distribution of test scores for trained and control models 
+
+    Arguments
+    ---------
+    trainedmodel : dict, information about trained model
+    controlmodel : dict, information about control
+    runinfo : RunInfo (extends dict)
+    
+    Returns
+    -------
+    
+    """    
     
     trainedmodevals = get_modevals(trainedmodel, runinfo)
     controlmodevals = get_modevals(controlmodel, runinfo)
