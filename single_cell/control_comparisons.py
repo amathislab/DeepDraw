@@ -832,7 +832,6 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     df : pd.DataFrame, statistics accompanying plot
     '''
     
-    
     columns = ['tmsmean', 'cmsmean', 'tmsstd', 'cmsstd', 'stddiff', 't stat', 'p value', 'Bonferroni', 'N for t']
     index = layers
     df = pd.DataFrame(index=index, columns=columns)
