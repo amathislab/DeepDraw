@@ -68,7 +68,7 @@ class RunInfo(dict):
         return self.__dict__['orientation'] + str(self.__dict__['height'])
     
     def experimentfolder(self):
-        return '%dexp%d' %(self.__dict__['basefolder'], self.__dict__['expid'])
+        return '%sexp%d' %(self.__dict__['basefolder'], self.__dict__['expid'])
     
     def resultsfolder(self, model, fset = None):
         ''' Returns the formatting string specifying the folder name in which the tuning curve fit test scores are saved.

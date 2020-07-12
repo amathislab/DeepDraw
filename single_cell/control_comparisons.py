@@ -414,9 +414,11 @@ def pairedt_comp(model, runinfo):
             controllayerevals.append(accevals[...,2,1]) #acc
             controllayerevals.append(labevals[...,0]) #labels    
             
-            for itc, tc in enumerate(tcnames):
+            #print(tcnames)
+            for itc, tc in enumerate(tcnames[:5]):
                 #for testtype in testtypes:
                 testtype='two-sided'
+                #print(itc, len(trainedlayerevals))
                 pv = ttest_rel(trainedlayerevals[itc].flatten(), controllayerevals[itc].flatten())[1]
                 df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'p-value')] = pv
                 df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'sl')] = pv_to_sl_code(pv)
