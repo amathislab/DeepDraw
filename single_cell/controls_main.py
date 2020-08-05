@@ -179,6 +179,8 @@ class RunInfo(dict):
         -------
         datafolder : string
         '''
+        
+        #print(self.__dict__['basefolder'])
 
         datafolder = '%sexp%d/data/' %(self.__dict__['basefolder'], self.__dict__['expid'])
         if model is not None:

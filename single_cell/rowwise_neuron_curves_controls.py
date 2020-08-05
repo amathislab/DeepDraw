@@ -423,19 +423,16 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
             x = x.reshape((-1,))
         y = y.reshape((-1,))
         
-        if mmod == 'std':
-            if fset == 'acc':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-            elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-            elif fset == 'ee':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, False)))
-                #sys.stdout.flush()
-            elif fset == 'labels':
-                results.append(pool.apply_async(tune_row_label, args=(x,y,irow)))
-        elif mmod == 'vonmises':
-            results.append(pool.apply_async(tune_row_vonmises, args=(x,y,irow)))
-            
+        if fset == 'acc':
+            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
+        elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
+            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
+        elif fset == 'ee':
+            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, False)))
+            #sys.stdout.flush()
+        elif fset == 'labels':
+            results.append(pool.apply_async(tune_row_label, args=(x,y,irow)))
+
     results = [r.get() for r in results]
     
     pool.close()
@@ -498,16 +495,8 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     elif (fset == 'labels'):
         nmods = 1
         nmets = 1
-    if (mmod == 'vonmises'):
-        nmods = 2
-        nmets = 7
     
-    if (mmod == 'decoding'):
-        nmods = 1
-        nmets = 3
-        trainevals, testevals = tune_decode(X, fset, lo, centers, nmods, nmets, mmod, savepath=savepath, savename=savename)
-    else:
-        trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, mmod)
+    trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, mmod)
     
     print("Layer %d Completed!" %ilayer)
     
