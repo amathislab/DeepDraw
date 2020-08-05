@@ -1,22 +1,64 @@
-# DeepDraw <img src="https://images.squarespace-cdn.com/content/v1/57f6d51c9f74566f55ecf271/1588528588264-C0AX88HTUWZIUZDBCMVY/ke17ZwdGBToddI8pDm48kI8xML9w6WVF-A8Fd6Xh7CFZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7RyFOMTxaKexDScLPdXmhUBUGoFwIJWq0ElUUZM0MaiSl578qHjAUVYQjaMp75n45A/deepdraw-01.png?format=300w" width="350" title="DeepDraw" alt="DLC Utils" align="right" vspace = "50">
+# DeepDraw <img src="https://images.squarespace-cdn.com/content/v1/57f6d51c9f74566f55ecf271/1588528588264-C0AX88HTUWZIUZDBCMVY/ke17ZwdGBToddI8pDm48kI8xML9w6WVF-A8Fd6Xh7CFZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7RyFOMTxaKexDScLPdXmhUBUGoFwIJWq0ElUUZM0MaiSl578qHjAUVYQjaMp75n45A/deepdraw-01.png?format=300w" width="350" title="DeepDraw" alt="DeepDraw" align="right" vspace = "50">
 
-
+Highlights:
 
 - We provide a normative approach to derive neural tuning of proprioceptive features from behaviorally-defined objectives.
 - We propose a method for creating a scalable muscle spindles dataset based on kinematic data and define an action recognition task as a benchmark.
 - Hierarchical neural networks solve the recognition task from muscle spindle inputs.
 - Individual neural network units resemble neurons in primate somatosensory cortex, and networks make predictions for other areas along the proprioceptive pathway.
 
-### This repository contains code for the paper "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
-Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1
+### Structure of the code
 
 The code is organized as follows:
+
 1. Dataset Generation. (Proprioceptive Character Recognition Task = PCRT Dataset) Code can be found in `dataset`
-2. Solving the PCRT Dataset using binary SVMs. Code can be found in `svm-analysis`
-3. Solving the PCRT Dataset using various network models. Code in `nn-training`
-4. Representational Similarity of the models. Code in `repr-analysis`
-5. Single Unit tuning curves. Code in (WIP)
+2. Classifying the PCRT Dataset using binary SVMs. Code can be found in `svm-analysis`
+3. Classifying the PCRT Dataset using various network models. Code in `nn-training`
+4. Representational Similarity (RDM) analysis of the models. Code in `repr-analysis`
+5. Single Unit tuning curve, tSNE, CKA analysis. Code in `single_cell`
 
 `code` contains classes and helper functions used at one/more places in the analyses.
 
-A Docker container with OpenSim binaries is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+Each part of the code has a dedicated readMe.md to describe how to run this section (e.g. `/single_cell/readMe.md`).
+
+## Runtimes and datasets:
+
+Installation should take a few minutes (for the conda environment) and half an hour for the docker container (see below). All runtimes are for a strong computer (CPU) except the NN training, which is for a GPU.
+
+1. Dataset generation: one run of generate_dataset.py (generates up to 200 datapoints) = 1 hour.
+2. SVM analysis: train one pairwise SVM using binary_svm.py on all datasets (full dataset, augmentation suppressed) = 2-4 hours.
+3. NN Training: train one neural network using train_convnets.py = 2-4 hours. (on a GPU)
+4. RDM: generate responses and compute rdms for all layers of one network on a test set of 4000 characters = 1-2 hours.
+5. Extracting hidden layer activations : a few minutes (per model)
+6. Fitting tuning curves for all models and planes: ~24h
+7. Remaining analyses of tuning strengths and of plotting : ~3 hrs
+
+Thus, for instance creating the PCRT dataset with 1,000,000 trajectories takes a substantial amount of time. For this reason we also share the datasets to allow reproduction of results from various points. All data are available at:
+https://www.dropbox.com/sh/afvyg524bakyo4u/AADqeN0uHYFdqfEEGShQeHopa?dl=0
+
+We share the PCRT dataset (contained in 'pcr_data') it has approximately ~30GB.
+
+We share the weights of all the trained networks (contained in 'network-weights'): about ~3.5GB
+
+We share the data for analysis (activations, etc. contained in 'analysis-data'): about ~88GB.
+
+### Installation, software & requirements
+
+Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [TensorFlow](https://www.tensorflow.org/). To easily reproduce our computational environment incl. the dependencies we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+
+For the rest of the analysis, we are sharing a conda environment that has the dependencies. It can be installed by:
+
+```
+conda env create -f environment.yml
+source activate DeepDraw
+```
+
+It was exported on an Ubuntu system, where all the analyses were performed.
+```
+conda env export > environment.yml
+```
+### References
+
+This repository contains code for the manuscript "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
+
+Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v2

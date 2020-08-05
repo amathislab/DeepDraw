@@ -1,5 +1,11 @@
-name: base
+# Conda environment for data analysis of DeepDraw project
+#
+# install: conda env create -f environment.yml
+# update:  conda env update -f environment.yml
+
+name: DeepDraw
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - _ipyw_jlab_nb_ext_conf=0.1.0=py37_0
@@ -317,5 +323,3 @@ dependencies:
     - torch==1.2.0
     - torchaudio==0.3.0
     - typed-ast==1.4.1
-prefix: /home/kai/anaconda3
-

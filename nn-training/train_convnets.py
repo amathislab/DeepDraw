@@ -6,7 +6,7 @@ import time
 from nn_models import ConvModel, AffineModel, RecurrentModel
 from nn_train_utils import *
 
-PATH_TO_DATA = '/gpfs01/bethge/home/pmamidanna/deep_proprioception/data/'
+PATH_TO_DATA = '../dataset/'
 
 def sample_latents(arch_type):
     n_layers = [1, 2, 3, 4]
