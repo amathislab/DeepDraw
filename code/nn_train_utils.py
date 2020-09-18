@@ -130,12 +130,12 @@ class Trainer:
     def build_graph(self):
         """Build training graph using the `Model`s predict function and setting up an optimizer."""
         
-        _, ninputs, ntime = self.dataset.train_data.shape
+        _, ninputs, ntime, _ = self.dataset.train_data.shape
         with tf.Graph().as_default() as self.graph:
             tf.set_random_seed(self.model.seed)
             # Placeholders
             self.learning_rate = tf.placeholder(tf.float32)
-            self.X = tf.placeholder(tf.float32, shape=[self.batch_size, ninputs, ntime], name="X")
+            self.X = tf.placeholder(tf.float32, shape=[self.batch_size, ninputs, ntime, 2], name="X")
             self.y = tf.placeholder(tf.int32, shape=[self.batch_size], name="y")
 
             # Set up optimizer, compute and apply gradients
@@ -316,7 +316,7 @@ def evaluate_model(model, dataset, batch_size=200):
 
     """
     # Data handling
-    nsamples, ninputs, ntime = dataset.test_data.shape
+    nsamples, ninputs, ntime, _ = dataset.test_data.shape
     num_steps = nsamples // batch_size
 
     # Retrieve training mean, if data was normalized
@@ -328,7 +328,7 @@ def evaluate_model(model, dataset, batch_size=200):
     mygraph = tf.Graph()
     with mygraph.as_default():
         # Declare placeholders for input data and labels
-        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime], name="X")
+        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
 
         # Compute scores and accuracy

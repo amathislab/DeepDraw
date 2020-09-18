@@ -12,7 +12,7 @@ slim = tf.contrib.slim
 cudnn_rnn = tf.contrib.cudnn_rnn
 
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), 'nn-training/')
+MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), '../nn-training/')
 
 
 class ConvModel():
@@ -92,7 +92,7 @@ class ConvModel():
 
         Arguments
         ---------
-        X : tf.tensor [batch_size, num_inputs, num_timesteps], input tensor for which scores must
+        X : tf.tensor [batch_size, num_inputs, num_timesteps, 2], input tensor for which scores must
             be calculated.
 
         Returns
@@ -105,7 +105,7 @@ class ConvModel():
         net = OrderedDict([])
 
         with tf.variable_scope('Network', reuse=tf.AUTO_REUSE):
-            score = tf.expand_dims(X, -1)
+            score = X
             batch_size = X.get_shape()[0]
 
             with slim.arg_scope([slim.conv2d], data_format='NHWC', normalizer_fn=slim.layer_norm):

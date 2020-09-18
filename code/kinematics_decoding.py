@@ -7,8 +7,8 @@ import pandas as pd
 import yaml
 import tensorflow as tf
 import h5py
-from scipy.stats import mode
-from scipy.spatial.distance import pdist, squareform
+# from scipy.stats import mode
+# from scipy.spatial.distance import pdist, squareform
 
 
 def load_model(meta_data, experiment_id, model_type, is_trained):
