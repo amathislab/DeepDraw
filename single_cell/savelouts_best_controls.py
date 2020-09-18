@@ -99,7 +99,7 @@ def main(modelinfo, runinfo):
         labels = labels[random_idx[:subset_num]]
         kinarr = kinarr[random_idx[:subset_num]]
     
-    nsamples, ninputs, ntime = data.shape
+    nsamples, ninputs, ntime, _ = data.shape
     batch_size = nsamples
     num_steps = nsamples // batch_size
     
@@ -120,6 +120,7 @@ def main(modelinfo, runinfo):
     
     #update model path
     model.model_path = basefolder + model.model_path
+    print('model.model_path', model.model_path)
     
     # RUN PREDICTIONS AND SAVE INFORMATION FOR TUNING CURVE
     mygraph = tf.Graph()
@@ -127,7 +128,7 @@ def main(modelinfo, runinfo):
         
         ##BUILD GRAPH
         # Declare placeholders for input data and labels
-        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
+        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime], name="X")
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
     
         # Compute scores and accuracy

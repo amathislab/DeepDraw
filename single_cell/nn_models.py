@@ -1,6 +1,9 @@
 '''
+Class and forward pass definitions for various neural network models.
 
 '''
+
+
 import os
 from collections import OrderedDict
 
@@ -9,16 +12,16 @@ slim = tf.contrib.slim
 cudnn_rnn = tf.contrib.cudnn_rnn
 
 #CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-CUR_DIR = ''
-#MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), 'models/')
-MODELS_DIR = os.path.join('', 'models/')
+#MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), 'nn-training/')
+MODELS_DIR = 'models/'
+
 
 class ConvModel():
     """Defines a convolutional neural network model of the proprioceptive system."""
 
     def __init__(self,
             experiment_id, nclasses, arch_type, nlayers, n_skernels, n_tkernels, s_kernelsize,
-            t_kernelsize, s_stride, t_stride, seed=None):
+            t_kernelsize, s_stride, t_stride, seed=None, train=True):
         """Set up hyperparameters of the convolutional network.
 
         Arguments
@@ -35,6 +38,7 @@ class ConvModel():
         s_stride : int, stride along the spatial dimension.
         t_stride : int, stride along the temporal dimension.
         seed : int, for saving random initializations of networks.
+        train : bool, is the network meant to be trained or not
 
         """
 
@@ -42,6 +46,7 @@ class ConvModel():
             "Number of spatial and temporal processing layers must be equal!"
         if arch_type == 'spatiotemporal':
             n_tkernels = n_skernels
+            t_kernelsize = s_kernelsize
             t_stride = s_stride
 
         self.experiment_id = experiment_id
@@ -71,7 +76,8 @@ class ConvModel():
         self.name = '_'.join(parts_name)
         
         if seed is not None: self.name += '_' + str(self.seed)
-        
+        if not train: self.name += 'r'
+            
         exp_dir = os.path.join(MODELS_DIR, f'experiment_{self.experiment_id}')
         self.model_path = os.path.join(exp_dir, self.name)
 
@@ -112,9 +118,7 @@ class ConvModel():
                     score, self.n_tkernels[layer_id], [1, self.t_kernelsize], [1, self.t_stride],
                     scope=f'Temporal{layer_id}')
                 spatiotemporal_conv = lambda score, layer_id: slim.conv2d(
-                    #score, self.n_skernels[layer_id], [self.s_kernelsize, self.s_kernelsize], 
                     score, self.n_skernels[layer_id], [self.s_kernelsize, self.t_kernelsize], 
-                    #[self.s_stride, self.s_stride], scope=f'Spatiotemporal{layer_id}')
                     [self.s_stride, self.t_stride], scope=f'Spatiotemporal{layer_id}')
 
                 if self.arch_type == 'spatial_temporal':

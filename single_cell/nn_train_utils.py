@@ -8,10 +8,7 @@ import h5py
 import yaml
 
 import numpy as np
-try:
-    import tensorflow as tf
-except:
-    print('working without TF, this will fail for many operations')
+import tensorflow as tf
 
 
 class Dataset():
@@ -201,6 +198,7 @@ class Trainer:
             self.train_data_mean = self.train_data_std = 0
         train_params = {'train_mean': self.train_data_mean,
                         'train_std': self.train_data_std}
+        val_params = {'validation_loss': 1e10, 'validation_accuracy': 0}
 
         self.build_graph()
         self.session = tf.Session(graph=self.graph)
@@ -213,7 +211,7 @@ class Trainer:
         if save_rand:
             self.save()
             self.model.is_training = False
-            make_config_file(self.model, train_params, {})
+            make_config_file(self.model, train_params, val_params)
             self.session.close()
             return
 
