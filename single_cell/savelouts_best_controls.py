@@ -12,10 +12,6 @@ Created on Tue May 14 14:55:40 2019
 Created on Mon Apr  1 11:39:39 2019
 
 @author: kai
-
-v5: variable model experiment_id
-v4: variable amount of data to save
-v2: restructured subfolders
 """
 
 import tensorflow as tf
@@ -57,11 +53,15 @@ def main(modelinfo, runinfo):
     print(modelname)
 
     #PATHS
-    model_path = f"models/experiment_{runinfo.model_experiment_id}/{modelname}/"
-    path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
-    PATH_TO_DATA = '../deep_proprioception/dataset/'
+    basefolder = runinfo['basefolder']
+    
+    model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
+    #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
+    #PATH_TO_DATA = '../deep_proprioception/dataset/'
+    path_to_data = f'{basefolder}../pcr_data/pcr_dataset_test.hdf5'
+    PATH_TO_DATA = f'{basefolder}../pcr_data/'
     MODELS_DIR = '.'
-    path_to_config_file = f"models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
+    path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
     
     if path_to_data is not None:
         with h5py.File(path_to_data, 'r') as datafile:
@@ -85,8 +85,8 @@ def main(modelinfo, runinfo):
     
     #SPINDLE FIRING TEST DATA
     test_data_path = os.path.join(PATH_TO_DATA, 'pcr_dataset_test.hdf5')
-    dataset = Dataset(test_data_path, dataset_type='test')
-    
+    dataset = Dataset(test_data_path, dataset_type='test', key='spindle_info')    
+ 
     #Extract needed data
     data = dataset.test_data
     labels = dataset.test_labels
@@ -118,13 +118,16 @@ def main(modelinfo, runinfo):
                       int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
                       int(model_config['t_stride']))
     
+    #update model path
+    model.model_path = basefolder + model.model_path
+    
     # RUN PREDICTIONS AND SAVE INFORMATION FOR TUNING CURVE
     mygraph = tf.Graph()
     with mygraph.as_default():
         
         ##BUILD GRAPH
         # Declare placeholders for input data and labels
-        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime], name="X")
+        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
     
         # Compute scores and accuracy
@@ -132,7 +135,7 @@ def main(modelinfo, runinfo):
         correct = tf.nn.in_top_k(probabilities, y, 1)
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")    
         
-        ##PROBE RECEPTIVE FIELDS        
+        ##PROBE RECEPTIVE FIELDS  
         if(not modelinfo['control']):
             model.model_path = model.model_path + modelname[-2:] #Add control set number
         else:
@@ -141,6 +144,7 @@ def main(modelinfo, runinfo):
         myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
         with tf.Session(config=myconfig) as sess:
             ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
+            print(ckpt_filepath)
             restorer.restore(sess, ckpt_filepath)
             layers = sess.run(list((net.values())), feed_dict={X: data, y: labels})
     

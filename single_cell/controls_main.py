@@ -40,7 +40,11 @@ def format_axis(ax):
     ax.yaxis.set_tick_params(size=6)
 
 # %% CONFIGURATION OPTIONS
-basefolder = '/home/kai/Dropbox/DeepDrawData/analysis-data/' #specify location in which model weights and results are to be saved
+basefolder = '/mnt/data/revisions/analysis-data/' #end on analysis-data/
+
+#basefolder = '/home/kai/Dropbox/DeepDrawData/analysis-data/' 
+
+#specify location in which model weights and results are to be saved
                        # (trailing space)
     ## CHANGE THIS TO MATCH THE LOCATION OF THE 'analysis-data/' FOLDER ON DROPBOX
 
@@ -215,7 +219,7 @@ runinfo = RunInfo({'expid': 102, #internal experiment id
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 0,
-                   'model_experiment_id': 4, #as per Pranav's model generation
+                   'model_experiment_id': 0, #as per Pranav's model generation
                    'basefolder': basefolder
             })
 
