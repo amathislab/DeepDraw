@@ -16,6 +16,7 @@ cudnn_rnn = tf.contrib.cudnn_rnn
 MODELS_DIR = 'models/'
 
 
+
 class ConvModel():
     """Defines a convolutional neural network model of the proprioceptive system."""
 
@@ -23,7 +24,6 @@ class ConvModel():
             experiment_id, nclasses, arch_type, nlayers, n_skernels, n_tkernels, s_kernelsize,
             t_kernelsize, s_stride, t_stride, seed=None, train=True):
         """Set up hyperparameters of the convolutional network.
-
         Arguments
         ---------
         experiment_id : int, identifier for model path
@@ -39,7 +39,6 @@ class ConvModel():
         t_stride : int, stride along the temporal dimension.
         seed : int, for saving random initializations of networks.
         train : bool, is the network meant to be trained or not
-
         """
 
         assert (len(n_skernels) == len(n_tkernels) == nlayers), \
@@ -90,23 +89,20 @@ class ConvModel():
 
     def predict(self, X, is_training=True):
         """Computes the scores (forward pass) for the given network.
-
         Arguments
         ---------
-        X : tf.tensor [batch_size, num_inputs, num_timesteps], input tensor for which scores must
+        X : tf.tensor [batch_size, num_inputs, num_timesteps, 2], input tensor for which scores must
             be calculated.
-
         Returns
         -------
         score : tf.tensor [batch_size, nclasses], computed scores by passing X through the network.
         probabilities : tf.tensor [batch_size, nclasses], softmax probabilities.
         net : orderedDict, contains all layer representations.
-
         """
         net = OrderedDict([])
 
         with tf.variable_scope('Network', reuse=tf.AUTO_REUSE):
-            score = tf.expand_dims(X, -1)
+            score = X
             batch_size = X.get_shape()[0]
 
             with slim.arg_scope([slim.conv2d], data_format='NHWC', normalizer_fn=slim.layer_norm):
@@ -157,13 +153,11 @@ class AffineModel():
     """Defines a neural network model of the proprioceptive system where the spatial
     processing happens through fully connected layers and temporal processing through
     convolutional layers.
-
     """
 
     def __init__(
             self, experiment_id, nclasses, nlayers, nunits, nkernels, kernelsize, stride, keep_prob):
         """Set up the hyperparameters of the affine model.
-
         Arguments
         ---------
         experiment_id : int, identifier for model path
@@ -174,7 +168,6 @@ class AffineModel():
         kernelsize : int, size of the temporal kernel.
         stride : int, stride along the temporal dimension.
         keep_prob : float, amount of dropout at each spatial processing layer.
-
         """
         assert (len(nkernels) == nlayers), \
             "Number of spatial and temporal processing layers must be equal!"
@@ -247,7 +240,6 @@ class RecurrentModel():
     def __init__(
             self, experiment_id, nclasses, rec_blocktype, n_recunits, npplayers, nppunits, keep_prob):
         """Set up the hyperparameters of the recurrent model.
-
         Arguments
         ---------
         experiment_id : int, identifier for model path
@@ -257,7 +249,6 @@ class RecurrentModel():
         npplayers : int, number of layers in the fully-connected module.
         nppunits : list of ints, number of units in the affine layers for spatial processing.
         keep_prob : float, amount of dropout at each spatial processing layer.
-
         """
 
         assert len(nppunits) == npplayers

@@ -104,6 +104,7 @@ def main(modelinfo, runinfo):
     num_steps = nsamples // batch_size
     
     # CREATE PANDAS PANEL
+    print('kinarr shape', kinarr.shape)
     kinvars = pd.Panel(np.swapaxes(kinarr, 0, 1), items=idx)
     
     # INITIALIZE MODEL
@@ -118,37 +119,37 @@ def main(modelinfo, runinfo):
                       int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
                       int(model_config['t_stride']))
     
-    #update model path
     model.model_path = basefolder + model.model_path
-    print('model.model_path', model.model_path)
     
-    # RUN PREDICTIONS AND SAVE INFORMATION FOR TUNING CURVE
     mygraph = tf.Graph()
     with mygraph.as_default():
-        
-        ##BUILD GRAPH
         # Declare placeholders for input data and labels
-        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime], name="X")
+        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
-    
+
         # Compute scores and accuracy
         scores, probabilities, net = model.predict(X, is_training=False)
         correct = tf.nn.in_top_k(probabilities, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")    
+        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+
+        # Test the `model`!
+        restorer = tf.train.Saver()
+        myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
         
-        ##PROBE RECEPTIVE FIELDS  
         if(not modelinfo['control']):
             model.model_path = model.model_path + modelname[-2:] #Add control set number
         else:
             model.model_path = model.model_path + modelname[-3:]
-        restorer = tf.train.Saver()
-        myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+
+        #update model path
+        print('model.model_path', model.model_path)
+        
         with tf.Session(config=myconfig) as sess:
             ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
-            print(ckpt_filepath)
+            print('checkpoint filepath', ckpt_filepath)
             restorer.restore(sess, ckpt_filepath)
             layers = sess.run(list((net.values())), feed_dict={X: data, y: labels})
-    
+            
     #SAVE FOLLOW THROUGH    
     datafolder = runinfo.datafolder(modelinfo)
     os.makedirs(datafolder, exist_ok=True)

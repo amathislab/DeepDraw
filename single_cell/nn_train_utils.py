@@ -1,5 +1,4 @@
 """
-
 """
 
 import os
@@ -16,13 +15,11 @@ class Dataset():
 
     def __init__(self, path_to_data=None, data=None, dataset_type='train', key='spindle_firing', fraction=None):
         """Set up the `Dataset` object.
-
         Arguments
         ---------
         path_to_data : str, absolute location of the dataset file.
         dataset_type : {'train', 'test'} str, type of data that will be used along with the model.
         key : {'endeffector_coords', 'joint_coords', 'muscle_coords', 'spindle_firing'} str
-
         """
         self.path_to_data = path_to_data
         self.dataset_type = dataset_type
@@ -41,12 +38,10 @@ class Dataset():
 
     def make_data(self, mydata):
         """Load train/val or test splits into the `Dataset` instance.
-
         Returns
         -------
         if dataset_type == 'train' : loads train and val splits.
         if dataset_type == 'test' : loads the test split.
-
         """
         # Load and shuffle dataset randomly before splitting
         if self.path_to_data is not None:
@@ -68,16 +63,13 @@ class Dataset():
 
     def next_trainbatch(self, batch_size, step=0):
         """Returns a new batch of training data.
-
         Arguments
         ---------
         batch_size : int, size of training batch.
         step : int, step index in the epoch.
-
         Returns
         -------
         2-tuple of batch of training data and correspondig labels.
-
         """
         if step == 0:
             shuffle_idx = np.random.permutation(self.train_data.shape[0])
@@ -90,11 +82,9 @@ class Dataset():
 
     def next_valbatch(self, batch_size, type='val', step=0):
         """Returns a new batch of validation or test data.
-
         Arguments
         ---------
         type : {'val', 'test'} str, type of data to return.
-
         """
         if type == 'val':
             mybatch_data = self.val_data[batch_size*step:batch_size*(step+1)]
@@ -111,12 +101,10 @@ class Trainer:
 
     def __init__(self, model=None, dataset=None, global_step=None):
         """Set up the `Trainer`.
-
         Arguments
         ---------
         model : an instance of `ConvModel`, `AffineModel` or `RecurrentModel` to be trained.
         dataset : an instance of `Dataset`, containing the train/val data splits.
-
         """
         self.model = model
         self.dataset = dataset
@@ -130,12 +118,12 @@ class Trainer:
     def build_graph(self):
         """Build training graph using the `Model`s predict function and setting up an optimizer."""
         
-        _, ninputs, ntime = self.dataset.train_data.shape
+        _, ninputs, ntime, _ = self.dataset.train_data.shape
         with tf.Graph().as_default() as self.graph:
             tf.set_random_seed(self.model.seed)
             # Placeholders
             self.learning_rate = tf.placeholder(tf.float32)
-            self.X = tf.placeholder(tf.float32, shape=[self.batch_size, ninputs, ntime], name="X")
+            self.X = tf.placeholder(tf.float32, shape=[self.batch_size, ninputs, ntime, 2], name="X")
             self.y = tf.placeholder(tf.int32, shape=[self.batch_size], name="y")
 
             # Set up optimizer, compute and apply gradients
@@ -173,7 +161,6 @@ class Trainer:
             verbose=True, 
             save_rand=False):
         """Train the `Model` object.
-
         Arguments
         ---------
         num_epochs : int, number of epochs to train for.
@@ -184,7 +171,6 @@ class Trainer:
         retrain : bool, train already existing model vs not.
         normalize : bool, whether to normalize training data or not.
         verbose : bool, print progress on screen.
-
         """
         steps_per_epoch = self.dataset.train_data.shape[0] // batch_size
         max_iter = num_epochs * steps_per_epoch
@@ -303,20 +289,17 @@ class Trainer:
 
 def evaluate_model(model, dataset, batch_size=200):
     """Evaluation routine for trained models.
-
     Arguments
     ---------
     model : the `Conv`, `Affine` or `Recurrent` model to be evaluated. The test data is 
         assumed to be defined within the model.dataset object.
     dataset : the `Dataset` object on which the model is to be evaluated.
-
     Returns
     -------
     accuracy : float, Classification accuracy of the model on the given dataset.
-
     """
     # Data handling
-    nsamples, ninputs, ntime = dataset.test_data.shape
+    nsamples, ninputs, ntime, _ = dataset.test_data.shape
     num_steps = nsamples // batch_size
 
     # Retrieve training mean, if data was normalized
@@ -328,7 +311,7 @@ def evaluate_model(model, dataset, batch_size=200):
     mygraph = tf.Graph()
     with mygraph.as_default():
         # Declare placeholders for input data and labels
-        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime], name="X")
+        X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
 
         # Compute scores and accuracy
@@ -364,10 +347,8 @@ def train_val_split(data, labels):
 
 def make_config_file(model, train_params, val_params):
     """Make a configuration file for the given model, created after training.
-
     Given a `ConvModel`, `AffineModel` or `RecurrentModel` instance, generates a 
     yaml file to save the configuration of the model.
-
     """
     mydict = copy.copy(model.__dict__)
     # Convert to python native types for better readability
