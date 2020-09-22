@@ -24,7 +24,10 @@ import os
 
 from rowwise_neuron_curves_controls import X_data
 
+char_labels = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'l', 'm', 'n',
+               'o', 'p', 'q', 'r', 's', 'u', 'v', 'w', 'y', 'z']
     
+
 # %% TSNE
 
 def mytsne(X):
@@ -60,30 +63,32 @@ def plottsne(df, name, labels, ff, alpha=0.8):
     plt.xlabel('tsne-pca50-one')
     plt.ylabel('tsne-pca50-two')
     #plt.savefig('%s%s_tsne%d.png' %(ff,name, int(alpha*100)))
-    plt.savefig('%s%s_tsne%d.png' %(ff,name))
+    filename = os.path.join(ff, 'tsne_%s.png' %name)
+    print('saving in file %s ...' %filename)
+    plt.savefig(filename)
     plt.close()
     
 def main(model, runinfo):
     nlayers = model['nlayers'] + 1
     
-    labels, xyplmvt = X_data('labels', runinfo)
+    labels, xyplmvt = X_data('labels', runinfo, datafolder=runinfo.datafolder(model))
     
     ff = runinfo.analysisfolder(model, 'tsne')
     
-    char_labels = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'l', 'm', 'n',
-                   'o', 'p', 'q', 'r', 's', 'u', 'v', 'w', 'y', 'z']
-    
-    nlayers= 8
+    nlayers= model['nlayers'] + 1
     
     os.makedirs(ff, exist_ok=True)
     
     # %% LOOP OVER ALL LAYERS
     
     for i in range(nlayers):
-        lname = "Layer %d" %i
+        lname = "l%d" %i
         
         print(lname)
-        l = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
+        if i == 0:
+            l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'data.pkl'), 'rb'))
+        else:
+            l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
         l = l[xyplmvt]
         
         lx = l.reshape(l.shape[0], -1)

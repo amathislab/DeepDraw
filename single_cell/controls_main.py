@@ -50,7 +50,7 @@ basefolder = '/mnt/data/revisions/analysis-data/' #end on analysis-data/
 
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
-fsets = ['vel', 'acc', 'labels', 'ee']
+fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar']
 decoding_fsets = ['ee', 'vel']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
@@ -284,6 +284,7 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                 if(do_data):
                     if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
+                    #if(True):
                         print('generating output for model %s ...' %modelname)
                         modeloutputs_main(model_to_analyse, runinfo)
                     else:
@@ -330,6 +331,10 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                     prefdir_main(model_to_analyse, runinfo_to_analyse)
                                 else:
                                     print('pref dir plots already exist')
+                                    
+                                if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
+                                        print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
+                                        tsne_main(model_to_analyse, runinfo_to_analyse)
 
                                 if(control):
                                     if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
@@ -347,9 +352,6 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                         else:
                                             print('rsa already saved')
-
-                                        if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
-                                            print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
 
                                 if (i==5 and control):
                                     comparisons_main(model, runinfo)

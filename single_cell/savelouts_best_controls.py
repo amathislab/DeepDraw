@@ -27,7 +27,7 @@ from scipy.optimize import curve_fit
 from scipy import exp
 from nn_models import ConvModel, AffineModel, RecurrentModel
 from nn_train_utils import Dataset
-import pickle
+import pickle, time
 
 # %% SETUP
 kinnames = ['endeffector_coords', 'joint_coords', 'muscle_coords', 'speed']
@@ -106,6 +106,7 @@ def main(modelinfo, runinfo):
     # CREATE PANDAS PANEL
     print('kinarr shape', kinarr.shape)
     kinvars = pd.Panel(np.swapaxes(kinarr, 0, 1), items=idx)
+    time.sleep(10)
     
     # INITIALIZE MODEL
     tf.reset_default_graph()

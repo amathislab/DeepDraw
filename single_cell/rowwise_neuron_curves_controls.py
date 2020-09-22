@@ -618,6 +618,7 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std'):
     
     print('evaluating %s model for %s %s, expid %d, plane %s ...' %(modelname, fset, mmod, runinfo['expid'], runinfo.planestring()))
     
+    #print('runinfo datafolder', runinfo.datafolder(model))
     X, xyplmvt = X_data(fset, runinfo, datafolder=runinfo.datafolder(model))
     
     np.random.seed(42)
