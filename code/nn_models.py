@@ -244,7 +244,8 @@ class RecurrentModel():
     """Defines a recurrent neural network model of the proprioceptive system."""
 
     def __init__(
-            self, experiment_id, nclasses, rec_blocktype, n_recunits, npplayers, nppunits, keep_prob):
+            self, experiment_id, nclasses, rec_blocktype, n_recunits, npplayers, nppfilters, keep_prob, 
+            s_kernelsize, s_stride, seed=None, train=True):
         """Set up the hyperparameters of the recurrent model.
 
         Arguments
@@ -254,29 +255,38 @@ class RecurrentModel():
         rec_blocktype: {'lstm', 'gru'} str, type of recurrent block.
         n_recunits : int, number of units in the recurrent block.
         npplayers : int, number of layers in the fully-connected module.
-        nppunits : list of ints, number of units in the affine layers for spatial processing.
+        nppfilters : list of ints, number of filters (spatial convolutions) for spatial processing.
         keep_prob : float, amount of dropout at each spatial processing layer.
+        seed : int, for saving random initializations
+        train : bool, whether to train the model or not (just save random initialization)
 
         """
 
-        assert len(nppunits) == npplayers
-        assert rec_blocktype in ('lstm', 'gru')
+        assert len(nppfilters) == npplayers
+        assert rec_blocktype in  ('lstm', 'gru')
 
         self.experiment_id = experiment_id
         self.nclasses = nclasses
         self.rec_blocktype = rec_blocktype
         self.n_recunits = n_recunits
         self.npplayers = npplayers
-        self.nppunits = nppunits
+        self.nppfilters = nppfilters
+        self.s_kernelsize = s_kernelsize
+        self.s_stride = s_stride
         self.keep_prob = keep_prob
+        self.seed = seed
+        
 
         # Make model name
         dropout_name = {'0.6': 'high', '0.7': 'med', '0.8': 'low'}
-        units = ('-'.join(str(i) for i in nppunits))
+        units = ('-'.join(str(i) for i in nppfilters))
         parts_name = [rec_blocktype, str(npplayers), units, str(n_recunits), dropout_name[str(keep_prob)]]
 
         # Create model directory
         self.name = '_'.join(parts_name)
+        if seed is not None: self.name += '_' + str(self.seed)
+        if not train: self.name += 'r'
+
         exp_dir = os.path.join(MODELS_DIR, f'experiment_{self.experiment_id}')
         self.model_path = os.path.join(exp_dir, self.name)
 
@@ -292,19 +302,22 @@ class RecurrentModel():
         net = OrderedDict()
 
         with tf.variable_scope('Network', reuse=tf.AUTO_REUSE):
-            score = tf.transpose(X, [0, 2, 1])
+            score = X
             batch_size = X.get_shape()[0]
 
-            fully_connected = lambda score, layer_id: slim.fully_connected(
-                score, self.nppunits[layer_id], normalizer_fn=slim.layer_norm, scope=f'FC{layer_id}')
+            spatial_conv = lambda score, layer_id: slim.conv2d(
+                score, self.nppfilters[layer_id], [self.s_kernelsize, 1], [self.s_stride, 1],
+                data_format='NHWC', normalizer_fn=slim.layer_norm, scope=f'Spatial{layer_id}')
 
             for layer in range(self.npplayers):
-                score = fully_connected(score, layer)
-                score = slim.dropout(score, keep_prob=self.keep_prob, is_training=is_training)
+                score = spatial_conv(score, layer)
                 net[f'spatial{layer}'] = score
 
             # `cudnn_rnn` requires the inputs to be of shape [timesteps, batch_size, num_inputs]
+            score = tf.transpose(score, [0, 2, 1, 3])
+            score = tf.reshape(score, [batch_size, 320, -1])
             score = tf.transpose(score, [1, 0, 2])
+            
             if self.rec_blocktype == 'lstm':
                 recurrent_cell = cudnn_rnn.CudnnLSTM(1, self.n_recunits, name='RecurrentBlock')
                 score, _ = recurrent_cell.apply(score)
