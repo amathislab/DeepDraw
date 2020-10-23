@@ -40,7 +40,7 @@ def format_axis(ax):
     ax.yaxis.set_tick_params(size=6)
 
 # %% CONFIGURATION OPTIONS
-basefolder = '/mnt/data/revisions/analysis-data/' #end on analysis-data/
+basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-data/
 
 #basefolder = '/home/kai/Dropbox/DeepDrawData/analysis-data/' 
 
@@ -213,8 +213,9 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 200, #internal experiment id
-                   'datafraction': 0.2,
+runinfo = RunInfo({'expid': 201, #internal experiment id
+                   #'datafraction': 0.2,
+                   'datafraction': 0.05,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
@@ -245,11 +246,13 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
     configfilename = os.path.join(runinfo.experimentfolder(), 'config.yaml')
     with io.open(configfilename, 'w',  encoding='utf8') as outfile:
         yaml.dump(runinfo, outfile, default_flow_style=False, allow_unicode=True)
-
-    allmodels = [dict({'type': 'S',
+        
+    allmodels = [
+        dict({'type': 'S',
             'base': 'spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
+            #'base': 'spatial_temporal_4_8-16-16-32_32-32-64-64_7293',
             'nlayers': 8,
-            'max_act': 14,
+            'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
             'control': False,
             'cmap': 'Blues_r',
             'color': 'C0',
@@ -257,11 +260,20 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
         dict({'type': 'ST',
               'base': 'spatiotemporal_4_8-8-32-64_7272',
               'nlayers': 4,
-              'max_act': 14,
+              'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
               'control': False,
               'cmap': 'Greens_r',
               'color': 'green',
-              'control_cmap': 'Greys_r'})]
+              'control_cmap': 'Greys_r'}),
+        dict({'type': 'LSTM',
+            'base': 'lstm_1_32_128_low',
+            'nlayers': 2,
+            'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
+            'control': False,
+            'cmap': 'Blues_r',
+            'color': 'C0',
+            'control_cmap': 'Purples_r'})
+        ]
 
     models = [model for model in allmodels if (model['type'] in include)]
 
@@ -381,6 +393,7 @@ if __name__=='__main__':
     parser.add_argument('--analysis', type=bool, default=False, help='Analyze fitted TCs?')
     parser.add_argument('--S', type=bool, default=False, help='Include Spatial_temporal models?')
     parser.add_argument('--ST', type=bool, default=False, help='Include SpatioTemporal models?')
+    parser.add_argument('--LSTM', type=bool, default=False, help='Include Spatial_temporal models?')
 
     args = parser.parse_args()
 
@@ -389,7 +402,9 @@ if __name__=='__main__':
         include.append('S')
     if args.ST:
         include.append('ST')
+    if args.LSTM:
+        include.append('LSTM')
     if (include == []):
-        include = ['S', 'T', 'ST']
+        include = ['LSTM', 'S', 'T', 'ST']
 
     main(args.data, args.results, args.analysis, include)

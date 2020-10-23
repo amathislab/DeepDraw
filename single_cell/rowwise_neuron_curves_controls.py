@@ -164,7 +164,11 @@ def linreg(X_train, X_test, Y_train, Y_test):
     
     if(np.any(np.isnan(X_train))):
         print("Warning: Contains nans")
+    print('fit')
+    print(X_train.shape, Y_train.shape)
+    print(X_train[:10,:3], Y_train[:10])
     c = np.linalg.lstsq(X_train, Y_train, rcond=None)[0]
+    print('completed')
     trainmets = np.concatenate((compute_metrics(Y_train, X_train @ c), c, np.zeros(3 - len(c))))
     testmets = np.concatenate((compute_metrics(Y_test, X_test @ c), c, np.zeros(3 - len(c))))
     
@@ -252,6 +256,8 @@ def tune_row_vel(X, Y, row, isPolar = True):
             Y_train,
             Y_test
             )
+    
+    print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
     

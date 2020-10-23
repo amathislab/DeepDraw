@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 14 14:55:40 2019
-
-@author: kai
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
 Created on Mon Apr  1 11:39:39 2019
 
 @author: kai
@@ -28,6 +20,7 @@ from scipy import exp
 from nn_models import ConvModel, AffineModel, RecurrentModel
 from nn_train_utils import Dataset
 import pickle, time
+from tensorflow.contrib.rnn import *
 
 # %% SETUP
 kinnames = ['endeffector_coords', 'joint_coords', 'muscle_coords', 'speed']
@@ -115,10 +108,18 @@ def main(modelinfo, runinfo):
         model_config = yaml.load(myfile)
         train_mean = model_config['train_mean']
 
-    model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
-                      int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
-                      int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
-                      int(model_config['t_stride']))
+
+    if (modelinfo['type'] in ['S', 'ST']):
+        model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
+                          int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
+                          int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
+                          int(model_config['t_stride']))
+    
+    else:        
+        print('building rec model')
+        model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
+                               model_config['n_recunits'], model_config['npplayers'], model_config['nppfilters'], 
+                               model_config['keep_prob'],  model_config['s_kernelsize'], model_config['s_stride'])
     
     model.model_path = basefolder + model.model_path
     
