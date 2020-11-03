@@ -6,6 +6,7 @@ import copy
 import h5py
 import yaml
 
+
 import numpy as np
 import tensorflow as tf
 

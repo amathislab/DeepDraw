@@ -369,7 +369,7 @@ def tune_row_label(X, Y, node):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
     
     try:
-        svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
+        svm = OneVsRestClassifier(LinearSVC(max_iter=25, verbose=0))
         svm.fit(Y_train, X_train)
         
         nodetraineval = roc_auc_score(X_train, svm.decision_function(Y_train))

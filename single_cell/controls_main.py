@@ -213,14 +213,14 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 300, #internal experiment id
+runinfo = RunInfo({'expid': 201, #internal experiment id
                    #'datafraction': 0.2,
                    'datafraction': 0.05,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 0,
-                   'model_experiment_id': 7, #as per Pranav's model generation
+                   'model_experiment_id': 0, #as per Pranav's model generation
                    'basefolder': basefolder
             })
 

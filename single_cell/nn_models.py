@@ -233,7 +233,6 @@ class AffineModel():
 
         return score, probabilities, net
 
-
 class RecurrentModel():
     """Defines a recurrent neural network model of the proprioceptive system."""
 
