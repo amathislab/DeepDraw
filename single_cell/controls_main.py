@@ -213,14 +213,14 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 201, #internal experiment id
+runinfo = RunInfo({'expid': 300, #internal experiment id
                    #'datafraction': 0.2,
                    'datafraction': 0.05,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 0,
-                   'model_experiment_id': 0, #as per Pranav's model generation
+                   'model_experiment_id': 7, #as per Pranav's model generation
                    'basefolder': basefolder
             })
 
@@ -249,14 +249,16 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
         
     allmodels = [
         dict({'type': 'S',
-            'base': 'spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
-            #'base': 'spatial_temporal_4_8-16-16-32_32-32-64-64_7293',
+            #'base': 'spatial_temporal_4_8-16-16-32_64-64-64-64_5272',
+            'base': 'spatial_temporal_4_8-16-16-32_32-32-64-64_7293',
             'nlayers': 8,
             'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
             'control': False,
             'cmap': 'Blues_r',
             'color': 'C0',
-            'control_cmap': 'Purples_r'}),
+            'control_cmap': 'Purples_r',
+            's_stride': 2,
+            't_stride': 3}),
         dict({'type': 'ST',
               'base': 'spatiotemporal_4_8-8-32-64_7272',
               'nlayers': 4,
@@ -316,8 +318,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                 for fset in fsets:
 
-                                    if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-
+                                    #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
+                                    if(True):
+                                    
                                         print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                         tuningcurves_main(fset,
                                                           runinfo_to_analyse,

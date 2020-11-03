@@ -66,10 +66,40 @@ def get_binidx(theta, nbins=8):
     binidx = int(( theta + np.pi ) / (2*np.pi/nbins))
     return binidx
 
-def get_centers(fmapntime, ntime = 320, t_stride = 2):
+def get_centers(fmapntime, ilayer, model, ntime = 320):
+    """ Computes the temporal centers of the convolutional centers
+    
+    Parameters
+    ----------
+    fmapntime : int, length of temporal axis in given feature map
+    ilayer : int, current layer of network, spindles = -1
+    ntime : int, starting width
+    model : dict -> Config, information of model
+    
+    Returns
+    -------
+    centers : list of ints, indices of temporal centers
+    """
+    
+    #s_stride = model['s_stride']
+    t_stride = model['t_stride']
+    mtype = model['type']
+    
     centers = np.arange(ntime)
-    for i in range(int(np.log2(len(centers)/ fmapntime))):
-        centers = np.array([centers[i*t_stride] for i in range(len(centers)//2)])
+    
+    #if spindles skip
+    #if(ilayer == -1):
+    #    ilayer = 0
+    
+    print(ilayer)
+    print(fmapntime, len(centers))
+    for i in np.arange(0, ilayer + 1):
+        print(len(centers))
+        print(centers)
+        if(mtype == 'S' and i >= 4):
+            centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
+    print(fmapntime, len(centers))
+    print(centers)
     assert len(centers) == fmapntime, "Time dimensions mismatch!!!!"
     return centers
 
@@ -164,11 +194,7 @@ def linreg(X_train, X_test, Y_train, Y_test):
     
     if(np.any(np.isnan(X_train))):
         print("Warning: Contains nans")
-    print('fit')
-    print(X_train.shape, Y_train.shape)
-    print(X_train[:10,:3], Y_train[:10])
     c = np.linalg.lstsq(X_train, Y_train, rcond=None)[0]
-    print('completed')
     trainmets = np.concatenate((compute_metrics(Y_train, X_train @ c), c, np.zeros(3 - len(c))))
     testmets = np.concatenate((compute_metrics(Y_test, X_test @ c), c, np.zeros(3 - len(c))))
     
@@ -465,7 +491,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     fset : string, kinematic tuning curve name
     xyplmvt : np.array of bools [nr_samples,], mask restricting to trials / movements that occur in the desired plane or orientation
     runinfo : RunInfo (dict extension)
-    ilayer : int, index of current layer
+    ilayer : int, index of current layer, -1 = spindles
     mmod : string, modifier to model or kinematic tuning curve type
     model : dict, information on model
     t_stride : int, temporal stride used when applying convolutional filters
@@ -493,7 +519,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
     lo = lo[xyplmvt]
     
-    centers = get_centers(lo.shape[2])
+    centers = get_centers(lo.shape[2], ilayer, model)
     
     if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):
         nmods = 4
