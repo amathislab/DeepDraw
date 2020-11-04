@@ -244,8 +244,8 @@ class RecurrentModel():
     """Defines a recurrent neural network model of the proprioceptive system."""
 
     def __init__(
-            self, experiment_id, nclasses, rec_blocktype, n_recunits, npplayers, nppfilters, keep_prob, 
-            s_kernelsize, s_stride, seed=None, train=True):
+            self, experiment_id, nclasses, rec_blocktype, n_recunits, npplayers, nppfilters, 
+            s_kernelsize, s_stride, seed=None, train=True, CPU=False):
         """Set up the hyperparameters of the recurrent model.
 
         Arguments
@@ -256,7 +256,8 @@ class RecurrentModel():
         n_recunits : int, number of units in the recurrent block.
         npplayers : int, number of layers in the fully-connected module.
         nppfilters : list of ints, number of filters (spatial convolutions) for spatial processing.
-        keep_prob : float, amount of dropout at each spatial processing layer.
+        s_kernelsize : int, size of conv kernel
+        s_stride : int, stride for conv kernel
         seed : int, for saving random initializations
         train : bool, whether to train the model or not (just save random initialization)
 
@@ -273,14 +274,12 @@ class RecurrentModel():
         self.nppfilters = nppfilters
         self.s_kernelsize = s_kernelsize
         self.s_stride = s_stride
-        self.keep_prob = keep_prob
         self.seed = seed
-        
+        self.CPU = CPU
 
         # Make model name
-        dropout_name = {'0.6': 'high', '0.7': 'med', '0.8': 'low'}
         units = ('-'.join(str(i) for i in nppfilters))
-        parts_name = [rec_blocktype, str(npplayers), units, str(n_recunits), dropout_name[str(keep_prob)]]
+        parts_name = [rec_blocktype, str(npplayers), units, str(n_recunits)]
 
         # Create model directory
         self.name = '_'.join(parts_name)
@@ -318,12 +317,17 @@ class RecurrentModel():
             score = tf.reshape(score, [batch_size, 320, -1])
             score = tf.transpose(score, [1, 0, 2])
             
-            if self.rec_blocktype == 'lstm':
+            if self.rec_blocktype == 'lstm' and self.CPU == False:
                 recurrent_cell = cudnn_rnn.CudnnLSTM(1, self.n_recunits, name='RecurrentBlock')
                 score, _ = recurrent_cell.apply(score)
-            elif self.rec_blocktype == 'gru':
+            elif self.rec_blocktype == 'gru' and self.CPU == False:
                 recurrent_cell = cudnn_rnn.CudnnGRU(1, self.n_recunits, name='RecurrentBlock')
                 score, _ = recurrent_cell.apply(score)
+            elif self.rec_blocktype == 'lstm' and self.CPU:
+                with tf.variable_scope('RecurrentBlock'):
+                    rec_layer = lambda: cudnn_rnn.CudnnCompatibleLSTMCell(self.n_recunits)
+                recurrent_cell = tf.nn.rnn_cell.MultiRNNCell([rec_layer() for _ in range(1)])
+                score, _ = tf.nn.dynamic_rnn(recurrent_cell, score, dtype=tf.float32)
 
             score = tf.transpose(score, [1, 0, 2])
             net['recurrent_out'] = score

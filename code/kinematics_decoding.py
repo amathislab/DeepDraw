@@ -39,6 +39,25 @@ def load_model(meta_data, experiment_id, model_type, is_trained):
             t_stride=int(meta_data['t_stride']),
             seed=myseed,
             train=is_trained)
+    
+    if model_type == 'rec':
+        
+        try:
+            myseed = meta_data['seed']
+        except:
+            myseed = None
+        
+        model = RecurrentModel(
+            experiment_id=experiment_id,
+            nclasses=20,
+            rec_blocktype=meta_data['rec_blocktype'],
+            n_recunits=meta_data['n_recunits'],
+            npplayers=meta_data['npplayers'],
+            s_kernelsize=meta_data['s_kernelsize'],
+            s_stride=meta_data['s_stride'],
+            nppfilters=meta_data['nppfilters'],
+            seed=myseed,
+            train=is_trained)
 
     return model
 
