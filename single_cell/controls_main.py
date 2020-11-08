@@ -213,14 +213,14 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 201, #internal experiment id
+runinfo = RunInfo({'expid': 301, #internal experiment id
                    #'datafraction': 0.2,
-                   'datafraction': 0.05,
+                   'datafraction': 0.2,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 0,
-                   'model_experiment_id': 0, #as per Pranav's model generation
+                   'model_experiment_id': 7, #as per Pranav's model generation
                    'basefolder': basefolder
             })
 
@@ -318,8 +318,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                 for fset in fsets:
 
-                                    #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-                                    if(True):
+                                    if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
+                                    #if(True):
                                     
                                         print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                         tuningcurves_main(fset,
@@ -334,8 +334,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
 
                                 print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
-                                #if(True):
+                                #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
+                                if(True):
                                     polar_tcs_main(model_to_analyse, runinfo_to_analyse)
                                 else:
                                     print('polar tc plots already exist')
@@ -348,6 +348,7 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                     print('pref dir plots already exist')
                                     
                                 if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
+                                #if(True):
                                         print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                         tsne_main(model_to_analyse, runinfo_to_analyse)
 

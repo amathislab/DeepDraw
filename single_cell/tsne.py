@@ -31,7 +31,9 @@ char_labels = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'l', 'm', 'n',
 # %% TSNE
 
 def mytsne(X):
+    
     pca = PCA(n_components=50)
+    #print(X.shape)
     pca_result = pca.fit_transform(X)
     print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
     print(f'Total explained variance: {sum(pca.explained_variance_ratio_)}')
@@ -91,7 +93,12 @@ def main(model, runinfo):
             l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
         l = l[xyplmvt]
         
+        #print(l.shape)
+        
         lx = l.reshape(l.shape[0], -1)
         
-        ltsne, ldf = mytsne(lx)
-        plottsne(ldf, lname, labels, ff)
+        try:
+            ltsne, ldf = mytsne(lx)
+            plottsne(ldf, lname, labels, ff)
+        except ValueError:
+            print('not enough samples to compute PCA & tSNE')

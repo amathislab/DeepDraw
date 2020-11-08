@@ -51,7 +51,7 @@ def compute_metrics(y, pred):
     cor = np.corrcoef(y.flatten(), pred.flatten())[0,1]
     
     print(r2)
-    assert r2 <=1 , 'illegal r2 score!!!! %s %s' %(y[:10], pred[:10])
+    assert r2 <=1 or np.isnan(r2), 'illegal r2 score!!!! %s %s %s' %(r2, y[:10], pred[:10])
     
     return [rmse, r2, cor]
     
@@ -91,15 +91,9 @@ def get_centers(fmapntime, ilayer, model, ntime = 320):
     #if(ilayer == -1):
     #    ilayer = 0
     
-    print(ilayer)
-    print(fmapntime, len(centers))
     for i in np.arange(0, ilayer + 1):
-        print(len(centers))
-        print(centers)
         if(mtype == 'S' and i >= 4):
             centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
-    print(fmapntime, len(centers))
-    print(centers)
     assert len(centers) == fmapntime, "Time dimensions mismatch!!!!"
     return centers
 
