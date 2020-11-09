@@ -19,7 +19,7 @@ from scipy.optimize import curve_fit
 from scipy import exp
 from nn_models import ConvModel, AffineModel, RecurrentModel
 from nn_train_utils import Dataset
-import pickle, time
+import pickle#, time
 from tensorflow.contrib.rnn import *
 
 # %% SETUP
@@ -93,13 +93,14 @@ def main(modelinfo, runinfo):
         kinarr = kinarr[random_idx[:subset_num]]
     
     nsamples, ninputs, ntime, _ = data.shape
-    batch_size = nsamples
+    #batch_size = nsamples
+    batch_size = 100 #can be updated based on GPU capacities for forward pass
     num_steps = nsamples // batch_size
     
     # CREATE PANDAS PANEL
     print('kinarr shape', kinarr.shape)
     kinvars = pd.Panel(np.swapaxes(kinarr, 0, 1), items=idx)
-    time.sleep(10)
+    #time.sleep(10)
     
     # INITIALIZE MODEL
     tf.reset_default_graph()
@@ -122,6 +123,8 @@ def main(modelinfo, runinfo):
                                model_config['keep_prob'],  model_config['s_kernelsize'], model_config['s_stride'])
     
     model.model_path = basefolder + model.model_path
+    
+    layers = []
     
     mygraph = tf.Graph()
     with mygraph.as_default():
@@ -150,7 +153,20 @@ def main(modelinfo, runinfo):
             ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
             print('checkpoint filepath', ckpt_filepath)
             restorer.restore(sess, ckpt_filepath)
-            layers = sess.run(list((net.values())), feed_dict={X: data, y: labels})
+            
+            for i in range(num_steps):
+                if(runinfo.verbose >= 1):
+                    print('batch %d / %d' %(i, num_steps))
+                layers_batch = sess.run(list((net.values())), \
+                        feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
+                
+                for j in range(len(layers_batch) - 1):
+                    if(i == 0):
+                        layers.append(layers_batch[j])
+                    else:
+                        #print(layers_batch[j].shape, layers[j].shape)
+                        layers[j] = np.concatenate((layers[j], layers_batch[j]))
+                        #print(layers[j].shape)
             
     #SAVE FOLLOW THROUGH    
     datafolder = runinfo.datafolder(modelinfo)
@@ -164,6 +180,6 @@ def main(modelinfo, runinfo):
     pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"))
     print("Labels saved")
     
-    for i in range(len(layers) - 1):
+    for i in range(len(layers)):
         pickle.dump(layers[i], open(datafolder + f"/l{i}.pkl", "wb"))
         print(f"L{i} saved")    

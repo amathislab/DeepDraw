@@ -215,11 +215,11 @@ class RunInfo(dict):
 
 runinfo = RunInfo({'expid': 301, #internal experiment id
                    #'datafraction': 0.2,
-                   'datafraction': 0.2,
+                   'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
-                   'verbose': 0,
+                   'verbose': 1, #0 (least), 1, 2 (most)
                    'model_experiment_id': 7, #as per Pranav's model generation
                    'basefolder': basefolder
             })

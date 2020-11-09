@@ -50,7 +50,7 @@ def compute_metrics(y, pred):
     r2 = r2_score(y.flatten(), pred.flatten())
     cor = np.corrcoef(y.flatten(), pred.flatten())[0,1]
     
-    print(r2)
+    #print(r2)
     assert r2 <=1 or np.isnan(r2), 'illegal r2 score!!!! %s %s %s' %(r2, y[:10], pred[:10])
     
     return [rmse, r2, cor]
@@ -192,9 +192,9 @@ def linreg(X_train, X_test, Y_train, Y_test):
     trainmets = np.concatenate((compute_metrics(Y_train, X_train @ c), c, np.zeros(3 - len(c))))
     testmets = np.concatenate((compute_metrics(Y_test, X_test @ c), c, np.zeros(3 - len(c))))
     
-    print("LinReg Fit Score: " + str(trainmets[:3]))
-    print("LinReg Test Score: " + str(testmets[:3]))
-    print("Coefficients: " + str(c[:3]))
+    #print("LinReg Fit Score: " + str(trainmets[:3]))
+    #print("LinReg Test Score: " + str(testmets[:3]))
+    #print("Coefficients: " + str(c[:3]))
     return trainmets, testmets
 
 def feature_set(Xcols_train, Xcols_test, Y_train, Y_test):
@@ -267,7 +267,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     ##BASELINE LINREG MODEL
-    print("Baseline Linear Regression Model:")
+    #print("Baseline Linear Regression Model:")
     #Xtform_train = np.c_[X_train[:,0], X_train[:,1], np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0], X_test[:,1], np.ones_like(X_test[:,0])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
@@ -277,18 +277,18 @@ def tune_row_vel(X, Y, row, isPolar = True):
             Y_test
             )
     
-    print('Feature sets built')
+    #print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
     
     #Change to polar coordinates
     if(not isPolar):
-        print("converting to polar...")
+        #print("converting to polar...")
         X_train = get_polar(X_train)
         X_test = get_polar(X_test)
     
     ##DIR DEP
-    print("Directional Dependence:")
+    #print("Directional Dependence:")
     #Xtform_train = np.c_[np.cos(X_train[:,1]), np.sin(X_train[:,1]), np.ones_like(X_train[:,1])]
     #Xtform_test = np.c_[np.cos(X_test[:,1]), np.sin(X_test[:,1]), np.ones_like(X_test[:,1])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
@@ -304,7 +304,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     
     #Xtform_train = np.c_[X_train[:,0], np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0], np.ones_like(X_test[:,0])]
-    print("Velocity Dependence:")
+    #print("Velocity Dependence:")
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0], np.ones_like(X_train[:,0])),
         (X_test[:,0], np.ones_like(X_test[:,0])),
@@ -316,7 +316,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     ##DIR PLUS VEL DEP
     #Xtform_train = np.c_[X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])]
-    print("Direction + Velocity Dependence:")   
+    #print("Direction + Velocity Dependence:")   
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])),
         (X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])),
@@ -377,8 +377,8 @@ def tune_row_label(X, Y, node):
          print("fitting SVM failed. %s" %err) 
          nodetraineval = 0.5
         
-    print("Train eval: %s" %str(nodetraineval))
-    print("Test eval: %s" %str(nodetesteval))
+    #print("Train eval: %s" %str(nodetraineval))
+    #print("Test eval: %s" %str(nodetesteval))
     
     return node, np.array([(nodetraineval-0.5)*2]), np.array([(nodetesteval-0.5)*2])
 
@@ -426,7 +426,7 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
     
     for irow in range(Y.shape[1]):
-        print("Row: ", irow)
+        #print("Row: ", irow)
         
         if(len(X.shape) > 1):
             x = X[..., centers]
