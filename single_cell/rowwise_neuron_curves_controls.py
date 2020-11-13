@@ -363,7 +363,7 @@ def tune_row_label(X, Y, node):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
     
     try:
-        svm = OneVsRestClassifier(LinearSVC(max_iter=25, verbose=0))
+        svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
         svm.fit(Y_train, X_train)
         
         nodetraineval = roc_auc_score(X_train, svm.decision_function(Y_train))
@@ -418,7 +418,10 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
         #Axis k+1: (0) LinReg (1) Dir Tuning (2) Vel Tuning (3) Dir + Vel Tuning
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
         
-    pool = mp.Pool(mp.cpu_count())
+    #pool = mp.Pool(mp.cpu_count())
+    n_cpus = 10
+    print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
+    pool = mp.Pool(n_cpus)
     
     results = []
     
