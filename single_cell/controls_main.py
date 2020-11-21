@@ -334,8 +334,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
 
                                 print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
-                                #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
-                                if(True):
+                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
+                                #if(True):
                                     polar_tcs_main(model_to_analyse, runinfo_to_analyse)
                                 else:
                                     print('polar tc plots already exist')

@@ -9,4 +9,6 @@ docker start kai_dlcdocker_data
 docker exec --user kai -i kai_dlcdocker_data bash <<'EOF'
 cd /media/data/DeepDraw/DeepDraw/single_cell
 python3 controls_main.py --S True --data True
+exit
 EOF
+docker stop kai_dlcdocker_data
