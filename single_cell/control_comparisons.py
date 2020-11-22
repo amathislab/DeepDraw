@@ -933,7 +933,6 @@ def ind_neuron_invars_comp(model, runinfo):
     
     
     analysisfolder = runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False)
-    os.makedirs(analysisfolder, exist_ok = True)
      
     ##SAVE PDs & R2s
     
@@ -971,6 +970,8 @@ def ind_neuron_invars_comp(model, runinfo):
         allcontroldevsim_hor.append(cmdevmean_hor)
         allcontroldevsim_vert.append(cmdevmean_vert)
     
+    os.makedirs(analysisfolder, exist_ok = True)
+
     figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
     figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     

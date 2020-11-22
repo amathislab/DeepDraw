@@ -119,8 +119,8 @@ def main(modelinfo, runinfo):
     else:        
         print('building rec model')
         model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
-                               model_config['n_recunits'], model_config['npplayers'], model_config['nppfilters'], 
-                               model_config['keep_prob'],  model_config['s_kernelsize'], model_config['s_stride'])
+                               int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
+                               int(model_config['s_kernelsize']), int(model_config['s_stride']))
     
     model.model_path = basefolder + model.model_path
     

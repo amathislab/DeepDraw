@@ -220,7 +220,7 @@ runinfo = RunInfo({'expid': 301, #internal experiment id
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 1, #0 (least), 1, 2 (most)
-                   'model_experiment_id': 7, #as per Pranav's model generation
+                   'model_experiment_id': 8, #as per Pranav's model generation
                    'basefolder': basefolder
             })
 
@@ -268,12 +268,12 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
               'color': 'green',
               'control_cmap': 'Greys_r'}),
         dict({'type': 'LSTM',
-            'base': 'lstm_1_32_128_low',
-            'nlayers': 2,
+            'base': 'lstm_3_8-16-16_256',
+            'nlayers': 3,
             'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
             'control': False,
-            'cmap': 'Blues_r',
-            'color': 'C0',
+            'cmap': 'Browns_r',
+            'color': 'brown',
             'control_cmap': 'Purples_r'})
         ]
 
