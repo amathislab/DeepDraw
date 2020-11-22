@@ -36,7 +36,7 @@ fset = 'vel'
 mmod = 'std'
 tcoff = 32
 
-tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels']#, 'ee', 'eepolar']
+tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels', 'ee', 'eepolar']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
                      21.,  24.,  27.,  30.]).astype(int))
@@ -293,6 +293,7 @@ def compile_comparisons_df(model, runinfo):
     
     labelstats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_labelstats_df.csv'))
     
+    assert not eestats_df.empty, "Endeffector Dataframe empty!!!"
     eestats_df.to_csv(os.path.join(analysisfolder, model['base'] + '_eestats_df.csv'))
     
     return df
@@ -732,6 +733,8 @@ def plotcomp_ees(tcfdf, model):
     fig : plt.figure
     '''
     
+    print('Endeffectors model comparisons plot')
+    
     fig = plt.figure(figsize=(12,5.5), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
@@ -754,6 +757,8 @@ def plotcomp_ees(tcfdf, model):
     t_corr = t.ppf(0.975, 4)
     
     print(tcfdf.head())
+    print(tcfdf.shape)
+    #print([tcfdf.loc[(trainednames, i, 'ee')])
     traineddirs = [np.nanmean(tcfdf.loc[(trainednames, i, 'ee')]) for i in np.arange(nlayers+1)]
     controldirs = [np.nanmean(tcfdf.loc[(controlnames, i, 'ee')]) for i in np.arange(nlayers+1)]
     errs_traineddirs = [np.nanstd(tcfdf.loc[(trainednames, i, 'ee')])/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
@@ -896,7 +901,7 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
     plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
 
-    plt.xticks(list(range(len(layers))), ['Sp.'] + ['L%d' %(i+1) for i in range(len(layers))])
+    plt.xticks(list(range(len(layers))), ['Sp.'] + ['L%d' %(i+1) for i in range(len(layers) - 1)])
     plt.xlim((-0.3, len(layers)-0.7))
     plt.xlabel('Layer')
     plt.ylabel('Mean Absolute Deviation')
@@ -928,7 +933,6 @@ def ind_neuron_invars_comp(model, runinfo):
     
     
     analysisfolder = runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False)
-    os.makedirs(analysisfolder, exist_ok = True)
      
     ##SAVE PDs & R2s
     
@@ -966,6 +970,8 @@ def ind_neuron_invars_comp(model, runinfo):
         allcontroldevsim_hor.append(cmdevmean_hor)
         allcontroldevsim_vert.append(cmdevmean_vert)
     
+    os.makedirs(analysisfolder, exist_ok = True)
+
     figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
     figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     

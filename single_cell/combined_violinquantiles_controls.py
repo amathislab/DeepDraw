@@ -126,7 +126,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     ax1 = fig.add_subplot(111)
     
     plt.xticks(np.arange(lspace/2,nlayers*lspace + 1,lspace), 
-               ['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers+1)])
+               ['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers)])
     
     ax1.set_ylabel('r2 or classification score')
     ax1.set_ylim(-0.1, 1.1)
@@ -136,7 +136,12 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     ccolorindex = 3
     for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
-                
+            
+            #print(mod)
+            mod = [x.reshape((-1,)) for x in mod]
+            #for x in mod:
+            #    print(x.shape)
+            
             vp = ax1.violinplot(mod,
                 positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
                 showextrema = False,
@@ -254,7 +259,7 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     
     
     plt.xticks(np.arange(lspace/2,nlayers*lspace + 1,lspace), 
-               ['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers+1)])
+               ['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers)])
     
     ax1.set_ylabel('r2 or classification score')
     ax1.set_ylim(-0.1, 1.1)
@@ -264,6 +269,8 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     ccolorindex = 1
     for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
+            
+            mod = [x.reshape((-1,)) for x in mod]
                 
             vp = ax1.violinplot(mod,
                 positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
