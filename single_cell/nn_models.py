@@ -314,11 +314,11 @@ class RecurrentModel():
             elif self.rec_blocktype == 'gru' and self.CPU == False:
                 recurrent_cell = cudnn_rnn.CudnnGRU(1, self.n_recunits, name='RecurrentBlock')
                 score, _ = recurrent_cell.apply(score)
-            elif self.rec_blocktype == 'lstm' and self.CPU:
-                with tf.variable_scope('RecurrentBlock'):
-                    rec_layer = lambda: cudnn_rnn.CudnnCompatibleLSTMCell(self.n_recunits)
-                recurrent_cell = tf.nn.rnn_cell.MultiRNNCell([rec_layer() for _ in range(1)])
-                score, _ = tf.nn.dynamic_rnn(recurrent_cell, score, dtype=tf.float32)
+            #elif self.rec_blocktype == 'lstm' and self.CPU:
+            #    with tf.variable_scope('RecurrentBlock'):
+            #        rec_layer = lambda: cudnn_rnn.CudnnCompatibleLSTMCell(self.n_recunits)
+            #    recurrent_cell = tf.nn.rnn_cell.MultiRNNCell([rec_layer() for _ in range(1)])
+            #    score, _ = tf.nn.dynamic_rnn(recurrent_cell, score, dtype=tf.float32)
 
             score = tf.transpose(score, [1, 0, 2])
             net['recurrent_out'] = score

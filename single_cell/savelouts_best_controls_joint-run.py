@@ -125,19 +125,7 @@ def main(modelinfo, runinfo):
     
     model.model_path = basefolder + model.model_path
     
-    #SAVE FOLLOW THROUGH    
-    datafolder = runinfo.datafolder(modelinfo)
-    os.makedirs(datafolder, exist_ok=True)
-    kinvars.to_hdf(datafolder + "/kinvars.hdf5", key="data")
-    print("Kinvars saved")
-    
-    pickle.dump(data, open(datafolder + "/data.pkl", "wb"))
-    print("MF saved")
-    
-    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"))
-    print("Labels saved")
-    
-    #layers = []
+    layers = []
     
     mygraph = tf.Graph()
     with mygraph.as_default():
@@ -184,22 +172,39 @@ def main(modelinfo, runinfo):
                         #print(layers[j].shape)
                     layers[j][i*batch_size : (i+1)*batch_size] = layers_batch[j]
         """
-        
-        for j in range(len(list((net.values()))) - 1):
-            with tf.Session(config=myconfig) as sess:
-                ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
-                print('checkpoint filepath', ckpt_filepath)
-                restorer.restore(sess, ckpt_filepath)
+        with tf.Session(config=myconfig) as sess:
+            ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
+            print('checkpoint filepath', ckpt_filepath)
+            restorer.restore(sess, ckpt_filepath)
+            
+            for i in range(num_steps):
+                if(runinfo.verbose >= 1):
+                    print('batch %d / %d' %(i, num_steps))
+                layers_batch = sess.run(list((net.values())), \
+                        feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
                 
-                for i in range(num_steps):
-                    if(runinfo.verbose >= 1):
-                        print('batch %d / %d' %(i, num_steps))
-                    layer_batch = sess.run(list((net.values()))[j], \
-                            feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
-                    
-                    if i == 0:
-                        layer = np.zeros(tuple([nsamples]) + layer_batch.shape[1:])
-                        
-                    layer[i*batch_size : (i+1)*batch_size] = layer_batch
-                    
-            pickle.dump(layer, open(datafolder + f"/l{i}.pkl", "wb"), protocol=4)
+                for j in range(len(layers_batch) - 1):
+                    if(i == 0):
+                        #layers.append(layers_batch[j])
+                        layers.append(np.zeros(tuple([nsamples]) + layers_batch[j].shape[1:]))
+                    #else:
+                        #print(layers_batch[j].shape, layers[j].shape)
+                    #    layers[j] = np.concatenate((layers[j], layers_batch[j]))
+                        #print(layers[j].shape)
+                    layers[j][i*batch_size : (i+1)*batch_size] = layers_batch[j]
+            
+    #SAVE FOLLOW THROUGH    
+    datafolder = runinfo.datafolder(modelinfo)
+    os.makedirs(datafolder, exist_ok=True)
+    kinvars.to_hdf(datafolder + "/kinvars.hdf5", key="data")
+    print("Kinvars saved")
+    
+    pickle.dump(data, open(datafolder + "/data.pkl", "wb"))
+    print("MF saved")
+    
+    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"))
+    print("Labels saved")
+    
+    for i in range(len(layers)):
+        pickle.dump(layers[i], open(datafolder + f"/l{i}.pkl", "wb"))
+        print(f"L{i} saved")    

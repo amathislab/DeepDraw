@@ -213,9 +213,9 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 301, #internal experiment id
-                   #'datafraction': 0.2,
-                   'datafraction': 0.5,
+runinfo = RunInfo({'expid': 302, #internal experiment id
+                   'datafraction': 0.2,
+                   #'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
@@ -297,8 +297,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                     model_to_analyse['control'] = True
 
                 if(do_data):
-                    if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
-                    #if(True):
+                    #if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
+                    if(True):
                         print('generating output for model %s ...' %modelname)
                         modeloutputs_main(model_to_analyse, runinfo)
                     else:
