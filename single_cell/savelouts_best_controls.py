@@ -94,7 +94,8 @@ def main(modelinfo, runinfo):
     
     nsamples, ninputs, ntime, _ = data.shape
     #batch_size = nsamples
-    batch_size = 100 #can be updated based on GPU capacities for forward pass
+    batch_size = runinfo.batchsize
+    #batch_size = 100 #can be updated based on GPU capacities for forward pass
     #batch_size = 25 #can be updated based on GPU capacities for forward pass
     num_steps = nsamples // batch_size
     
@@ -162,29 +163,6 @@ def main(modelinfo, runinfo):
         #update model path
         print('model.model_path', model.model_path)
         
-        """
-        with tf.Session(config=myconfig) as sess:
-            ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
-            print('checkpoint filepath', ckpt_filepath)
-            restorer.restore(sess, ckpt_filepath)
-            
-            for i in range(num_steps):
-                if(runinfo.verbose >= 1):
-                    print('batch %d / %d' %(i, num_steps))
-                layers_batch = sess.run(list((net.values())), \
-                        feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
-                
-                for j in range(len(layers_batch) - 1):
-                    if(i == 0):
-                        #layers.append(layers_batch[j])
-                        layers.append(np.zeros(tuple([nsamples]) + layers_batch[j].shape[1:]))
-                    #else:
-                        #print(layers_batch[j].shape, layers[j].shape)
-                    #    layers[j] = np.concatenate((layers[j], layers_batch[j]))
-                        #print(layers[j].shape)
-                    layers[j][i*batch_size : (i+1)*batch_size] = layers_batch[j]
-        """
-        
         for j in range(len(list((net.values()))) - 1):
             with tf.Session(config=myconfig) as sess:
                 ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
@@ -198,8 +176,10 @@ def main(modelinfo, runinfo):
                             feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
                     
                     if i == 0:
-                        layer = np.zeros(tuple([nsamples]) + layer_batch.shape[1:])
+                        #layer = np.zeros(tuple([nsamples]) + layer_batch.shape[1:])
+                        layer = h5py.File(datafolder + f"/l{j}.hdf5", 'w')
                         
-                    layer[i*batch_size : (i+1)*batch_size] = layer_batch
+                    #layer[i*batch_size : (i+1)*batch_size] = layer_batch
+                    layer.create_dataset(str(i), data=layer_batch)
                     
-            pickle.dump(layer, open(datafolder + f"/l{i}.pkl", "wb"), protocol=4)
+            #pickle.dump(layer, open(datafolder + f"/l{i}.pkl", "wb"), protocol=4)

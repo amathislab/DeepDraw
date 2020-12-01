@@ -213,15 +213,16 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 302, #internal experiment id
-                   'datafraction': 0.2,
+runinfo = RunInfo({'expid': 304, #internal experiment id
+                   'datafraction': 0.5,
                    #'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 1, #0 (least), 1, 2 (most)
                    'model_experiment_id': 8, #as per Pranav's model generation
-                   'basefolder': basefolder
+                   'basefolder': basefolder,
+                   'batchsize': 100, #for layer representation generation
             })
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
@@ -271,6 +272,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
             'base': 'lstm_3_8-16-16_256',
             'nlayers': 3,
             'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
+            't_stride': 1,
+            's_stride': 1,
             'control': False,
             'cmap': 'Browns_r',
             'color': 'brown',

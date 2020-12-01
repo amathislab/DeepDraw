@@ -97,6 +97,43 @@ def get_centers(fmapntime, ilayer, model, ntime = 320):
     assert len(centers) == fmapntime, "Time dimensions mismatch!!!!"
     return centers
 
+def read_layer_reps(ilayer, runinfo, model):
+    '''Retrieve generated representations for the queried layer, adapted from Pranav 2020-12-01.
+    
+    Parameters
+    ----------
+    ilayer : int, index of current layer, spindles = -1
+    runinfo : RunInfo, contains run configuration
+    model : dict, contains model configuration
+    
+    Returns
+    -------
+    layer : array of floats [n_samples, n_features, n_time] or [n_samples, n_features, n_time, n_channels], 
+        storing current layer activation
+    '''
+    
+    layer = lstring(ilayer)
+    
+    if ilayer == -1:
+        lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
+    else:
+        h5filepath = os.path.join(runinfo.datafolder(model), layer + '.hdf5')
+    
+        reps_layer = h5py.File(h5filepath, 'r')
+        num_datasets = len(list(reps_layer))
+        ds_shape = list(reps_layer.get('0').shape)
+    
+        batch_size = ds_shape[0]
+        ds_shape[0] = batch_size*num_datasets
+        lo = np.zeros((ds_shape))
+        for i in range(num_datasets):
+            lo[batch_size*i : batch_size*(i+1)] = reps_layer.get(str(i))[()]
+
+    if(runinfo.verbose):
+        print("read layer represenations. shape: ", lo.shape)
+
+    return lo
+
 # %% DIRECTION TUNING UTILITY FCTS
 
 def unit_vector(vector):
@@ -513,7 +550,8 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     layer = lstring(ilayer)
     expid = runinfo['expid']
     
-    lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
+    #lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
+    lo = read_layer_reps(ilayer, runinfo, model)
     lo = lo[xyplmvt]
     
     centers = get_centers(lo.shape[2], ilayer, model)
