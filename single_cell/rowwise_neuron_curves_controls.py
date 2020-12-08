@@ -421,7 +421,7 @@ def tune_row_label(X, Y, node):
 
 # %% TUNE
         
-def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
+def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
     ''' Makes calls to tuning curves for individual rows using multiprocessing
        
        Arguments
@@ -456,7 +456,15 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
         
     #pool = mp.Pool(mp.cpu_count())
-    n_cpus = 10
+    if fset == "labels" or fset == 'ee' or fset == 'eepolar':
+        if ilayer == -1:
+            n_cpus = 10
+        elif ilayer == 0:
+            n_cpus = 5
+        else:
+            n_cpus = 1
+    else:
+        n_cpus = 10
     print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
     pool = mp.Pool(n_cpus)
     
@@ -563,7 +571,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
         nmods = 1
         nmets = 1
     
-    trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, mmod)
+    trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, ilayer, mmod)
     
     print("Layer %d Completed!" %ilayer)
     
