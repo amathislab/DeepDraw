@@ -456,67 +456,98 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
         
     #pool = mp.Pool(mp.cpu_count())
-    if fset == "labels" or fset == 'ee' or fset == 'eepolar':
-        if ilayer == -1:
-            n_cpus = 10
-        elif ilayer == 0:
-            n_cpus = 5
-        else:
-            n_cpus = 1
-    else:
-        n_cpus = 10
-    print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
-    pool = mp.Pool(n_cpus)
-    
-    results = []
-    
-    # Resize Y so that feature maps are appended as new rows in first feature map
-    Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
-    
-    for irow in range(Y.shape[1]):
-        #print("Row: ", irow)
+    if (fset == 'ee' or fset == 'eepolar') and ilayer > 0:
+        Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
         
-        if(len(X.shape) > 1):
-            x = X[..., centers]
-        else:
-            x = X
-        
-        y = Y[:,irow]
-        
-        ##RESHAPE FOR LINEAR REGRESSION
-        
-        if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
+        for irow in range(Y.shape[1]):
+            if(len(X.shape) > 1):
+                x = X[..., centers]
+            else:
+                x = X
             
-            tcoff = sum(np.where(centers <= 32, True, False))
-            x = x[...,tcoff:ntime-tcoff]
-            y = y[:,tcoff:ntime-tcoff]
-            x = x.swapaxes(1,2).reshape((-1,2))
-        elif fset == 'labels':
-            temp = np.ones_like(y)
-            x = (temp.swapaxes(0,1) * x).swapaxes(0,1)
-            x = x.reshape((-1,))
-        y = y.reshape((-1,))
+            y = Y[:,irow]
+            
+            ##RESHAPE FOR LINEAR REGRESSION
+            
+            if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
+                
+                tcoff = sum(np.where(centers <= 32, True, False))
+                x = x[...,tcoff:ntime-tcoff]
+                y = y[:,tcoff:ntime-tcoff]
+                x = x.swapaxes(1,2).reshape((-1,2))
+            
+            y = y.reshape((-1,))
+            
+            if fset == 'ee':
+                isPolar = False
+            else:
+                isPolar = True
+            
+            _, trainevals[irow], testevals[irow] = tune_row_vel(x, y, irow, isPolar)    
+            
+    else:
+            
+        if fset == "labels" or fset == 'ee' or fset == 'eepolar':
+            if ilayer == -1:
+                n_cpus = 10
+            elif ilayer == 0:
+                n_cpus = 5
+            else:
+                n_cpus = 1
+        else:
+            n_cpus = 10
+        print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
+        pool = mp.Pool(n_cpus)
         
-        if fset == 'acc':
-            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-        elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
-            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-        elif fset == 'ee':
-            results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, False)))
-            #sys.stdout.flush()
-        elif fset == 'labels':
-            results.append(pool.apply_async(tune_row_label, args=(x,y,irow)))
-
-    results = [r.get() for r in results]
+        results = []
+        
+        # Resize Y so that feature maps are appended as new rows in first feature map
+        Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
+        
+        for irow in range(Y.shape[1]):
+            #print("Row: ", irow)
+            
+            if(len(X.shape) > 1):
+                x = X[..., centers]
+            else:
+                x = X
+            
+            y = Y[:,irow]
+            
+            ##RESHAPE FOR LINEAR REGRESSION
+            
+            if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
+                
+                tcoff = sum(np.where(centers <= 32, True, False))
+                x = x[...,tcoff:ntime-tcoff]
+                y = y[:,tcoff:ntime-tcoff]
+                x = x.swapaxes(1,2).reshape((-1,2))
+            elif fset == 'labels':
+                temp = np.ones_like(y)
+                x = (temp.swapaxes(0,1) * x).swapaxes(0,1)
+                x = x.reshape((-1,))
+            y = y.reshape((-1,))
+            
+            if fset == 'acc':
+                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
+            elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
+                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
+            elif fset == 'ee':
+                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, False)))
+                #sys.stdout.flush()
+            elif fset == 'labels':
+                results.append(pool.apply_async(tune_row_label, args=(x,y,irow)))
     
-    pool.close()
-    print("pool closed")
-    pool.join()
-    print("pool joined")
-    
-    for result in results:
-        trainevals[result[0]] = result[1]
-        testevals[result[0]] = result[2]
+        results = [r.get() for r in results]
+        
+        pool.close()
+        print("pool closed")
+        pool.join()
+        print("pool joined")
+        
+        for result in results:
+            trainevals[result[0]] = result[1]
+            testevals[result[0]] = result[2]
     
     #shape evals back to original shape
     trainevals = trainevals.reshape(unravelshape) #check configuration!!!

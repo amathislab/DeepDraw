@@ -219,7 +219,7 @@ runinfo = RunInfo({'expid': 304, #internal experiment id
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
-                   'verbose': 1, #0 (least), 1, 2 (most)
+                   'verbose': 2, #0 (least), 1, 2 (most)
                    'model_experiment_id': 8, #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
