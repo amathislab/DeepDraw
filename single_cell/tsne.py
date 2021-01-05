@@ -22,7 +22,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 import os
 
-from rowwise_neuron_curves_controls import X_data
+from rowwise_neuron_curves_controls import X_data, read_layer_reps
 
 char_labels = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'l', 'm', 'n',
                'o', 'p', 'q', 'r', 's', 'u', 'v', 'w', 'y', 'z']
@@ -86,11 +86,15 @@ def main(model, runinfo):
     for i in range(nlayers):
         lname = "l%d" %i
         
+        '''
         print(lname)
         if i == 0:
             l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'data.pkl'), 'rb'))
         else:
             l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
+        l = l[xyplmvt]
+        '''
+        l = read_layer_reps(i - 1, runinfo, model) #-1 because of alternate spindles convention, here =0, there =-1
         l = l[xyplmvt]
         
         #print(l.shape)
@@ -100,5 +104,6 @@ def main(model, runinfo):
         try:
             ltsne, ldf = mytsne(lx)
             plottsne(ldf, lname, labels, ff)
-        except ValueError:
+        except ValueError as e:
             print('not enough samples to compute PCA & tSNE')
+            print(e)

@@ -213,14 +213,14 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 304, #internal experiment id
+runinfo = RunInfo({'expid': 307, #internal experiment id
+                   #'datafraction': 0.1,
                    'datafraction': 0.5,
-                   #'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 2, #0 (least), 1, 2 (most)
-                   'model_experiment_id': 8, #as per Pranav's model generation
+                   'model_experiment_id': 7, #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
             })
@@ -267,7 +267,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
               'control': False,
               'cmap': 'Greens_r',
               'color': 'green',
-              'control_cmap': 'Greys_r'}),
+              'control_cmap': 'Greys_r',
+              't_stride': 2,
+              's_stride': 2}),
         dict({'type': 'LSTM',
             'base': 'lstm_3_8-16-16_256',
             'nlayers': 3,
@@ -275,122 +277,181 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
             't_stride': 1,
             's_stride': 1,
             'control': False,
-            'cmap': 'Browns_r',
-            'color': 'brown',
+            'cmap': 'Purples_r',
+            'color': 'C4',
             'control_cmap': 'Purples_r'})
         ]
 
     models = [model for model in allmodels if (model['type'] in include)]
 
+    print("beginning body...")
+
+    startmodel = 0
+    startrun = 1
+    startcontrol = False
+    startior = 0
+    startheight = 'all'
+
+    runmodels = False
+    runruns = False
+    runtype = False
+    runior = False
+    runheight = False
+
     for imodel, model in enumerate(models):
+        
+        #print(startmodel, imodel)
 
-        for i in np.arange(1, 6):
+        if startmodel == imodel:
+            runmodels = True
 
-            modelname = model['base'] + '_%d' %i
-            model['name'] = modelname
+        if runmodels:
+            for i in np.arange(1, 6):
 
-            model_to_analyse = model.copy()
-            trainedmodel = model.copy()
+                modelname = model['base'] + '_%d' %i
+                model['name'] = modelname
 
-            for control in [False, True]:
+                model_to_analyse = model.copy()
+                trainedmodel = model.copy()
 
-                if control:
-                    modelname = modelname + 'r'
-                    model_to_analyse['name'] = modelname
-                    model_to_analyse['control'] = True
+                if startrun == i:
+                    runruns = True
 
-                if(do_data):
-                    #if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
-                    if(True):
-                        print('generating output for model %s ...' %modelname)
-                        modeloutputs_main(model_to_analyse, runinfo)
-                    else:
-                        print('data for model %s already generated' %modelname)
+                if runruns == True:
+                    for control in [False, True]:
 
-                if(do_results or do_analysis):
-                    for ior, orientation in enumerate(orientations):
-                        runinfo['orientation'] = orientation
+                        if control:
+                            modelname = modelname + 'r'
+                            model_to_analyse['name'] = modelname
+                            model_to_analyse['control'] = True
 
-                        for height in (['all'] + uniqueplanes[ior]):
-                            runinfo['height'] = height
+                        if startcontrol == control:
+                            runtype = True
 
-                            runinfo_to_analyse = copy.copy((runinfo))
-
-                            if(do_results):
-                                print('running analysis for model %s plane %s...' %(modelname, runinfo.planestring()))
-
-                                for fset in fsets:
-
-                                    if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-                                    #if(True):
-                                    
-                                        print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
-                                        tuningcurves_main(fset,
-                                                          runinfo_to_analyse,
-                                                          model_to_analyse,
-                                                          )
-
-                                    else:
-                                        print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))
-
-                            if(do_analysis):
-                                print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
-
-                                print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
+                        if runtype:
+                            if(do_data):
+                                if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
                                 #if(True):
-                                    polar_tcs_main(model_to_analyse, runinfo_to_analyse)
+                                    print('generating output for model %s ...' %modelname)
+                                    modeloutputs_main(model_to_analyse, runinfo)
                                 else:
-                                    print('polar tc plots already exist')
+                                    print('data for model %s already generated' %modelname)
 
-                                print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
-                                #if(True):
-                                    prefdir_main(model_to_analyse, runinfo_to_analyse)
-                                else:
-                                    print('pref dir plots already exist')
-                                    
-                                if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
-                                #if(True):
-                                        print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
-                                        tsne_main(model_to_analyse, runinfo_to_analyse)
+                            if(do_results or do_analysis):
+                                for ior, orientation in enumerate(orientations):
+                                    runinfo['orientation'] = orientation
 
-                                if(control):
-                                    if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
-                                    #if(True):
-                                        print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                        comp_violin_main(trainedmodel, model_to_analyse, runinfo)
-                                    else:
-                                        print('comparison violin plot already saved')
+                                    if startior == ior:
+                                        runior = True
 
-                                    if(runinfo.planestring() == 'horall'):
-                                        if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
-                                        #if(True):
-                                            print('computing representational similarity analysis for model %s plane %s ... ' %(modelname, runinfo.planestring()))
-                                            rsa_main(trainedmodel, model_to_analyse, runinfo)
+                                    if runior:
+                                        for height in (['all'] + uniqueplanes[ior]):
+                                            runinfo['height'] = height
 
-                                        else:
-                                            print('rsa already saved')
+                                            runinfo_to_analyse = copy.copy((runinfo))
 
-                                if (i==5 and control):
-                                    comparisons_main(model, runinfo)
+                                            if startheight == height:
+                                                runheight = True
+
+                                            if runheight:
+                                                if(do_results):
+                                                    print('running analysis for model %s plane %s...' %(modelname, runinfo.planestring()))
+
+                                                    for fset in fsets:
+
+                                                        if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
+                                                        #if(True):
+                                                        
+                                                            print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
+                                                            tuningcurves_main(fset,
+                                                                            runinfo_to_analyse,
+                                                                            model_to_analyse,
+                                                                            )
+
+                                                        else:
+                                                            print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))
+
+                                                if(do_analysis):
+                                                    evals = np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
+                                                    print(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
+                                                    print(evals.shape)
+
+                                                    if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                        print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
+
+                                                        print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
+                                                        
+                                                        if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
+                                                        #if(True):
+                                                            polar_tcs_main(model_to_analyse, runinfo_to_analyse)
+                                                        else:
+                                                            print('polar tc plots already exist')
+                                                        
+                                                        '''
+                                                        try:
+                                                            from subprocess32 import check_call
+                                                            check_call(['test', '-f', runinfo.analysisfolder(model_to_analyse, 'polar_tcs')], timeout=0.5)
+                                                        except:
+                                                            print('did not find folder with subprocess')
+                                                        else:
+                                                            polar_tcs_main(model_to_analyse, runinfo_to_analyse)
+                                                        '''
+
+                                                        print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
+                                                        if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
+                                                        #if(True):
+                                                            prefdir_main(model_to_analyse, runinfo_to_analyse)
+                                                        else:
+                                                            print('pref dir plots already exist')
+                                                            
+                                                        #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
+                                                        if(True):
+                                                                print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
+                                                                tsne_main(model_to_analyse, runinfo_to_analyse)
+
+                                                        if(control):
+                                                            if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
+                                                            #if(True):
+                                                                print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
+                                                                comp_violin_main(trainedmodel, model_to_analyse, runinfo)
+                                                            else:
+                                                                print('comparison violin plot already saved')
+
+                                                            if(runinfo.planestring() == 'horall'):
+                                                                if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
+                                                                #if(True):
+                                                                    print('computing representational similarity analysis for model %s plane %s ... ' %(modelname, runinfo.planestring()))
+                                                                    rsa_main(trainedmodel, model_to_analyse, runinfo)
+
+                                                                else:
+                                                                    print('rsa already saved')
+
+                                                        if (i==5 and control):
+                                                            comparisons_main(model, runinfo)
 
 
-                                    if(runinfo.planestring() == 'horall'):
-                                        print('combining rsa results for all models')
-                                        if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
-                                            rsa_models_comp(model, runinfo)
-                                        else:
-                                            print('rsa models comp already completed')
+                                                            if(runinfo.planestring() == 'horall'):
+                                                                print('combining rsa results for all models')
+                                                                if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
+                                                                #if(True):
+                                                                    rsa_models_comp(model, runinfo)
+                                                                else:
+                                                                    print('rsa models comp already completed')
 
-                if(do_analysis):
-                    print('launching analysis of nodes\' generalizational capacity...')
-                    generalization_main(model_to_analyse, runinfo)
+                                    if(do_analysis):
 
-                    if(i==5 and control):
-                    #if(True):
-                        generalizations_comparisons_main(model, runinfo)
+                                        if startheight == 'comp':
+                                            runheight = True
 
+                                        if runheight:
+                                            print('launching analysis of nodes\' generalizational capacity...')
+                                            generalization_main(model_to_analyse, runinfo)
+
+                                            if(i==5 and control):
+                                            #if(True):
+                                                generalizations_comparisons_main(model, runinfo)
+
+    print("Yay! Done, success")
 
 if __name__=='__main__':
 

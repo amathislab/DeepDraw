@@ -147,7 +147,9 @@ def main(model, runinfo, r2threshold = 0.2):
         print("Layer %d" % (ilayer + 1))
         r2 = testevals[...,1,1]
         print(r2[r2 > r2threshold].size)
-        sigfit = testevals[r2 > r2threshold]
+
+        #also exclude r2=1 scores
+        sigfit = testevals[(r2 > r2threshold) & (r2 != 1)]
         dirtuning = sigfit[...,1,3:5].reshape((-1,2))
         
         if len(dirtuning) > 0:

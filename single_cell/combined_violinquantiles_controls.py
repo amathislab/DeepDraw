@@ -141,6 +141,9 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
             mod = [x.reshape((-1,)) for x in mod]
             #for x in mod:
             #    print(x.shape)
+
+            ##exclude r2 == 1 scores
+            mod = [x[x != 1] for x in mod]
             
             vp = ax1.violinplot(mod,
                 positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 

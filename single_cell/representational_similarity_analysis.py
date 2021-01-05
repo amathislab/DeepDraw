@@ -8,7 +8,7 @@ Created on Thu Mar 26 22:50:22 2020
 
 import numpy as np
 from kornblith_et_al_rsa_colab import *
-from rowwise_neuron_curves_controls import lstring
+from rowwise_neuron_curves_controls import lstring, read_layer_reps
 import seaborn as sns
 import os, pickle
 import copy
@@ -46,9 +46,11 @@ def main(trainedmodel, controlmodel, runinfo):
     
     for ilayer in np.arange(-1, nlayers):
         layer = lstring(ilayer)  
-        X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        X = read_layer_reps(ilayer, runinfo, trainedmodel)
         X = X.reshape((X.shape[0], -1))                    
-        Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        Y = read_layer_reps(ilayer, runinfo, controlmodel)
         Y = Y.reshape((Y.shape[0], -1))
         
         print("Layer %d " %(ilayer + 1))

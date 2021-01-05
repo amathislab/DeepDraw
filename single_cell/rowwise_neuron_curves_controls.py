@@ -19,12 +19,17 @@ from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import label_binarize
 from sklearn.svm import LinearSVC
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.linear_model import LinearRegression
+import time
+import resource
+import os
 
 # GLOBAL PARS
 t_stride = 2
 ntime=320
 metrics = ['RMSE', 'r2', 'PCC']
 nmetrics = len(metrics)
+need_to_sleep = False
 #datafolder = 'data/'
 
 # %% UTILITY FUNCTIONS
@@ -91,10 +96,12 @@ def get_centers(fmapntime, ilayer, model, ntime = 320):
     #if(ilayer == -1):
     #    ilayer = 0
     
-    for i in np.arange(0, ilayer + 1):
+    for i in np.arange(0, ilayer + 1): #excludes spindles
         if(mtype == 'S' and i >= 4):
             centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
-    assert len(centers) == fmapntime, "Time dimensions mismatch!!!!"
+        elif(mtype == 'ST'):
+            centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
+    assert len(centers) == fmapntime, "Time dimensions mismatch!!!! centers: %d fmap: %d" %(len(centers), fmapntime)
     return centers
 
 def read_layer_reps(ilayer, runinfo, model):
@@ -117,17 +124,20 @@ def read_layer_reps(ilayer, runinfo, model):
     if ilayer == -1:
         lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
     else:
-        h5filepath = os.path.join(runinfo.datafolder(model), layer + '.hdf5')
-    
-        reps_layer = h5py.File(h5filepath, 'r')
-        num_datasets = len(list(reps_layer))
-        ds_shape = list(reps_layer.get('0').shape)
-    
-        batch_size = ds_shape[0]
-        ds_shape[0] = batch_size*num_datasets
-        lo = np.zeros((ds_shape))
-        for i in range(num_datasets):
-            lo[batch_size*i : batch_size*(i+1)] = reps_layer.get(str(i))[()]
+        try:
+            lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
+        except:
+            h5filepath = os.path.join(runinfo.datafolder(model), layer + '.hdf5')
+        
+            reps_layer = h5py.File(h5filepath, 'r')
+            num_datasets = len(list(reps_layer))
+            ds_shape = list(reps_layer.get('0').shape)
+        
+            batch_size = ds_shape[0]
+            ds_shape[0] = batch_size*num_datasets
+            lo = np.zeros((ds_shape))
+            for i in range(num_datasets):
+                lo[batch_size*i : batch_size*(i+1)] = reps_layer.get(str(i))[()]
 
     if(runinfo.verbose):
         print("read layer represenations. shape: ", lo.shape)
@@ -295,6 +305,42 @@ def tune_row_vel(X, Y, row, isPolar = True):
         rowtraineval : np.array [4, 6] for four different model types. Cols 0-2: Metrics from compute_metrics, Cols 3-5: Linear Regression coeffs
         rowtesteval : np.array [4, 6] for four different model types. Cols 0-2: Metrics from compute_metrics, Cols 3-5: Linear regression coeffs
     '''
+
+    if need_to_sleep:
+        time.sleep(0.2)
+
+        hard_limit = 1000*1024*1024
+        soft, hard = resource.getrlimit(resource.RUSAGE_SELF)
+        print("Soft and hard limits RUSAGE_SELF: %d, %d" %(soft, hard))
+        resource.setrlimit(resource.RUSAGE_SELF, (hard_limit, hard_limit))
+        soft, hard = resource.getrlimit(resource.RUSAGE_SELF)
+        print("Soft and hard limits RUSAGE_SELF after mod: %d, %d" %(soft, hard))
+
+        '''
+        soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
+        print("Soft and hard limits  RLIMIT_CPU: %d, %d" %(soft, hard))
+        resource.setrlimit(resource.RLIMIT_CPU, (soft // 2, hard  // 2))
+        '''
+
+        '''
+        soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+        print("Soft and hard limits  RLIMIT_DATA: %d, %d" %(soft, hard))
+        resource.setrlimit(resource.RLIMIT_DATA, (hard_limit, hard_limit))
+        '''
+        '''
+
+        soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+        print("Soft and hard limits  RLIMIT_RSS: %d, %d" %(soft, hard))
+        resource.setrlimit(resource.RLIMIT_RSS, (hard_limit, hard_limit))
+        '''
+        
+        '''
+        soft, hard = resource.getrlimit(resource.RLIMIT_NICE)
+        print("Soft and hard limits  RLIMIT_NICE: %d, %d" %(soft, hard))
+        resource.setrlimit(resource.RLIMIT_NICE, (15, 15))
+        '''
+
+        os.nice(19)
     
     rowtraineval = np.zeros((4,6))
     rowtesteval = np.zeros((4,6))
@@ -313,16 +359,25 @@ def tune_row_vel(X, Y, row, isPolar = True):
             Y_train,
             Y_test
             )
+
+    if need_to_sleep:
+        time.sleep(0.2)
     
     #print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
+
+    if need_to_sleep:
+        time.sleep(0.2)
     
     #Change to polar coordinates
     if(not isPolar):
         #print("converting to polar...")
         X_train = get_polar(X_train)
         X_test = get_polar(X_test)
+
+    if need_to_sleep:
+        time.sleep(0.2)
     
     ##DIR DEP
     #print("Directional Dependence:")
@@ -336,6 +391,9 @@ def tune_row_vel(X, Y, row, isPolar = True):
         )
 
     rowtraineval[1], rowtesteval[1] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
+
+    if need_to_sleep:
+        time.sleep(0.2)
     
     ##VEL DEP
     
@@ -349,6 +407,9 @@ def tune_row_vel(X, Y, row, isPolar = True):
         Y_test
         )
     rowtraineval[2], rowtesteval[2] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
+
+    if need_to_sleep:
+        time.sleep(0.2)
     
     ##DIR PLUS VEL DEP
     #Xtform_train = np.c_[X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])]
@@ -362,8 +423,31 @@ def tune_row_vel(X, Y, row, isPolar = True):
         )
     
     rowtraineval[3], rowtesteval[3] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
+
+    if need_to_sleep:
+        time.sleep(0.2)
         
     return (row, rowtraineval, rowtesteval)
+
+# %% DECODING
+def tune_row_decoding(X, Y, row):
+    
+    rowtraineval = np.zeros((1,3))
+    rowtesteval = np.zeros((1,3))
+
+    X_temp = X
+    X = Y
+    Y = X_temp
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+
+    c = np.linalg.lstsq(X_train, Y_train, rcond=None)[0]
+
+    rowtraineval[0] = compute_metrics(Y_train, X_train @ c)
+    rowtesteval[0] = compute_metrics(Y_test, X_test @ c)
+
+    return (row, rowtraineval, rowtesteval)
+
 
 # %% LABEL SPECIFICITY
     
@@ -456,10 +540,15 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
         
     #pool = mp.Pool(mp.cpu_count())
+    #if(True):
+    '''
     if (fset == 'ee' or fset == 'eepolar') and ilayer > 0:
+        print("Proceeding without multiprocessing...")
+        time.sleep(5)
         Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
         
         for irow in range(Y.shape[1]):
+            print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
             if(len(X.shape) > 1):
                 x = X[..., centers]
             else:
@@ -481,12 +570,14 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
             if fset == 'ee':
                 isPolar = False
             else:
-                isPolar = True
+                isPolar = Tsrue
             
             _, trainevals[irow], testevals[irow] = tune_row_vel(x, y, irow, isPolar)    
-            
-    else:
-            
+    '''        
+    #else:
+    if(True):
+        
+        '''
         if fset == "labels" or fset == 'ee' or fset == 'eepolar':
             if ilayer == -1:
                 n_cpus = 10
@@ -495,6 +586,9 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
             else:
                 n_cpus = 1
         else:
+        '''
+
+        if(True):
             n_cpus = 10
         print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
         pool = mp.Pool(n_cpus)
@@ -503,9 +597,12 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
         
         # Resize Y so that feature maps are appended as new rows in first feature map
         Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
-        
+    
         for irow in range(Y.shape[1]):
-            #print("Row: ", irow)
+            #print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
+
+            if need_to_sleep:
+                time.sleep(0.2)
             
             if(len(X.shape) > 1):
                 x = X[..., centers]
@@ -527,7 +624,7 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
                 x = (temp.swapaxes(0,1) * x).swapaxes(0,1)
                 x = x.reshape((-1,))
             y = y.reshape((-1,))
-            
+
             if fset == 'acc':
                 results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
             elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
@@ -548,12 +645,47 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
         for result in results:
             trainevals[result[0]] = result[1]
             testevals[result[0]] = result[2]
-    
+
     #shape evals back to original shape
-    trainevals = trainevals.reshape(unravelshape) #check configuration!!!
+    trainevals = trainevals.reshape(unravelshape)
     testevals = testevals.reshape(unravelshape)
     
     return trainevals, testevals
+
+def tune_decoding(X, fset, Y, centers, ilayer, mmod):
+
+    if(len(X.shape) > 1):
+        X = X[..., centers]
+    
+    # Resize Y so that feature maps are appended as new rows in first feature map
+    Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
+
+    # reshape so that both X and Y are in format [samples x timepoints, features]
+    assert len(X.shape) > 1, "X has shape 1"
+    
+    X = X.swapaxes(1,2).reshape((-1, X.shape[1]))
+    
+    if len(Y.shape) > 2:
+        Y = Y.swapaxes(1,2).reshape((-1, Y.shape[1]))
+    else:
+        Y = Y.reshape((-1, Y.shape[1]))
+
+    #switch spindles to Y and neuron firing ratest to X
+    X_temp = X
+    X = Y
+    Y = X_temp
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+
+    lm = LinearRegression().fit(X_train, Y_train)
+
+    trainevals = compute_metrics(Y_train, lm.predict(X_train))
+    testevals = compute_metrics(Y_test, lm.predict(X_test))
+
+    coefs = lm.coef_
+
+    return (trainevals, testevals, coefs)
+
 
 def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     """Performs several layer-wide calculations for fitting the tuning curves and saves output to file
@@ -595,15 +727,26 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     
     centers = get_centers(lo.shape[2], ilayer, model)
     
-    if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):
-        nmods = 4
-        nmets = 6
-    elif (fset == 'labels'):
-        nmods = 1
-        nmets = 1
+    if mmod=='decoding':
+        trainevals, testevals, coefs = tune_decoding(X, fset, lo, centers, ilayer, mmod)
+
+        print('saving decoding reg coefs')
+        np.save('%s/%s_coefs.npy' %(savepath, savename), coefs)        
+
+    else:
+        if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):
+            nmods = 4
+            nmets = 6
+        elif (fset == 'labels'):
+            nmods = 1
+            nmets = 1
     
-    trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, ilayer, mmod)
-    
+        if len(X) > 1:
+            trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, ilayer, mmod)
+        else:
+            trainevals = np.empty((0, nmods, nmets))
+            testevals = np.empty((0, nmods, nmets))
+        
     print("Layer %d Completed!" %ilayer)
     
     np.save('%s/%s_train.npy' %(savepath, savename), trainevals)        
@@ -676,37 +819,41 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
     vels = vels[xyplmvt]
     X = vels
 
-    if(fset == 'acc'):
-        X = np.gradient(vels)[2]
-        if polar:
-            X = get_polar(X)
-        #X = np.nan_to_num(X)
-    elif(fset == 'ang'):
-        Xa = np.apply_along_axis(angle_xaxis, 1, vels)
-        Xb = np.gradient(Xa)[1]
-        Xa = Xa[:,np.newaxis,:]
-        Xb = Xb[:,np.newaxis,:]
-        X = np.concatenate((Xb, Xa), axis=1)
-    elif(fset == 'angvel'):
-        X = np.apply_along_axis(angle_xaxis, 1, vels)
-        X = np.gradient(X)[1]
-        X = np.concatenate((X[:,np.newaxis,:], X[:,np.newaxis,:]), axis=1)
-    elif(fset == 'labels'):
-        X = pickle.load(open(os.path.join(datafolder, 'labels.pkl'), 'rb'))
-        X = X[xyplmvt]
-    elif(fset == 'ee'):
-        X = ee
-    elif(fset == 'eepolar'):
-        x0 = ee[:,:,0]
-        Xrel = [(ee[i].swapaxes(0,1) - x0[i]).swapaxes(0,1) for i in range(len(ee))]
-        X[:,0,:] = np.apply_along_axis(np.linalg.norm, 1, Xrel)
-        X[:,1,:] = np.apply_along_axis(angle_xaxis, 1, Xrel)
-    
-    elif(fset == 'vel'):
-        
-        if polar:
-            X = get_polar(X)
-    
+    if len(X) > 1:
+        print(X.size)
+        print(X.shape)
+
+        if(fset == 'acc'):
+            X = np.gradient(vels)[2]
+            if polar:
+                X = get_polar(X)
+            #X = np.nan_to_num(X)
+        elif(fset == 'ang'):
+            Xa = np.apply_along_axis(angle_xaxis, 1, vels)
+            Xb = np.gradient(Xa)[1]
+            Xa = Xa[:,np.newaxis,:]
+            Xb = Xb[:,np.newaxis,:]
+            X = np.concatenate((Xb, Xa), axis=1)
+        elif(fset == 'angvel'):
+            X = np.apply_along_axis(angle_xaxis, 1, vels)
+            X = np.gradient(X)[1]
+            X = np.concatenate((X[:,np.newaxis,:], X[:,np.newaxis,:]), axis=1)
+        elif(fset == 'labels'):
+            X = pickle.load(open(os.path.join(datafolder, 'labels.pkl'), 'rb'))
+            X = X[xyplmvt]
+        elif(fset == 'ee'):
+            X = ee
+        elif(fset == 'eepolar'):
+            x0 = ee[:,:,0]
+            Xrel = [(ee[i].swapaxes(0,1) - x0[i]).swapaxes(0,1) for i in range(len(ee))]
+            X[:,0,:] = np.apply_along_axis(np.linalg.norm, 1, Xrel)
+            X[:,1,:] = np.apply_along_axis(angle_xaxis, 1, Xrel)
+ 
+        elif(fset == 'vel'):
+            
+            if polar:
+                X = get_polar(X)
+
     return X, xyplmvt
 
 # %% MAIN

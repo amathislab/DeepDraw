@@ -158,6 +158,7 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
                 Ax 2: Neurons
             """
             pds[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(prefdirs)))
+            pds[ilayer][ior][:] = np.NaN
             
             for iht, ht in enumerate(uniqueheights[ior]):
                 runinfo['height'] = ht
@@ -170,8 +171,9 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
                     if score < r2threshold:
                         dirtuning[neuron] = np.nan
                 
-                prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                pds[ilayer][ior][iht] = prefdirs
+                if(len(dirtuning) > 0):
+                    prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
+                    pds[ilayer][ior][iht] = prefdirs
     
     ffolder = runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified')
     os.makedirs(ffolder, exist_ok=True)

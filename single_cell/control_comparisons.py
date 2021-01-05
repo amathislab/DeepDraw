@@ -104,7 +104,7 @@ def pv_to_sl_code(pv):
     return sl
 
 def get_pds_sp(model, runinfo, r2threshold =  None):
-    """ Get pds in a single plane 
+    """ Get pds in a single plane that are siginificantly tuned for direction, i.e. r2threshold < r2_score < 1
     
     Arguments
     ---------
@@ -132,7 +132,7 @@ def get_pds_sp(model, runinfo, r2threshold =  None):
         
         testevals = np.load('%sl%d_%s_mets_%s_%s_test.npy' %(expf, ilayer, fset, mmod, runinfo.planestring()))        
         if r2threshold is not None:
-            testevals = testevals[testevals[...,1,1] > r2threshold] 
+            testevals = testevals[(testevals[...,1,1] > r2threshold) & (testevals[...,1,1] != 1)]  #also check for r2 != 1
         if testevals.size > 0:
             dirtuning = testevals[...,1,3:5].reshape((-1,2))            
             prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
