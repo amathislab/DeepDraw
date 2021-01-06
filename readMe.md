@@ -42,9 +42,64 @@ We share the weights of all the trained networks (contained in 'network-weights'
 
 We share the data for analysis (activations, etc. contained in 'analysis-data'): about ~88GB.
 
-### Installation, software & requirements
+## Installation, software & requirements
 
 Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [TensorFlow](https://www.tensorflow.org/). To easily reproduce our computational environment incl. the dependencies we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+
+
+### Starting the docker container from the image:
+
+After pulling the docker image from the docker hub, in the terminal, start the container with the following command:
+
+Options:
+
+* change port: (i.e. 2355 can be 777, etc)
+* change which GPU to use (check which GPU you want to use in the terminal by running nvidia-smi)
+* change the name: --name containername can be anything you want
+
+```
+GPU=0 bash ./dlc-docker run -d -p 2355:8888 -v $MEDIA --name containername pranavm19/opensim:opensim-tf
+```
+
+Enter the container via the terminal (to get terminal access in container):
+
+```
+docker exec --user $USER -it containername /bin/bash
+```
+
+In the container, check that OpenSim is correctly imported:
+
+```
+python3.6
+import opensim
+```
+
+After finishing, the container can be stopped:
+
+```
+docker stop containername
+```
+
+To start the container again:
+
+```
+docker start containername
+```
+
+### Jupyter and docker
+
+You can access Jupyter by going to the port you specified (e.g. http://localhost:2355) in Google Chrome. 
+
+To get the token for entry, back in the terminal, look at the docker log:
+
+```
+docker logs containername 
+```
+
+Copy and paste the value after "token=". 
+
+
+### Create the conda environment
 
 For the rest of the analysis, we are sharing a conda environment that has the dependencies. It can be installed by:
 
