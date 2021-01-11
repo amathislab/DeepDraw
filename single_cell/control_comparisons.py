@@ -234,7 +234,8 @@ def compile_comparisons_df(model, runinfo):
               'vel': runinfo.resultsfolder(model_to_analyse, 'vel'),
               'acc': runinfo.resultsfolder(model_to_analyse, 'acc'),
               'labels': runinfo.resultsfolder(model_to_analyse, 'labels'),
-              'ee': runinfo.resultsfolder(model_to_analyse, 'ee')
+              'ee': runinfo.resultsfolder(model_to_analyse, 'ee'),
+              'eepolar': runinfo.resultsfolder(model_to_analyse, 'eepolar')
         }
         
         for ilayer in np.arange(0,nlayers):
@@ -243,7 +244,8 @@ def compile_comparisons_df(model, runinfo):
             accevals = np.load(os.path.join(expf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
             labevals = np.load(os.path.join(expf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
             eeevals = np.load(os.path.join(expf['ee'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'ee', 'std', runinfo.planestring())))
-            
+            eepolarevals = np.load(os.path.join(expf['eepolar'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'eepolar', 'std', runinfo.planestring())))
+
             layerevals = []
             layerevals.append(dvevals[...,1,1]) #dir
             layerevals.append(dvevals[...,2,1]) #vel
@@ -251,7 +253,7 @@ def compile_comparisons_df(model, runinfo):
             layerevals.append(accevals[...,2,1]) #acc
             layerevals.append(labevals[...,0]) #labels
             layerevals.append(eeevals[...,0,1]) #ee
-            layerevals.append(eeevals[...,3,1]) #eepolar
+            layerevals.append(eepolarevals[...,3,1]) #eepolar
             
             for j, tcname in enumerate(tcnames):
                 df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
@@ -991,17 +993,18 @@ def main(model, runinfo):
     print('comparing kinetic differences for model %s ...' %model['base'])
     df = None
     
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
-    #if(True):
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
+    if(True):
+    #if(runinfo.default_run):
         print('compiling dataframe for comparions...')
         df = compile_comparisons_df(model, runinfo)
         
     else:
         print('kinetic and label embeddings already analyzed')
         
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pairedt'))):
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pairedt'))):
     #if(True):
-        
+    if(runinfo.default_run):    
         print('running pairedt...')
         pairedt_comp(model, runinfo)
         print('ks analysis saved')
@@ -1009,8 +1012,9 @@ def main(model, runinfo):
     else:
         print('kinetic and label embeddings already analyzed')
         
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
-    #if(True):
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
+    if(True):
+    #if(runinfo.default_run):
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
             df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_comparisons_df.csv'),
@@ -1019,8 +1023,9 @@ def main(model, runinfo):
         tcctrlcompplots(df, model, runinfo)
     else:
         print('kindiffs plots already made')
-        
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pd_deviation'))):
+
+    if(runinfo.default_run):    
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pd_deviation'))):
     #if(True):
         print('computing deviation measure for PDs')
         pd_deviation(model, runinfo)
@@ -1031,7 +1036,8 @@ def main(model, runinfo):
 def generalizations_comparisons_main(model, runinfo):
     """main for comparing features that describe all planes"""
     
-    if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False))):
+    if(runinfo.default_run):
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False))):
     #if(True):
         print('running individual neuron invars comparison...')
         ind_neuron_invars_comp(model, runinfo)
@@ -1040,3 +1046,5 @@ def generalizations_comparisons_main(model, runinfo):
         print('ind neuron invars comps already run')
         
     plt.close('all')
+
+# %%

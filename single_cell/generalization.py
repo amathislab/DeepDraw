@@ -199,7 +199,8 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
 def main(model, runinfo, r2threshold = 0.2):        
     print('creating individual neuron generalization plot for model %s ...' %model['name'])
                 
-    if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified'))):
+    if(runinfo.default_run):
+    #if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified'))):
     #if(True):
         ind_neuron_invar_collapsed(model, runinfo, r2threshold)
         print('plots saved')

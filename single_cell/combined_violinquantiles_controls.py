@@ -207,6 +207,7 @@ def get_modevals_ee(model, runinfo):
     
     expf={
           'ee': runinfo.resultsfolder(model, 'ee'),
+          'eepolar': runinfo.resultsfolder(model, 'eepolar')
     }
     
     # READ IN OF REGS AND THRESHOLD, SAVE TEXT FILE
@@ -219,12 +220,12 @@ def get_modevals_ee(model, runinfo):
     for ilayer in np.arange(0,model['nlayers'] + 1):
         
         eeevals = np.load(os.path.join(expf['ee'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'ee', mmod, runinfo.planestring())))
+        eepolarevals = np.load(os.path.join(expf['eepolar'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'eepolar', mmod, runinfo.planestring())))
         
         modevals[0].append(eeevals[...,0,1])
-        modevals[1].append(eeevals[...,3,1])
+        modevals[1].append(eepolarevals[...,3,1])
         
     return modevals
-
 
 def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     ''' Plot the comparison violin plot showing the distribution of tuning strengths
@@ -274,6 +275,9 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
         for i, mod in enumerate(modevals):
             
             mod = [x.reshape((-1,)) for x in mod]
+
+            ##exclude r2 == 1 scores
+            mod = [x[x != 1] for x in mod]
                 
             vp = ax1.violinplot(mod,
                 positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 

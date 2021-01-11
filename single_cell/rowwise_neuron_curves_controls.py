@@ -359,17 +359,10 @@ def tune_row_vel(X, Y, row, isPolar = True):
             Y_train,
             Y_test
             )
-
-    if need_to_sleep:
-        time.sleep(0.2)
-    
     #print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
 
-    if need_to_sleep:
-        time.sleep(0.2)
-    
     #Change to polar coordinates
     if(not isPolar):
         #print("converting to polar...")

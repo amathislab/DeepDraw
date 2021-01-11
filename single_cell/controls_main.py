@@ -223,6 +223,9 @@ runinfo = RunInfo({'expid': 307, #internal experiment id
                    'model_experiment_id': 7, #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
+                   'default_run': False #only variable that is 'trial'-dependent,
+                                    #ie should be changed when rerunning stuff in same folder
+                                    #not semantically important for run info
             })
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
@@ -298,6 +301,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
     runior = False
     runheight = False
 
+    default_run = runinfo.default_run
+
     for imodel, model in enumerate(models):
         
         #print(startmodel, imodel)
@@ -330,8 +335,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                         if runtype:
                             if(do_data):
-                                if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
+                                #if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
                                 #if(True):
+                                if(default_run):
                                     print('generating output for model %s ...' %modelname)
                                     modeloutputs_main(model_to_analyse, runinfo)
                                 else:
@@ -359,7 +365,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                                     for fset in fsets:
 
-                                                        if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
+                                                        #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
+                                                        if(default_run):
                                                         #if(True):
                                                         
                                                             print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
@@ -381,8 +388,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                                         print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
                                                         
-                                                        if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
+                                                        #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
                                                         #if(True):
+                                                        if(default_run):
                                                             polar_tcs_main(model_to_analyse, runinfo_to_analyse)
                                                         else:
                                                             print('polar tc plots already exist')
@@ -405,12 +413,14 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                             print('pref dir plots already exist')
                                                             
                                                         #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
-                                                        if(True):
+                                                        #if(True):
+                                                        if(default_run):
                                                                 print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                 tsne_main(model_to_analyse, runinfo_to_analyse)
 
                                                         if(control):
-                                                            if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
+                                                            #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
+                                                            if(default_run):
                                                             #if(True):
                                                                 print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                 comp_violin_main(trainedmodel, model_to_analyse, runinfo)
@@ -418,8 +428,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                                 print('comparison violin plot already saved')
 
                                                             if(runinfo.planestring() == 'horall'):
-                                                                if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
+                                                                #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
                                                                 #if(True):
+                                                                if(default_run):
                                                                     print('computing representational similarity analysis for model %s plane %s ... ' %(modelname, runinfo.planestring()))
                                                                     rsa_main(trainedmodel, model_to_analyse, runinfo)
 
@@ -432,8 +443,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                                             if(runinfo.planestring() == 'horall'):
                                                                 print('combining rsa results for all models')
-                                                                if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
+                                                                #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
                                                                 #if(True):
+                                                                if(default_run):
                                                                     rsa_models_comp(model, runinfo)
                                                                 else:
                                                                     print('rsa models comp already completed')
