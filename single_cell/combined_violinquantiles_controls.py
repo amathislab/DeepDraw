@@ -174,6 +174,8 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
         
         for i in [0,3]:
             mod = modevals[i]
+
+            mod = [x[x != 1] for x in mod]
             
             q90s = np.zeros((nlayers,))
             
@@ -308,7 +310,9 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
         
         for i in [0,1]:
             mod = modevals[i]
-            
+
+            mod = [x[x != 1] for x in mod]
+
             q90s = np.zeros((nlayers,))
             
             for ilayer, layer in enumerate(mod):

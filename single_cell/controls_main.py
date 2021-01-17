@@ -51,7 +51,7 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
 fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar']
-decoding_fsets = ['ee', 'vel']
+decoding_fsets = ['ee', 'eepolar', 'vel']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
@@ -213,9 +213,9 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 307, #internal experiment id
-                   #'datafraction': 0.1,
-                   'datafraction': 0.5,
+runinfo = RunInfo({'expid': 306, #internal experiment id
+                   'datafraction': 0.1,
+                   #'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
@@ -369,14 +369,26 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                         if(default_run):
                                                         #if(True):
                                                         
-                                                            print('running %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
+                                                            print('running %s analysis (fitting tuning curves) for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                                             tuningcurves_main(fset,
                                                                             runinfo_to_analyse,
                                                                             model_to_analyse,
                                                                             )
 
                                                         else:
-                                                            print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))
+                                                            print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))                                                  
+
+                                                    for dfset in decoding_fsets:
+                                                        #if(default_run):
+                                                        if(True):
+                                                            print('decoding %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
+                                                            tuningcurves_main(dfset,
+                                                                            runinfo_to_analyse,
+                                                                            model_to_analyse,
+                                                                            mmod='decoding'
+                                                                            )
+                                                        else:
+                                                            print('decoding %s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))                                                  
 
                                                 if(do_analysis):
                                                     evals = np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
@@ -420,8 +432,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                                         if(control):
                                                             #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
-                                                            if(default_run):
-                                                            #if(True):
+                                                            #if(default_run):
+                                                            if(True):
                                                                 print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                 comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                             else:

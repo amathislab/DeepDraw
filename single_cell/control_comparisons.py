@@ -256,6 +256,10 @@ def compile_comparisons_df(model, runinfo):
             layerevals.append(eepolarevals[...,3,1]) #eepolar
             
             for j, tcname in enumerate(tcnames):
+
+                #exclude r2 == 1 scores
+                layerevals[j] = layerevals[j][layerevals[j] != 1]
+
                 df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
                 df.loc[(mname, ilayer, tcname), 'median'] = np.median(layerevals[j])
                 df.loc[(mname, ilayer, tcname), 'std'] = layerevals[j].mean()               
@@ -403,7 +407,10 @@ def pairedt_comp(model, runinfo):
             trainedlayerevals.append(dvevals[...,2,1]) #vel
             trainedlayerevals.append(dvevals[...,3,1]) #dir + vel
             trainedlayerevals.append(accevals[...,2,1]) #acc
-            trainedlayerevals.append(labevals[...,0]) #labels    
+            trainedlayerevals.append(labevals[...,0]) #labels
+
+            for i in range(len(trainedlayerevals)):
+                trainedlayerevals[i][trainedlayerevals[i] == 1] = np.nan
 
             dvevals = np.load(os.path.join(controlexpf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'vel', mmod, runinfo.planestring())))
             accevals = np.load(os.path.join(controlexpf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
@@ -414,7 +421,10 @@ def pairedt_comp(model, runinfo):
             controllayerevals.append(dvevals[...,2,1]) #vel
             controllayerevals.append(dvevals[...,3,1]) #dir + vel
             controllayerevals.append(accevals[...,2,1]) #acc
-            controllayerevals.append(labevals[...,0]) #labels    
+            controllayerevals.append(labevals[...,0]) #labels 
+
+            for i in range(len(controllayerevals)):
+                controllayerevals[i][controllayerevals[i] == 1] = np.nan
             
             #print(tcnames)
             for itc, tc in enumerate(tcnames[:5]):
@@ -1003,8 +1013,8 @@ def main(model, runinfo):
         print('kinetic and label embeddings already analyzed')
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pairedt'))):
-    #if(True):
-    if(runinfo.default_run):    
+    if(True):
+    #if(runinfo.default_run):    
         print('running pairedt...')
         pairedt_comp(model, runinfo)
         print('ks analysis saved')

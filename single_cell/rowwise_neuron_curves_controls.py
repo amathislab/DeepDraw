@@ -670,6 +670,20 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
+    if len(Y_train.shape) > 1:
+        nna = ~np.any(np.isnan(Y_train), axis=1)
+    else:
+        nna = ~np.isnan(Y_train)
+    X_train = X_train[nna]
+    Y_train = Y_train[nna]
+    
+    if len(Y_test.shape) > 1:
+        nna = ~np.any(np.isnan(Y_test), axis=1)
+    else:
+        nna = ~np.isnan(Y_test)
+    X_test = X_test[nna]
+    Y_test = Y_test[nna]
+
     lm = LinearRegression().fit(X_train, Y_train)
 
     trainevals = compute_metrics(Y_train, lm.predict(X_train))
@@ -856,7 +870,7 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std'):
     assert fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang'\
         or fset == 'labels' or fset=='angvel' or fset=='ee', "Invalid fset!!!"
         
-    assert mmod == 'std' or mmod=='vert' or mmod=='vonmises' or mmod=='decoding', 'Invalid mmod!!!'
+    assert mmod == 'std' or mmod=='decoding', 'Invalid mmod!!!'
     
     modelname = model['name']
     nlayers = model['nlayers']
