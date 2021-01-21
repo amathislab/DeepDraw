@@ -7,7 +7,7 @@ Highlights:
 - Hierarchical neural networks solve the recognition task from muscle spindle inputs.
 - Individual neural network units resemble neurons in primate somatosensory cortex, and networks make predictions for other areas along the proprioceptive pathway.
 
-### Structure of the code
+# Structure of the code
 
 The code is organized as follows:
 
@@ -21,7 +21,7 @@ The code is organized as follows:
 
 Each part of the code has a dedicated readMe.md to describe how to run this section (e.g. `/single_cell/readMe.md`).
 
-## Runtimes and datasets:
+# Runtimes and datasets:
 
 Installation should take a few minutes (for the conda environment) and half an hour for the docker container (see below). All runtimes are for a strong computer (CPU) except the NN training, which is for a GPU.
 
@@ -42,14 +42,13 @@ We share the weights of all the trained networks (contained in 'network-weights'
 
 We share the data for analysis (activations, etc. contained in 'analysis-data'): about ~88GB.
 
-## Installation, software & requirements
+# Installation, software & requirements
 
 Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [TensorFlow](https://www.tensorflow.org/). To easily reproduce our computational environment incl. the dependencies we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
 
+## Creating the dataset (via docker)
 
-### Starting the docker container from the image:
-
-After pulling the docker image from the docker hub, in the terminal, start the container with the following command:
+Starting the docker container from the image. After pulling the docker image from the docker hub, in the terminal, start the container with the following command:
 
 Options:
 
@@ -99,9 +98,9 @@ docker logs containername
 Copy and paste the value after "token=". 
 
 
-### Create the conda environment
+## Reproducing the analysis (after dataset creation) 
 
-For the rest of the analysis, we are sharing a conda environment that has the dependencies. It can be installed by:
+For the rest of the analysis, we are sharing a *conda environment that has the dependencies*. It can be installed by:
 
 ```
 conda env create -f environment.yml
