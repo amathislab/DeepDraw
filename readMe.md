@@ -44,9 +44,11 @@ We share the data for analysis (activations, etc. contained in 'analysis-data'):
 
 # Installation, software & requirements
 
-Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [TensorFlow](https://www.tensorflow.org/). To easily reproduce our computational environment incl. the dependencies we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
+This project comrpises multiple parts, which is why there are also two different computing environments for reproducing the results. Below, provide a docker container for creating the PCR dataset and training the models and a conda enviroment for analyzing the models. These environments are not cross-compatible. 
 
-## Creating the dataset (via docker)
+## Creating the dataset/training DNNs (via docker)
+
+Dataset generation requires [OpenSim](https://opensim.stanford.edu/) and the network training requires [TensorFlow](https://www.tensorflow.org/). To easily reproduce our computational environment incl. the dependencies we are sharing a Docker container with OpenSim binaries and TensorFlow. It is available here: https://hub.docker.com/r/pranavm19/opensim/tags
 
 Starting the docker container from the image. After pulling the docker image from the docker hub, in the terminal, start the container with the following command:
 
