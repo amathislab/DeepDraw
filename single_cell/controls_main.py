@@ -51,7 +51,7 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
 fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar']
-decoding_fsets = ['ee', 'eepolar', 'vel']
+decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
@@ -432,8 +432,8 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
 
                                                         if(control):
                                                             #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
-                                                            #if(default_run):
-                                                            if(True):
+                                                            if(default_run):
+                                                            #if(True):
                                                                 print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                 comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                             else:

@@ -684,12 +684,24 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     X_test = X_test[nna]
     Y_test = Y_test[nna]
 
-    lm = LinearRegression().fit(X_train, Y_train)
+    trainevals = []
+    testevals = []
+    coefs = []
+    
+    assert Y_train.shape[1] > 1, 'Y is supposed to have multiple targets/columns'
 
-    trainevals = compute_metrics(Y_train, lm.predict(X_train))
-    testevals = compute_metrics(Y_test, lm.predict(X_test))
+    for feature in range(Y_train.shape[1]):
 
-    coefs = lm.coef_
+        lm = LinearRegression().fit(X_train, Y_train[feature])
+
+        trainevals.append(compute_metrics(Y_train[feature], lm.predict(X_train)))
+        testevals.append(compute_metrics(Y_test[feature], lm.predict(X_test)))
+
+        coefs.append(lm.coef_.copy())
+
+    trainevals = np.vstack(trainevals)
+    testevals = np.vstack(testevals)
+    coefs = np.vstack(coefs)
 
     return (trainevals, testevals, coefs)
 
