@@ -690,12 +690,12 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     
     assert Y_train.shape[1] > 1, 'Y is supposed to have multiple targets/columns'
 
-    for feature in range(Y_train.shape[1]):
+    for target in range(Y_train.shape[1]):
 
-        lm = LinearRegression().fit(X_train, Y_train[feature])
+        lm = LinearRegression().fit(X_train, Y_train[:,target])
 
-        trainevals.append(compute_metrics(Y_train[feature], lm.predict(X_train)))
-        testevals.append(compute_metrics(Y_test[feature], lm.predict(X_test)))
+        trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
+        testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
 
         coefs.append(lm.coef_.copy())
 
