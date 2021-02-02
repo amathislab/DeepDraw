@@ -779,6 +779,14 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
            threed= False,
            polar=True):
     """Returns input data for model. Uses global parameters.
+
+    Arguments
+    ---------
+    fset : string, one of ['acc', 'ang', 'angvel', 'labels', 'ee', 'eepolar', 'muscle_coords', 'mf' (muscle firing rates)]
+    runinfo : RunInfo (dict extension)
+    datafolder : string, location where data is stored
+    threed : bool, are all three coords needed or only the two in which movement occurs
+    polar : bool, should data be converted to polar
     
     Returns
     ---------
@@ -836,6 +844,7 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
     
     ee = ee[xyplmvt]
     vels = vels[xyplmvt]
+    mc = mc[xyplmvt]
     X = vels
 
     if len(X) > 1:
@@ -872,6 +881,13 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
             
             if polar:
                 X = get_polar(X)
+
+        elif(fset == 'muscle_coords'):
+            X = mc
+
+        elif (fset == 'mf'):
+            data = pickle.load(open(os.path.join(datafolder, 'data.pkl'), 'rb'))
+            X = data[xyplmvt]
 
     return X, xyplmvt
 

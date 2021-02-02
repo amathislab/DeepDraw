@@ -30,6 +30,7 @@ from representational_similarity_analysis import main as rsa_main
 from representational_similarity_analysis import rsa_models_comp
 from polar_tcs import main as polar_tcs_main
 from tsne import main as tsne_main
+from network_dissection import main as network_dissection_main
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -213,7 +214,7 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 301, #internal experiment id
+runinfo = RunInfo({'expid': 306, #internal experiment id
                    #'datafraction': 0.1,
                    'datafraction': 0.5,
                    'randomseed': 2000,
@@ -391,9 +392,9 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                             print('decoding %s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))                                                  
 
                                                 if(do_analysis):
-                                                    evals = np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
-                                                    print(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
-                                                    print(evals.shape)
+                                                    #evals = np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
+                                                    #print(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
+                                                    #print(evals.shape)
 
                                                     if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
                                                         print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
@@ -427,8 +428,15 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                         #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
                                                         #if(True):
                                                         if(default_run):
-                                                                print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
-                                                                tsne_main(model_to_analyse, runinfo_to_analyse)
+                                                            print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
+                                                            tsne_main(model_to_analyse, runinfo_to_analyse)
+
+                                                        if(i == 1 and runinfo.planestring() == 'horall' and not control):
+                                                            if(True):
+                                                                print('running network dissection for model %s plane %s .... ' %(modelname, runinfo.planestring()))
+                                                                network_dissection_main(model_to_analyse, runinfo_to_analyse)
+                                                            else:
+                                                                print('network dissection already completed or skipped')
 
                                                         if(control):
                                                             #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
@@ -450,8 +458,10 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                                                     print('rsa already saved')
 
                                                         if (i==5 and control):
-                                                            comparisons_main(model, runinfo)
-
+                                                            if(False):
+                                                                comparisons_main(model, runinfo)
+                                                            else:
+                                                                print('skipping comparisons')
 
                                                             if(runinfo.planestring() == 'horall'):
                                                                 print('combining rsa results for all models')
@@ -468,12 +478,14 @@ def main(do_data=False, do_results=False, do_analysis=False, include = ['S', 'T'
                                             runheight = True
 
                                         if runheight:
-                                            print('launching analysis of nodes\' generalizational capacity...')
-                                            generalization_main(model_to_analyse, runinfo)
+                                            if(False):
+                                                print('launching analysis of nodes\' generalizational capacity...')
+                                                generalization_main(model_to_analyse, runinfo)
 
                                             if(i==5 and control):
                                             #if(True):
-                                                generalizations_comparisons_main(model, runinfo)
+                                                if(False):
+                                                    generalizations_comparisons_main(model, runinfo)
 
     print("Yay! Done, success")
 
@@ -500,3 +512,4 @@ if __name__=='__main__':
         include = ['LSTM', 'S', 'T', 'ST']
 
     main(args.data, args.results, args.analysis, include)
+# %%
