@@ -1,6 +1,7 @@
 import os
 import sys
 from nn_models import ConvModel, RecurrentModel, AffineModel
+from nn_rmodels import ConvRModel, RecurrentRModel
 
 import numpy as np
 import pandas as pd
@@ -62,6 +63,55 @@ def load_model(meta_data, experiment_id, model_type, is_trained):
     return model
 
 
+def load_rmodel(meta_data, experiment_id, model_type, is_trained):
+    '''Load a trained `ConvRModel`, `RecurrentRModel` object.
+
+    Returns
+    -------
+    model : an instance of `ConvRModel` or `RecurrentRModel`
+
+    '''
+    if model_type == 'conv':
+        
+        try:
+            myseed = meta_data['seed']
+        except:
+            myseed = None
+        
+        model = ConvRModel(
+            experiment_id=experiment_id,
+            arch_type=meta_data['arch_type'],
+            nlayers=meta_data['nlayers'],
+            n_skernels=meta_data['n_skernels'],
+            n_tkernels=meta_data['n_tkernels'],
+            s_kernelsize=int(meta_data['s_kernelsize']),
+            t_kernelsize=int(meta_data['t_kernelsize']),
+            s_stride=int(meta_data['s_stride']),
+            t_stride=int(meta_data['t_stride']),
+            seed=myseed,
+            train=is_trained)
+    
+    if model_type == 'rec':
+        
+        try:
+            myseed = meta_data['seed']
+        except:
+            myseed = None
+        
+        model = RecurrentRModel(
+            experiment_id=experiment_id,
+            rec_blocktype=meta_data['rec_blocktype'],
+            n_recunits=meta_data['n_recunits'],
+            npplayers=meta_data['npplayers'],
+            s_kernelsize=meta_data['s_kernelsize'],
+            s_stride=meta_data['s_stride'],
+            nppfilters=meta_data['nppfilters'],
+            seed=myseed,
+            train=is_trained)
+
+    return model
+
+
 def set_layer_dimensions(representations, model_type, layer_name):
     '''Set dimensions of the layer representations to (n_examples, n_timesteps, n_dims).
 
@@ -100,7 +150,7 @@ def set_kin_dimensions(kinematics, n_out_timesteps):
     assert n_timesteps == 320, "Kinematics shape mismatch. Please revise."
     skip_idx = n_timesteps // (n_out_timesteps - 1)
     kinematics = kinematics[:, :, ::skip_idx]
-    assert kinematics.shape[-1] == n_out_timesteps, "Whaatt!"
+    assert kinematics.shape[-1] == n_out_timesteps
     return kinematics.transpose(0, 2, 1)
 
 
@@ -160,7 +210,11 @@ def generate_layerwise_representations(model, data, batch_size, repfile_name):
 
     with tf.Graph().as_default():
         X = tf.placeholder(tf.float32, myshape, name="X")
-        _, _, output = model.predict(X, is_training=False)
+        name = type(model).__name__
+        if name == 'ConvModel' or name == 'RecurrentModel':
+            _, _, output = model.predict(X, is_training=False)
+        elif name == 'ConvRModel' or name == 'RecurrentRModel':
+            _, output = model.predict(X, is_training=False)
         restorer = tf.train.Saver()
         myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
 
