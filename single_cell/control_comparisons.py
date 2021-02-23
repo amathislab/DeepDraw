@@ -37,7 +37,7 @@ mmod = 'std'
 tcoff = 32
 
 tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels', 'ee', 'eepolar']
-dec_tcnames = ['ee_x', 'ee_y', 'eepolar_r', 'eepolar_theta', 'dir', 'vel', 'acc_r', 'acc_theta']
+dec_tcnames = ['ee_x', 'ee_y', 'eepolar_r', 'eepolar_theta', 'vel', 'dir', 'acc_r', 'acc_theta']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
                      21.,  24.,  27.,  30.]).astype(int))
