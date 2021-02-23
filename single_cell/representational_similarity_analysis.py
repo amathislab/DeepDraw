@@ -28,6 +28,42 @@ def cca(features_x, features_y):
     qy, _ = np.linalg.qr(features_y)
     return np.linalg.norm(qx.T.dot(qy)) ** 2 / min(features_x.shape[1], features_y.shape[1])
 
+def models_cka_matrix(modelA, modelB, runinfo):
+    '''Calculates a matrix of CKA scores comparing two models
+
+    Arguments
+    ---------
+    modelA : dict containing model information for model A, including base and name
+    modelB : dict containing model information for model B
+    runinfo : RunInfo
+
+    Returns
+    -------
+    cka_matrix : np.array of floats [1, nlayers + 1], cka scores for each layer
+    '''
+
+    nlayers = modelA['nlayers']
+    cka_matrix = np.zeros((1, nlayers + 1))
+
+    for ilayer in np.arange(-1, nlayers):
+        layer = lstring(ilayer)  
+        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        X = read_layer_reps(ilayer, runinfo, modelA)
+        X = X.reshape((X.shape[0], -1))                    
+        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        Y = read_layer_reps(ilayer, runinfo, modelB)
+        Y = Y.reshape((Y.shape[0], -1))
+        
+        print("Layer %d " %(ilayer + 1))
+        print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
+            
+        cka_from_examples = cka(gram_linear(X), gram_linear(Y))
+            
+        cka_matrix[0, ilayer + 1] = cka_from_examples
+    
+    return cka_matrix
+
+
 def main(trainedmodel, controlmodel, runinfo):
     '''Calculate the CKA and CCA scores of a given trained and control model for every layer and save output
     

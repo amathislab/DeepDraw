@@ -47,14 +47,19 @@ def main(modelinfo, runinfo):
 
     #PATHS
     basefolder = runinfo['basefolder']
-    
-    model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
-    #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
-    #PATH_TO_DATA = '../deep_proprioception/dataset/'
+
     path_to_data = f'{basefolder}../pcr_data/pcr_dataset_test.hdf5'
     PATH_TO_DATA = f'{basefolder}../pcr_data/'
-    MODELS_DIR = '.'
-    path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
+    
+    if model['model_path'] is None:
+        model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
+        #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
+        #PATH_TO_DATA = '../deep_proprioception/dataset/'
+        MODELS_DIR = '.'
+        path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
+    else:
+        model_path = model['model_path']
+        path_to_config_file = model['path_to_config_file']
     
     if path_to_data is not None:
         with h5py.File(path_to_data, 'r') as datafile:
