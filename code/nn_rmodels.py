@@ -185,7 +185,7 @@ class RecurrentRModel():
 
         # Make model name
         units = ('-'.join(str(i) for i in nppfilters))
-        parts_name = [rec_blocktype, str(npplayers), units, str(n_recunits)]
+        parts_name = [rec_blocktype, 'r', str(npplayers), units, str(n_recunits)]
 
         # Create model directory
         self.name = '_'.join(parts_name)
