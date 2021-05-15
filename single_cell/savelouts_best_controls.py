@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy import exp
 from nn_models import ConvModel, AffineModel, RecurrentModel
+from nn_rmodels import ConvRModel, RecurrentRModel
 from nn_train_utils import Dataset
 import pickle#, time
 from tensorflow.contrib.rnn import *
@@ -51,16 +52,17 @@ def main(modelinfo, runinfo):
     path_to_data = f'{basefolder}../pcr_data/pcr_dataset_test.hdf5'
     PATH_TO_DATA = f'{basefolder}../pcr_data/'
     
-    if model['model_path'] is None:
+    if modelinfo['model_path'] is None:
         model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
         #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
         #PATH_TO_DATA = '../deep_proprioception/dataset/'
         MODELS_DIR = '.'
         path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
     else:
-        model_path = model['model_path']
-        path_to_config_file = model['path_to_config_file']
-    
+        model_path = modelinfo['model_path']
+        path_to_config_file = modelinfo['path_to_config_file']
+    print(model_path, path_to_config_file)
+
     if path_to_data is not None:
         with h5py.File(path_to_data, 'r') as datafile:
             idxtups = []
@@ -117,18 +119,33 @@ def main(modelinfo, runinfo):
         train_mean = model_config['train_mean']
 
 
-    if (modelinfo['type'] in ['S', 'ST']):
-        model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
-                          int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
-                          int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
-                          int(model_config['t_stride']))
-    
-    else:        
-        print('building rec model')
-        model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
-                               int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
-                               int(model_config['s_kernelsize']), int(model_config['s_stride']))
-    
+    if not modelinfo['regression_task']:
+        if (modelinfo['type'] in ['S', 'ST']):
+            model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
+                            int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
+                            int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
+                            int(model_config['t_stride']))
+        
+        else:        
+            print('building rec model')
+            model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
+                                int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
+                                int(model_config['s_kernelsize']), int(model_config['s_stride']))
+
+    else:
+        if (modelinfo['type'] in ['S', 'ST']):
+            model = ConvRModel(model_config['experiment_id'], model_config['arch_type'], \
+                            int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
+                            int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
+                            int(model_config['t_stride']))
+        
+        else:        
+            print('building rec model')
+            model = RecurrentRModel(model_config['experiment_id'], model_config['rec_blocktype'], 
+                                int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
+                                int(model_config['s_kernelsize']), int(model_config['s_stride']))
+
+
     model.model_path = basefolder + model.model_path
     
     #SAVE FOLLOW THROUGH    
@@ -152,18 +169,24 @@ def main(modelinfo, runinfo):
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
 
         # Compute scores and accuracy
-        scores, probabilities, net = model.predict(X, is_training=False)
-        correct = tf.nn.in_top_k(probabilities, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+        if not modelinfo['regression_task']:
+            scores, probabilities, net = model.predict(X, is_training=False)
+        else:
+            scores, net = model.predict(X, is_training=False)
+        #correct = tf.nn.in_top_k(probabilities, y, 1)
+        #accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
         # Test the `model`!
         restorer = tf.train.Saver()
         myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
         
-        if(not modelinfo['control']):
-            model.model_path = model.model_path + modelname[-2:] #Add control set number
+        if not runinfo.regression_task:
+            if(not modelinfo['control']):
+                model.model_path = model.model_path + modelname[-2:] #Add control set number
+            else:
+                model.model_path = model.model_path + modelname[-3:]
         else:
-            model.model_path = model.model_path + modelname[-3:]
+            model.model_path = model_path
 
         #update model path
         print('model.model_path', model.model_path)
