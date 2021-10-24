@@ -162,8 +162,12 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
                 part.set_alpha(alpha[1])
                 part.set_zorder(zorder)
     
-            clip(vp, lr)
-            
+            try:
+                clip(vp, lr)
+            except IndexError as e:
+                print(e)
+                print("not enough samples for ", lr)
+                print(vp)            
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             
             vps.append(vp)
@@ -297,9 +301,14 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
                     part.set_edgecolor(cmap(cidx[ccolorindex]))
                 part.set_alpha(alpha[1])
                 part.set_zorder(zorder)
-    
-            clip(vp, lr)
             
+            try:
+                clip(vp, lr)
+            except IndexError as e:
+                print(e)
+                print("not enough samples for ", lr)
+                print(vp)
+
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             
             vps.append(vp)

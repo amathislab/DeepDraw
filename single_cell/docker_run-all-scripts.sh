@@ -8,9 +8,9 @@
 docker start kai_dlcdocker_data_tf15
 docker exec --user kai -i kai_dlcdocker_data_tf15 bash <<'EOF'
 cd /media/data/DeepDraw/DeepDraw/single_cell
-python3 controls_main.py --S True --data True --regression_models True --task_models False
+python3 controls_main.py --LSTM True --data True --task_models True
 exit
 EOF
 docker stop kai_dlcdocker_data_tf15
-python3 controls_main.py --S True --results True --regression_models True --task_models False
-python3 controls_main.py --S True --analysis True --regression_models True --task_models False
+python3 controls_main.py --LSTM True --results True --task_models True
+python3 controls_main.py --LSTM True --analysis True --task_models True

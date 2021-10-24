@@ -54,6 +54,7 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
 fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar']
+#decoding_fsets = []
 decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
@@ -234,17 +235,17 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 311, #internal experiment id
+runinfo = RunInfo({'expid': 315, #internal experiment id
                    #'datafraction': 0.05,
-                   'datafraction': 0.5,
+                   'datafraction': 0.1,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 2, #0 (least), 1, 2 (most)
-                   'model_experiment_id': 7, #as per Pranav's model generation
+                   'model_experiment_id': 32, #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
-                   'default_run': True #only variable that is 'trial'-dependent,
+                   'default_run': True, #only variable that is 'trial'-dependent,
                                     #ie should be changed when rerunning stuff in same folder
                                     #not semantically important for run info
             })
@@ -325,6 +326,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
     models = [model for model in allmodels if (model['type'] in include)]
 
     runinfo.regression_task = do_regression_task
+        #slightly confusing where runinfo.regression_task specifies if we are running CKA regression cluster of tasks,
+        #whereas modelinfo.regression_task specifies if the current model was trained on regression (True) or task (False)
 
     print("beginning body...")
 
@@ -332,7 +335,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
     startrun = 1
     startcontrol = False
     startior = 0
-    startheight = -42
+    startheight = 'all'
+    #startheight = 6
 
     runmodels = False
     runruns = False
@@ -341,6 +345,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
     runheight = False
 
     default_run = runinfo.default_run
+    initiated_mp = False
 
     for imodel, model in enumerate(models):
         
@@ -351,9 +356,12 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
             for task in tasks:
 
                 if task == 'regression':
+                    print("Working on regression models...")
                     model['base'] = model['base_regression']
+                    model['regression_task'] = True
                 
                 if startmodel == imodel:
+                    print("Running model ", imodel)
                     runmodels = True
 
                 if runmodels:
@@ -366,6 +374,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                         trainedmodel = model.copy()
 
                         if startrun == i:
+                            print("Running model run ", startrun)
                             runruns = True
 
                         if runruns == True:
@@ -389,7 +398,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                         else:
                                             print('data for model %s already generated' %modelname)
 
+                                    
                                     if(do_results or do_analysis):
+                                        
                                         for ior, orientation in enumerate(orientations):
                                             runinfo['orientation'] = orientation
 
@@ -397,6 +408,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                 runior = True
 
                                             if runior:
+                                            #if(False):
                                                 for height in (['all'] + uniqueplanes[ior]):
                                                     runinfo['height'] = height
 
@@ -406,19 +418,49 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                         runheight = True
 
                                                     if runheight:
+                                                        
+                                                        if(False):
+                                                        #try garbage collecting
+                                                            import gc
+
+                                                            def garbage_collect():
+                                                                print("Collecting...")
+                                                                n = gc.collect()
+                                                                print("Number of unreachable objects collected by GC:", n)
+                                                                print("Uncollectable garbage:", gc.garbage)
+                                                            
+                                                            garbage_collect()
+
                                                         if(do_results):
                                                             print('running analysis for model %s plane %s...' %(modelname, runinfo.planestring()))
+
+                                                            '''
+                                                            if(~initiated_mp):
+                                                                import multiprocessing as mp
+                                                                if(True):
+                                                                    n_cpus = 10
+                                                                print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
+                                                                if(True):
+                                                                    with mp.get_context("spawn").Pool(n_cpus) as myPool:
+                                                                        pool = myPool
+                                                                if(True):
+                                                                    pool = mp.Pool(n_cpus)
+                                                                print("Pool started")
+                                                                initiated_mp = True
+                                                            '''
 
                                                             for fset in fsets:
 
                                                                 #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-                                                                if(default_run):
+                                                                #if(default_run):
                                                                 #if(True):
+                                                                if(False):
                                                                 
                                                                     print('running %s analysis (fitting tuning curves) for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                                                     tuningcurves_main(fset,
                                                                                     runinfo_to_analyse,
                                                                                     model_to_analyse,
+                                                                                    #pool=pool
                                                                                     )
 
                                                                 else:
@@ -427,6 +469,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                             for dfset in decoding_fsets:
                                                                 #if(default_run):
                                                                 if(True):
+                                                                #if(False):
                                                                     print('decoding %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                                                     tuningcurves_main(dfset,
                                                                                     runinfo_to_analyse,
@@ -472,12 +515,13 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     
                                                                 #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
                                                                 #if(True):
-                                                                if(default_run):
+                                                                #if(default_run):
+                                                                if(False):
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
                                                                 if(i == 1 and runinfo.planestring() == 'horall' and not control):
-                                                                    if(True):
+                                                                    if(False):
                                                                         print('running network dissection for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                         network_dissection_main(model_to_analyse, runinfo_to_analyse)
                                                                     else:
@@ -503,7 +547,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                             print('rsa already saved')
 
                                                                 if (i==5 and control):
-                                                                    if(False):
+                                                                    if(True):
                                                                         comparisons_main(model, runinfo)
                                                                     else:
                                                                         print('skipping comparisons')
@@ -516,6 +560,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                             rsa_models_comp(model, runinfo)
                                                                         else:
                                                                             print('rsa models comp already completed')
+                                            else:
+                                                runheight = True
 
                                             if(do_analysis):
 
@@ -523,13 +569,13 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                     runheight = True
 
                                                 if runheight:
-                                                    if(False):
+                                                    if(True):
                                                         print('launching analysis of nodes\' generalizational capacity...')
                                                         generalization_main(model_to_analyse, runinfo)
 
                                                     if(i==5 and control):
-                                                    #if(True):
-                                                        if(False):
+                                                        if(True):
+                                                        #if(False):
                                                             generalizations_comparisons_main(model, runinfo)
 
         else:
@@ -576,6 +622,14 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
             '''
 
+    '''
+    if(initiated_mp):
+        pool.close()
+        print("pool closed")
+        pool.join()
+        print("pool joined")
+    '''
+
     print("Yay! Done, success")
 
 if __name__=='__main__':
@@ -585,7 +639,7 @@ if __name__=='__main__':
     parser.add_argument('--results', type=bool, default=False, help='Fit TCs?')
     parser.add_argument('--analysis', type=bool, default=False, help='Analyze fitted TCs?')
     parser.add_argument('--regression_task', type=bool, default=False, help='Analyze models from regression task?')
-    parser.add_argument('--task_models', type=bool, default=True, help='Include task models?')
+    parser.add_argument('--task_models', type=bool, default=False, help='Include task models?')
     parser.add_argument('--regression_models', type=bool, default=False, help='Include regression models?')
     parser.add_argument('--S', type=bool, default=False, help='Include Spatial_temporal models?')
     parser.add_argument('--ST', type=bool, default=False, help='Include SpatioTemporal models?')
@@ -609,5 +663,7 @@ if __name__=='__main__':
     if args.regression_models:
         tasks.append('regression')
 
-    main(args.data, args.results, args.analysis, args.regression_task, include, tasks)
+    print("Working on the following tasks: ", tasks)
+
+    main(args.data, args.results, args.analysis, args.regression_task, include, tasks= tasks)
 # %%

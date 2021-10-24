@@ -146,8 +146,19 @@ def main(modelinfo, runinfo):
                                 int(model_config['s_kernelsize']), int(model_config['s_stride']))
 
 
-    model.model_path = basefolder + model.model_path
+    print("Old model path: ", model.model_path)
+    if not modelinfo['regression_task']:
+        model.model_path = basefolder + model.model_path
+        if(not modelinfo['control']):
+            model.model_path = model.model_path + modelname[-2:] #Add control set number
+        else:
+            model.model_path = model.model_path + modelname[-3:]
+    else:
+        model.model_path = model_path
+    print("New model path: ", model.model_path)
     
+    print('Final model.model_path', model.model_path)
+
     #SAVE FOLLOW THROUGH    
     datafolder = runinfo.datafolder(modelinfo)
     os.makedirs(datafolder, exist_ok=True)
@@ -179,17 +190,6 @@ def main(modelinfo, runinfo):
         # Test the `model`!
         restorer = tf.train.Saver()
         myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
-        
-        if not runinfo.regression_task:
-            if(not modelinfo['control']):
-                model.model_path = model.model_path + modelname[-2:] #Add control set number
-            else:
-                model.model_path = model.model_path + modelname[-3:]
-        else:
-            model.model_path = model_path
-
-        #update model path
-        print('model.model_path', model.model_path)
         
         for j in range(len(list((net.values()))) - 1):
             with tf.Session(config=myconfig) as sess:

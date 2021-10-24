@@ -101,6 +101,7 @@ def get_centers(fmapntime, ilayer, model, ntime = 320):
             centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
         elif(mtype == 'ST'):
             centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
+
     assert len(centers) == fmapntime, "Time dimensions mismatch!!!! centers: %d fmap: %d" %(len(centers), fmapntime)
     return centers
 
@@ -138,6 +139,10 @@ def read_layer_reps(ilayer, runinfo, model):
             lo = np.zeros((ds_shape))
             for i in range(num_datasets):
                 lo[batch_size*i : batch_size*(i+1)] = reps_layer.get(str(i))[()]
+
+    if(model['type'] == 'LSTM' and ilayer == model['nlayers'] - 1):
+        lo = lo.swapaxes(-2,-1)
+        print("lo axes swapped. layer representations shape %s " %str(lo.shape))
 
     if(runinfo.verbose):
         print("read layer represenations. shape: ", lo.shape)
@@ -498,7 +503,7 @@ def tune_row_label(X, Y, node):
 
 # %% TUNE
         
-def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
+def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std', pool=None):
     ''' Makes calls to tuning curves for individual rows using multiprocessing
        
        Arguments
@@ -581,18 +586,24 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std'):
         else:
         '''
 
-        if(True):
+        
+        if(fset != 'labels'):
             n_cpus = 10
+        else:
+            n_cpus = 5
         print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
         pool = mp.Pool(n_cpus)
+        print("Pool started")
+        
         
         results = []
         
         # Resize Y so that feature maps are appended as new rows in first feature map
         Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
+        print("Y reshaped")
     
         for irow in range(Y.shape[1]):
-            #print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
+            print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
 
             if need_to_sleep:
                 time.sleep(0.2)
@@ -690,14 +701,21 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     
     assert Y_train.shape[1] > 1, 'Y is supposed to have multiple targets/columns'
 
-    for target in range(Y_train.shape[1]):
+    if (len(Y_train) >= 1 and len(Y_test)  >= 1):
 
-        lm = LinearRegression().fit(X_train, Y_train[:,target])
+        for target in range(Y_train.shape[1]):
 
-        trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
-        testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
+            lm = LinearRegression().fit(X_train, Y_train[:,target])
 
-        coefs.append(lm.coef_.copy())
+            trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
+            testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
+
+            coefs.append(lm.coef_.copy())
+
+    else:
+        trainevals.append([np.nan]*3)
+        testevals.append([np.nan]*3)
+        coefs.append([np.nan]*3)
 
     trainevals = np.vstack(trainevals)
     testevals = np.vstack(testevals)
@@ -706,7 +724,7 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     return (trainevals, testevals, coefs)
 
 
-def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
+def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=None):
     """Performs several layer-wide calculations for fitting the tuning curves and saves output to file
     
     Arguments
@@ -723,7 +741,6 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     """
 
     savepath = runinfo.resultsfolder(model, fset)
-
         
     if mmod == 'decoding':
         savepath = runinfo.resultsfolder(model, '%s_%s' %(mmod, fset))
@@ -761,7 +778,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
             nmets = 1
     
         if len(X) > 1:
-            trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, ilayer, mmod)
+            trainevals, testevals = tune(X, fset, lo, centers, nmods, nmets, ilayer, mmod, pool=pool)
         else:
             trainevals = np.empty((0, nmods, nmets))
             testevals = np.empty((0, nmods, nmets))
@@ -893,7 +910,7 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
 
 # %% MAIN
 
-def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std'):
+def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None):
 
     assert fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang'\
         or fset == 'labels' or fset=='angvel' or fset=='ee', "Invalid fset!!!"
@@ -912,7 +929,7 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std'):
     np.random.seed(42)
         
     for ilayer in np.arange(startlayer, min(endlayer, nlayers)):
-        tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model)
+        tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, pool=pool)
         
 if __name__=='__main__':
     
