@@ -437,6 +437,10 @@ def tune_row_decoding(X, Y, row):
     X = Y
     Y = X_temp
 
+    #trying Pranav's regression trick where I divide layer activations by their maximal value
+    print("Normalizing by maximal value %s" %np.max(X))
+    X = X/np.max(X)
+
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     c = np.linalg.lstsq(X_train, Y_train, rcond=None)[0]
@@ -767,7 +771,9 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=
         trainevals, testevals, coefs = tune_decoding(X, fset, lo, centers, ilayer, mmod)
 
         print('saving decoding reg coefs')
-        np.save('%s/%s_coefs.npy' %(savepath, savename), coefs)        
+        np.save('%s/%s_coefs_normalized.npy' %(savepath, savename), coefs)       
+
+        savename = '%s_normalized' %savename
 
     else:
         if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):

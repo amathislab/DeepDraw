@@ -238,6 +238,7 @@ class RunInfo(dict):
 runinfo = RunInfo({'expid': 315, #internal experiment id
                    #'datafraction': 0.05,
                    'datafraction': 0.1,
+                   #'datafraction': 0.5,
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
@@ -245,7 +246,7 @@ runinfo = RunInfo({'expid': 315, #internal experiment id
                    'model_experiment_id': 32, #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
-                   'default_run': True, #only variable that is 'trial'-dependent,
+                   'default_run': False, #only variable that is 'trial'-dependent,
                                     #ie should be changed when rerunning stuff in same folder
                                     #not semantically important for run info
             })
@@ -507,16 +508,17 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                 '''
 
                                                                 print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
-                                                                if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
+                                                                #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
                                                                 #if(True):
+                                                                if(default_run):
                                                                     prefdir_main(model_to_analyse, runinfo_to_analyse)
                                                                 else:
                                                                     print('pref dir plots already exist')
                                                                     
                                                                 #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
                                                                 #if(True):
-                                                                #if(default_run):
-                                                                if(False):
+                                                                if(default_run):
+                                                                #if(False):
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
