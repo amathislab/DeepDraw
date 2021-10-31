@@ -438,6 +438,7 @@ def tune_row_decoding(X, Y, row):
     Y = X_temp
 
     #trying Pranav's regression trick where I divide layer activations by their maximal value
+    #NORMALIZATION
     print("Normalizing by maximal value %s" %np.max(X))
     X = X/np.max(X)
 
@@ -449,7 +450,6 @@ def tune_row_decoding(X, Y, row):
     rowtesteval[0] = compute_metrics(Y_test, X_test @ c)
 
     return (row, rowtraineval, rowtesteval)
-
 
 # %% LABEL SPECIFICITY
     
