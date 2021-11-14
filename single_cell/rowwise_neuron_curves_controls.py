@@ -427,6 +427,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
         
     return (row, rowtraineval, rowtesteval)
 
+'''
 # %% DECODING
 def tune_row_decoding(X, Y, row):
     
@@ -439,8 +440,8 @@ def tune_row_decoding(X, Y, row):
 
     #trying Pranav's regression trick where I divide layer activations by their maximal value
     #NORMALIZATION
-    print("Normalizing by maximal value %s" %np.max(X))
-    X = X/np.max(X)
+    #print("Normalizing by maximal value %s" %np.max(X))
+    #X = X/np.max(X)
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
@@ -450,6 +451,7 @@ def tune_row_decoding(X, Y, row):
     rowtesteval[0] = compute_metrics(Y_test, X_test @ c)
 
     return (row, rowtraineval, rowtesteval)
+'''
 
 # %% LABEL SPECIFICITY
     
@@ -466,19 +468,7 @@ def tune_row_label(X, Y, node):
     Returns
     ----------
     node: node index
-    nodeeval: np.array of floats [21 x 3], return node evaluation.
-        First 20 Rows: Metrics for each individual label [a, b, ...]:
-            - Mean Squared (Deviation) of Group MSG
-            - Mean Squared Within Group MSW
-            - Explained Variance MSG/Var
-        Row 20:
-            - Total Mean
-            - Total Variance
-            - Total Fraction of Variance Explained
-        Final Row: "Prediction" evaluation
-            - RMSE
-            - r2
-            - PCC
+    nodeeval: np.array
     """
     
     X = label_binarize(X, np.unique(X))
@@ -665,23 +655,47 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     if(len(X.shape) > 1):
         X = X[..., centers]
     
+    print("initial shape of Y %s" %str(Y.shape))
+
     # Resize Y so that feature maps are appended as new rows in first feature map
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
 
-    # reshape so that both X and Y are in format [samples x timepoints, features]
-    assert len(X.shape) > 1, "X has shape 1"
+    # reshape so that both X and Y are in format [samples x timepoints, features] (except for labels)
     
-    X = X.swapaxes(1,2).reshape((-1, X.shape[1]))
-    
-    if len(Y.shape) > 2:
-        Y = Y.swapaxes(1,2).reshape((-1, Y.shape[1]))
-    else:
-        Y = Y.reshape((-1, Y.shape[1]))
+    if fset != 'labels':
+        print(X.shape)
+        assert len(X.shape) > 1, "X has shape 1 %s" %str(X.shape)
+        
+        X = X.swapaxes(1,2).reshape((-1, X.shape[1]))
 
-    #switch spindles to Y and neuron firing ratest to X
+        if len(Y.shape) > 2:
+            Y = Y.swapaxes(1,2).reshape((-1, Y.shape[1]))
+        else:
+            Y = Y.reshape((-1, Y.shape[1]))
+
+    # for labels: reshape so that both are in format [samples, timepoints x features]
+
+    else:
+        print("About to binarize shape %s" %str(X.shape))
+        X = label_binarize(X, np.unique(X))
+        print("New shape of X %s"%str(X.shape))
+
+        Y = Y.reshape((Y.shape[0], -1))
+        
+    print("final shape of X %s" %str(X.shape))
+    print("final shape of Y %s" %str(Y.shape))
+    
+
+    #switch kin vars / labels to Y and neuron firing ratest to X
     X_temp = X
     X = Y
     Y = X_temp
+
+    #trying Pranav's regression trick where I divide layer activations by their maximal value
+    #NORMALIZATION
+    if fset != 'labels':
+        print("Normalizing by maximal value %s" %np.max(X))
+        X = X/np.max(X)
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
@@ -709,12 +723,42 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
 
         for target in range(Y_train.shape[1]):
 
-            lm = LinearRegression().fit(X_train, Y_train[:,target])
+            if fset != 'labels':
 
-            trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
-            testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
+                lm = LinearRegression().fit(X_train, Y_train[:,target])
 
-            coefs.append(lm.coef_.copy())
+                trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
+                testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
+
+                coefs.append(lm.coef_.copy())
+
+            else:
+                svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
+                try:
+                    svm.fit(X_train, Y_train)
+                except ValueError as err:
+                    print("fitting SVM failed. %s" %err) 
+                    nodetraineval = 0.5
+                
+                try:
+                    print("About to calculate ROC: X_train Shape: %s, Y_train Shape: %s" %(str(X_train.shape), str(Y_train.shape)))
+                    nodetraineval = roc_auc_score(Y_train, svm.decision_function(X_train))
+                except ValueError as err:
+                    print("train evaluation failed. %s" %err) 
+                    nodetraineval = 0.5
+
+                try:
+                    nodetesteval = roc_auc_score(Y_test, svm.decision_function(X_test))
+                except ValueError as err:
+                    print("test evaluation failed. %s" %err) 
+                    nodetesteval = 0.5
+                    
+                #print("Train eval: %s" %str(nodetraineval))
+                #print("Test eval: %s" %str(nodetesteval))
+                
+                trainevals.append(np.array([(nodetraineval-0.5)*2]*3))
+                testevals.append(np.array([(nodetesteval-0.5)*2]*3))
+                coefs.append([np.nan]*3)
 
     else:
         trainevals.append([np.nan]*3)

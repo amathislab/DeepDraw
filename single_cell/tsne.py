@@ -48,7 +48,8 @@ def mytsne(X):
     return tsne, df
 
 def plottsne(df, name, labels, ff, alpha=0.8):
-    plt.figure(dpi=275)
+    plt.figure(dpi=150)
+    #plt.figure(figsize=[2,2])
     plt.scatter(
         x = df['tsne-2d-one'],
         y = df['tsne-2d-two'],
@@ -66,6 +67,7 @@ def plottsne(df, name, labels, ff, alpha=0.8):
     plt.ylabel('tsne-pca50-two')
     #plt.savefig('%s%s_tsne%d.png' %(ff,name, int(alpha*100)))
     filename = os.path.join(ff, 'tsne_%s.png' %name)
+    filename = os.path.join(ff, 'tsne_%s.svg' %name)
     print('saving in file %s ...' %filename)
     plt.savefig(filename)
     plt.close()
@@ -85,15 +87,15 @@ def main(model, runinfo):
     
     for i in range(nlayers):
         lname = "l%d" %i
+    
         
-        '''
-        print(lname)
-        if i == 0:
-            l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'data.pkl'), 'rb'))
-        else:
-            l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
-        l = l[xyplmvt]
-        '''
+        #print(lname)
+        #if i == 0:
+        #    l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'data.pkl'), 'rb'))
+        #else:
+        #    l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
+        #l = l[xyplmvt]
+        
         l = read_layer_reps(i - 1, runinfo, model) #-1 because of alternate spindles convention, here =0, there =-1
         l = l[xyplmvt]
         
@@ -107,3 +109,16 @@ def main(model, runinfo):
         except ValueError as e:
             print('not enough samples to compute PCA & tSNE')
             print(e)
+    
+    
+    ## Print an endeffector tSNE
+    
+    lname = 'ee'
+    ee, xyplmvt = X_data('ee', runinfo, datafolder=runinfo.datafolder(model))
+    eex = ee.reshape(ee.shape[0], -1)
+    try:
+        ltsne, ldf = mytsne(eex)
+        plottsne(ldf, lname, labels, ff)
+    except ValueError as e:
+        print('not enough samples to compute PCA & tSNE')
+        print(e)

@@ -129,11 +129,13 @@ def main(trainedmodel, controlmodel, runinfo):
     cka_ax = sns.heatmap(cka_matrix)
     fig = cka_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cka.pdf'))
+    fig.savefig(os.path.join(folder, 'svg.pdf'))
     
     fig.clf()
     cca_ax = sns.heatmap(cca_matrix)
     fig = cca_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cca.pdf'))
+    fig.savefig(os.path.join(folder, 'svg.pdf'))
     fig.clf()
     
     plt.close('all')
@@ -178,6 +180,7 @@ def rsa_models_comp(model, runinfo):
     cka_ax.set_ylabel('model')
     fig = cka_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cka.pdf'))
+    fig.savefig(os.path.join(folder, 'cka.svg'))
     
     fig.clf()
     cca_ax = sns.heatmap(cca)
@@ -185,6 +188,7 @@ def rsa_models_comp(model, runinfo):
     cca_ax.set_ylabel('model')
     fig = cca_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cca.pdf'))
+    fig.savefig(os.path.join(folder, 'cca.svg'))
     fig.clf()
     
     plt.close('all')

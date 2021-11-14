@@ -187,6 +187,7 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
             
             fig, deviations = plot_ind_neuron_invar_collapsed_beautified(pds[ilayer][ior], uniqueheights[ior], ilayer, orientation)
             fig.savefig(os.path.join(ffolder, 'ind_neuron_invar_l%d_%s_collapsed_0%d_v2.pdf' %(ilayer, orientation, int(r2threshold*10))))
+            fig.savefig(os.path.join(ffolder, 'ind_neuron_invar_l%d_%s_collapsed_0%d_v2.svg' %(ilayer, orientation, int(r2threshold*10))))
             plt.close('all')
             print('indinvars_collapsed plots plotted')
             

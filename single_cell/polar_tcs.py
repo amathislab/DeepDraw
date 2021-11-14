@@ -47,6 +47,7 @@ def polartc(thetas, rs, ilayer, k, irow, r2, expf, fset='vel'):
     plt.title(str(r2))
     
     plt.savefig('%s/%s_l%d_%s_polar_r2_bl.pdf' %(expf, fset, ilayer + 1, k))
+    plt.savefig('%s/%s_l%d_%s_polar_r2_bl.svg' %(expf, fset, ilayer + 1, k))
      
 def get_thetas_rs_from_row(polar, acts, rowidx, ilayer, model, tcoff=32):
     """Get matching thetas and activations (stored as Rs)
@@ -151,6 +152,7 @@ def dirvelplotpolar(thetas, vms, acts, ilayer, k, rowidx, r2, expf, fset='vel'):
     plt.colorbar(pad=0.07)
     
     plt.savefig('%s/dirvel_l%d_%d_3dpolar_smoothen_0%d_rc_nn.pdf' %(expf, ilayer + 1, k, int(kernelfactor*100)))
+    plt.savefig('%s/dirvel_l%d_%d_3dpolar_smoothen_0%d_rc_nn.svg' %(expf, ilayer + 1, k, int(kernelfactor*100)))
     plt.close('all')
     
 def get_thetas_vms_rs_from_row(polar, acts, rowidx,  ilayer, model, tcoff=32):

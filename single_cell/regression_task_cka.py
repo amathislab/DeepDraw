@@ -143,4 +143,5 @@ def main(task_models, regression_models, runinfo, modelinfo):
             fig = plt.figure()
             plt.hist(layer_cka_scores, range=[0,1.1])
             fig.savefig(os.path.join(regressiontaskfolder, 'histogram_nlayers%d_layer%d.png' %(nlayers, ilayer)))
+            fig.savefig(os.path.join(regressiontaskfolder, 'histogram_nlayers%d_layer%d.svg' %(nlayers, ilayer)))
             plt.close()

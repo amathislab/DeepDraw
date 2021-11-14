@@ -134,6 +134,7 @@ def plot_hm_ctrs(mf, bost, ilayer, itf, char, k, th, ff, channel):
     plt.xlabel('Time')
     plt.ylabel('Muscles (Muscle / Spindle Firing Rate)')
     plt.savefig('%s/l%d/tf%d/%s/nwdiss_%d_th%s_ch%d.png' %(ff, ilayer, itf, char, k, th, channel))
+    plt.savefig('%s/l%d/tf%d/%s/nwdiss_%d_th%s_ch%d.svg' %(ff, ilayer, itf, char, k, th, channel))
     plt.close()
 '''
 am = actmaps[0][0][0,0]

@@ -53,9 +53,10 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 
 # %% UTILS, CONFIG MODELS, AND GLOBAL VARS
 
-fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar']
+fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar',]
 #decoding_fsets = []
-decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
+decoding_fsets = ['ee', 'eepolar', 'vel', 'acc', 'labels']
+#decoding_fsets = ['labels']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
@@ -238,7 +239,7 @@ class RunInfo(dict):
 runinfo = RunInfo({'expid': 301, #internal experiment id
                    #'datafraction': 0.05,
                    #'datafraction': 0.1,
-                   'datafraction': 0.5,
+                   'datafraction': 'auto', #fraction (0,1] or 'auto'
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
@@ -249,11 +250,21 @@ runinfo = RunInfo({'expid': 301, #internal experiment id
                    'default_run': False, #only variable that is 'trial'-dependent,
                                     #ie should be changed when rerunning stuff in same folder
                                     #not semantically important for run info
+                    'dpi': 150
             })
+
+exp_par_lookup = {
+    301: {'datafraction': 0.5},
+    306: {'datafraction': 0.1},
+    307: {'datafraction': 0.5},
+    312: {'datafraction': 0.1},
+    313: {'datafraction': 0.1},
+    315: {'datafraction': 0.1}
+}
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
 
-def main(do_data=False, do_results=False, do_analysis=False, do_regression_task = False, include = ['S', 'T','ST'], tasks = ['task']):
+def main(do_data=False, do_results=False, do_analysis=False, do_regression_task = False, include = ['S', 'T','ST'], tasks = ['task'], expid = None):
     ''' Calls the analyses that need to be run for all model types and instantiations
 
     Parameters
@@ -263,6 +274,13 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
     do_analysis : bool, should we fit the analysis strengths
     include : list of strings, short names of different model types for which the functions are supposed to runs
     '''
+
+    if expid is not None:
+        runinfo['expid'] = expid
+        if runinfo['datafraction'] == 'auto':
+            runinfo['datafraction'] = exp_par_lookup[expid]['datafraction']
+
+    print("Running Experiment %d with datafraction %.2f" %(expid, runinfo['datafraction']))
 
     matplotlib.pyplot.rcParams.update({'legend.title_fontsize':40})
 
@@ -339,6 +357,10 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
     startheight = 'all'
     #startheight = 6
 
+    endrun = 6
+    #endheight = 'after_all' #['after_all', None]
+    endheight = None
+
     runmodels = False
     runruns = False
     runtype = False
@@ -378,7 +400,11 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                             print("Running model run ", startrun)
                             runruns = True
 
-                        if runruns == True:
+                        if endrun < i:
+                            print("Ending on model run %d since endrun surpassed" %endrun)
+                            runruns = False
+
+                        if runruns:
                             for control in [False, True]:
 
                                 if control:
@@ -417,6 +443,10 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                     if startheight == height:
                                                         runheight = True
+
+                                                    if endheight is not None and endheight == 'after_all' and height != 'all':
+                                                        runheight = False
+                                                        print("Ending run since finished run for plane all")
 
                                                     if runheight:
                                                         
@@ -517,8 +547,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     
                                                                 #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'tsne'))):
                                                                 #if(True):
-                                                                if(default_run):
-                                                                #if(False):
+                                                                #if(default_run):
+                                                                if(False):
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
@@ -557,8 +587,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     if(runinfo.planestring() == 'horall'):
                                                                         print('combining rsa results for all models')
                                                                         #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
-                                                                        #if(True):
-                                                                        if(default_run):
+                                                                        if(True):
+                                                                        #if(default_run):
                                                                             rsa_models_comp(model, runinfo)
                                                                         else:
                                                                             print('rsa models comp already completed')
@@ -646,6 +676,7 @@ if __name__=='__main__':
     parser.add_argument('--S', type=bool, default=False, help='Include Spatial_temporal models?')
     parser.add_argument('--ST', type=bool, default=False, help='Include SpatioTemporal models?')
     parser.add_argument('--LSTM', type=bool, default=False, help='Include Spatial_temporal models?')
+    parser.add_argument('--expid', type=int, default=None, help='What Experimental ID to use?')
 
     args = parser.parse_args()
 
@@ -667,5 +698,5 @@ if __name__=='__main__':
 
     print("Working on the following tasks: ", tasks)
 
-    main(args.data, args.results, args.analysis, args.regression_task, include, tasks= tasks)
+    main(args.data, args.results, args.analysis, args.regression_task, include, tasks= tasks, expid= args.expid)
 # %%

@@ -37,7 +37,7 @@ mmod = 'std'
 tcoff = 32
 
 tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels', 'ee', 'eepolar']
-dec_tcnames = ['ee_x', 'ee_y', 'eepolar_r', 'eepolar_theta', 'vel', 'dir', 'acc_r', 'acc_theta']
+dec_tcnames = ['ee_x', 'ee_y', 'eepolar_r', 'eepolar_theta', 'vel', 'dir', 'acc_r', 'acc_theta', 'labels']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
                      -12.,  -9.,  -6.,  -3.,   0.,   3.,   6.,   9.,  12.,  15.,  18.,
                      21.,  24.,  27.,  30.]).astype(int))
@@ -345,6 +345,7 @@ def compile_decoding_comparisons_df(model, runinfo):
               'decoding_eepolar': runinfo.resultsfolder(model_to_analyse, 'decoding_eepolar'),
               'decoding_vel': runinfo.resultsfolder(model_to_analyse, 'decoding_vel'),
               'decoding_acc': runinfo.resultsfolder(model_to_analyse, 'decoding_acc'),
+              'decoding_labels': runinfo.resultsfolder(model_to_analyse, 'decoding_labels'),
         }
         
         for ilayer in np.arange(0,nlayers):
@@ -359,6 +360,7 @@ def compile_decoding_comparisons_df(model, runinfo):
             decoding_eepolar_evals = np.load(os.path.join(expf['decoding_eepolar'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'eepolar', 'decoding', runinfo.planestring())))
             decoding_vel_evals = np.load(os.path.join(expf['decoding_vel'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'vel', 'decoding', runinfo.planestring())))
             decoding_acc_evals = np.load(os.path.join(expf['decoding_acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'decoding', runinfo.planestring())))
+            decoding_label_evals = np.load(os.path.join(expf['decoding_labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'decoding', runinfo.planestring())))
 
             layerevals = []
             layerevals.append(decoding_ee_evals[0,1]) #ee_x
@@ -373,6 +375,8 @@ def compile_decoding_comparisons_df(model, runinfo):
             layerevals.append(decoding_acc_evals[0,1]) #acc_r
             layerevals.append(decoding_acc_evals[1,1]) #acc_theta  
 
+            layerevals.append(decoding_label_evals[0,1]) #labels
+
             layerevals_RMSE = []
             layerevals_RMSE.append(decoding_ee_evals[0,0]) #ee_x
             layerevals_RMSE.append(decoding_ee_evals[1,0]) #ee_y
@@ -386,7 +390,8 @@ def compile_decoding_comparisons_df(model, runinfo):
             layerevals_RMSE.append(decoding_acc_evals[0,0]) #acc_r
             layerevals_RMSE.append(decoding_acc_evals[1,0]) #acc_theta  
         
-            
+            layerevals_RMSE.append(decoding_labels_evals[0,0]) #labels
+
             for j, tcname in enumerate(dec_tcnames):
 
                 df.loc[(mname, ilayer, tcname), 'r2'] = layerevals[j]
@@ -396,8 +401,8 @@ def compile_decoding_comparisons_df(model, runinfo):
     os.makedirs(analysisfolder, exist_ok=True)
 
     #SWITCHED FOR NORMALIZATION
-    #df.to_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'))
-    df.to_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df.csv'))
+    df.to_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'))
+    #df.to_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df.csv'))
         
     return df
 
@@ -680,10 +685,13 @@ def pd_deviation(model, runinfo):
 
     analysisfolder = runinfo.sharedanalysisfolder(model, 'pd_deviation')  
     os.makedirs(analysisfolder, exist_ok=True)
-    df.to_csv(os.path.join(analysisfolder, 'pd_deviation_normalized.csv'))    
+    #df.to_csv(os.path.join(analysisfolder, 'pd_deviation_normalized.csv'))    
+    df.to_csv(os.path.join(analysisfolder, 'pd_deviation.csv'))    
     
     fig = plot_pd_deviation(layers, trainedmodeldevs, controlmodeldevs, model)
-    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot_normalized.pdf'))
+    #fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot_normalized.pdf'))
+    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.pdf'))
+    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.svg'))
     plt.close('all')
     
     ##statistical tests
@@ -1023,15 +1031,19 @@ def decoding_tcctrlcompplots(df, model, runinfo):
         
         fig = plotcomp_decoding(tcdf, tcname, model)
         #SWITCH FOR NORMALIZATION
-        #fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized.pdf' %tcname))
-        fig.savefig(os.path.join(folder, 'decoding_%s_comp.pdf' %tcname))
+        fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized.pdf' %tcname))
+        fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized.svg' %tcname))
+        #fig.savefig(os.path.join(folder, 'decoding_%s_comp.pdf' %tcname))
+        #fig.savefig(os.path.join(folder, 'decoding_%s_comp.svg' %tcname))
 
         tcdf_RMSE = df.loc[(slice(None), slice(None), tcname), 'RMSE']#.reset_index(level=2, drop=True)
         
         fig = plotcomp_decoding(tcdf_RMSE, tcname, model)
         #SWITCH FOR NORMALIZATION
-        #fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized_RMSE.pdf' %tcname))
-        fig.savefig(os.path.join(folder, 'decoding_%s_comp_RMSE.pdf' %tcname))
+        fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized_RMSE.pdf' %tcname))
+        fig.savefig(os.path.join(folder, 'decoding_%s_comp_normalized_RMSE.svg' %tcname))
+        #fig.savefig(os.path.join(folder, 'decoding_%s_comp_RMSE.pdf' %tcname))
+        #fig.savefig(os.path.join(folder, 'decoding_%s_comp_RMSE.svg' %tcname))
         
         plt.close('all')
 
@@ -1053,11 +1065,13 @@ def tcctrlcompplots(df, model, runinfo):
     
     fig = plotcomp_dir_accs(tcdf, tcf, model)
     fig.savefig(os.path.join(folder, 'tcctrlcomp_dir_accs_horlabels_shortlegend.pdf'))
+    fig.savefig(os.path.join(folder, 'tcctrlcomp_dir_accs_horlabels_shortlegend.svg'))
     
     eedf = df.loc[(slice(None), slice(None), ['ee', 'eepolar']), 'q90']
     
     ee_fig = plotcomp_ees(eedf, model)
     ee_fig.savefig(os.path.join(folder, 'tcctrlcomp_ees.pdf'))
+    ee_fig.savefig(os.path.join(folder, 'tcctrlcomp_ees.svg'))
     
     plt.close('all')
         
@@ -1218,7 +1232,9 @@ def ind_neuron_invars_comp(model, runinfo):
     figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     
     figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.pdf'))
+    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.svg'))
     figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.pdf'))
+    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.svg'))
     
     df_hor.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_hor.csv'))
     df_vert.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_vert.csv'))
@@ -1278,8 +1294,8 @@ def main(model, runinfo):
         if decoding_df is None:
             analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')
             #SWITCH FOR NORMALIZATION
-            #decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'),
-            decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df.csv'),
+            decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'),
+            #decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df.csv'),
                              header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
         print('creating decoding kindiffs plots')
         decoding_tcctrlcompplots(decoding_df, model, runinfo)
