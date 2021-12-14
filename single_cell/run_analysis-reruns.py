@@ -25,12 +25,15 @@ if method == 'parallel':
 
     #INCLUDING RESULTS
     parsets = [
-        #(False, True, True, False, ['S'], ['task'], 301),
-        (False, True, True, False, ['ST'], ['task'], 307),
-        (False, True, True, False, ['LSTM'], ['task'], 315),
-        (False, True, True, False, ['S'], ['regression'], 312),
-        (False, True, True, False, ['ST'], ['regression'], 313),
-        (False, True, True, False, ['LSTM'], ['regression'], 315),
+        (False, False, True, False, ['S'], ['task'], 301),
+        (False, False, True, False, ['ST'], ['task'], 307),
+        (False, False, True, False, ['LSTM'], ['task'], 315),
+        #(False, True, True, False, ['S'], ['regression'], 312),
+        #(False, True, True, False, ['ST'], ['regression'], 313),
+        #(False, True, True, False, ['LSTM'], ['regression'], 315),
+        (False, False, True, False, ['S'], ['regression'], 301),
+        (False, False, True, False, ['ST'], ['regression'], 307),
+        (False, False, True, False, ['LSTM'], ['regression'], 315),
     ]
 
     running_tasks = []

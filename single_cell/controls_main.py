@@ -23,8 +23,9 @@ except ModuleNotFoundError as e:
     print('proceeding without savelouts , this will only work if no data is being generated')
 
 from rowwise_neuron_curves_controls import main as tuningcurves_main
-from combined_violinquantiles_controls import comp_violin_main
+from combined_violinquantiles_controls import comp_violin_main, comp_tr_reg_violin_main
 from control_comparisons import main as comparisons_main
+from control_comparisons import comparisons_tr_reg_main
 from control_comparisons import generalizations_comparisons_main
 from prefdir_controls import main as prefdir_main
 from generalization import main as generalization_main
@@ -259,7 +260,8 @@ exp_par_lookup = {
     307: {'datafraction': 0.5},
     312: {'datafraction': 0.1},
     313: {'datafraction': 0.1},
-    315: {'datafraction': 0.1}
+    315: {'datafraction': 0.1},
+    316: {'datafraction': 0.5}
 }
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
@@ -304,7 +306,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
             'control': False,
             'cmap': 'Blues_r',
             'color': 'C0',
+            'regression_color': 'purple',
             'control_cmap': 'Purples_r',
+            'regression_cmap': 'Oranges_r',
             's_stride': 2,
             't_stride': 3,
             'regression_task': False,
@@ -319,7 +323,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
               'control': False,
               'cmap': 'Greens_r',
               'color': 'green',
+              'regression_color': 'red',
               'control_cmap': 'Greys_r',
+              'regression_cmap': 'Reds_r',
               't_stride': 2,
               's_stride': 2,
               'regression_task': False,
@@ -335,7 +341,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
             's_stride': 1,
             'control': False,
             'cmap': 'Purples_r',
+            'regression_cmap': 'Wistia_r',
             'color': 'C4',
+            'regression_color': 'yellow',
             'control_cmap': 'Purples_r', 
             'regression_task': False,
             'model_path': None,
@@ -395,6 +403,11 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                         model_to_analyse = model.copy()
                         trainedmodel = model.copy()
+                        
+                        regressionmodel = model.copy()
+                        regressionmodel['base'] = model['base_regression']
+                        regressionmodel['name'] = regressionmodel['base'] + '_%d' %i
+                        regressionmodel['regression_task'] = True
 
                         if startrun == i:
                             print("Running model run ", startrun)
@@ -515,6 +528,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                             #print(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))
                                                             #print(evals.shape)
 
+                                                            #check to make sure that this model and plane combination has any samples
                                                             if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
                                                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
 
@@ -577,21 +591,36 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                         else:
                                                                             print('rsa already saved')
+                                                                    
+                                                                else:
 
-                                                                if (i==5 and control):
-                                                                    if(True):
-                                                                        comparisons_main(model, runinfo)
-                                                                    else:
-                                                                        print('skipping comparisons')
+                                                                    #check to make sure that this model and plane combination has any samples
+                                                                    if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                                
+                                                                        if(False):  
+                                                                            print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
+                                                                            comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
-                                                                    if(runinfo.planestring() == 'horall'):
-                                                                        print('combining rsa results for all models')
-                                                                        #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
+
+                                                                if (i==5):
+                                                                    if(control):
                                                                         if(True):
-                                                                        #if(default_run):
-                                                                            rsa_models_comp(model, runinfo)
+                                                                            comparisons_main(model, runinfo)
                                                                         else:
-                                                                            print('rsa models comp already completed')
+                                                                            print('skipping comparisons')
+
+                                                                        if(runinfo.planestring() == 'horall'):
+                                                                            print('combining rsa results for all models')
+                                                                            #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
+                                                                            if(True):
+                                                                            #if(default_run):
+                                                                                rsa_models_comp(model, runinfo)
+                                                                            else:
+                                                                                print('rsa models comp already completed')
+                                                                    else:
+                                                                        if('all' in runinfo.planestring()):
+                                                                            if(True):
+                                                                                comparisons_tr_reg_main(model, regressionmodel, runinfo)
                                             else:
                                                 runheight = True
 
@@ -605,10 +634,13 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                         print('launching analysis of nodes\' generalizational capacity...')
                                                         generalization_main(model_to_analyse, runinfo)
 
-                                                    if(i==5 and control):
-                                                        if(True):
-                                                        #if(False):
-                                                            generalizations_comparisons_main(model, runinfo)
+                                                    if(i==5):
+                                                        if(control):
+                                                            if(True):
+                                                            #if(False):
+                                                                generalizations_comparisons_main(model, runinfo)
+                                                        else:
+                                                            pass
 
         else:
             print('analyzing models on specified regression task')

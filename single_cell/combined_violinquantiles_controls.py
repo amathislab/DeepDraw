@@ -95,7 +95,7 @@ def clip(vp, lr):
             b.get_paths()[0].vertices[:, 0] = np.clip(b.get_paths()[0].vertices[:, 0], m, np.inf)
        
            
-def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
+def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False):
     ''' Plot the comparison violin plot showing the distribution of tuning strengths
     
     Arguments
@@ -108,6 +108,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     -------
     fig : plt.figure, comparison violin plot
     '''
+    print("Regcomp: ", regcomp)
        
     nlayers = trainedmodel['nlayers'] + 1
     
@@ -116,7 +117,11 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     lspace = space*nmods + 1
     
     trainedcmap = matplotlib.cm.get_cmap(trainedmodel['cmap']) #spatial_temporal    
-    controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
+
+    if not regcomp:
+        controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
+    else:
+        controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
     cmaps = [trainedcmap, controlcmap]
     
     ct = 0.6
@@ -192,8 +197,11 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel):
     format_axis(plt.gca())
     leg = plt.legend(patches[5:], modnames, loc='upper right')
     ax1.add_artist(leg)
-    plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
-    
+    if not regcomp:
+        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
+    else:
+        plt.legend([patches[5], patches[ccolorindex]], ['Task', 'Decoding'], loc='upper right', bbox_to_anchor=(0.87, 1))
+
     return fig
 
 def get_modevals_ee(model, runinfo):
@@ -233,7 +241,7 @@ def get_modevals_ee(model, runinfo):
         
     return modevals
 
-def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
+def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = False):
     ''' Plot the comparison violin plot showing the distribution of tuning strengths
     
     Arguments
@@ -256,8 +264,12 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     width = 0.6
     lspace = space*nmods_ee + 1
     
-    trainedcmap = matplotlib.cm.get_cmap(trainedmodel['cmap']) #spatial_temporal    
-    controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
+    trainedcmap = matplotlib.cm.get_cmap(trainedmodel['cmap'])
+    if not regcomp:
+        controlcmap = matplotlib.cm.get_cmap('Greys_r')  
+    else:
+        print("Choosing the regression cmap")
+        controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])  
     cmaps = [trainedcmap, controlcmap]
     
     ct = 0.6
@@ -333,8 +345,12 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel):
     format_axis(plt.gca())
     leg = plt.legend(patches[2:], modnames_ee, loc='upper right')
     ax1.add_artist(leg)
-    plt.legend([patches[2], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
-    
+
+    if not regcomp:
+        plt.legend([patches[2], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
+    else:
+        plt.legend([patches[2], patches[ccolorindex]], ['Task', 'Decoding'], loc='upper right', bbox_to_anchor=(0.87, 1))
+
     return fig
         
 def comp_violin_main(trainedmodel, controlmodel, runinfo):
@@ -372,6 +388,46 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_violin/comp_violin_v2_ee_notypo_legcols_splitviolin.pdf' %(ff))
     fig.savefig('%s/comp_violin/comp_violin_v2_ee_notypo_legcols_splitviolin.svg' %(ff))
+    
+    print('figure saved')
+    
+    plt.close('all')
+
+def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
+    """Saves the violin plots comparing distribution of test scores for trained and control models 
+
+    Arguments
+    ---------
+    trainedmodel : dict, information about trained model
+    controlmodel : dict, information about control
+    runinfo : RunInfo (extends dict)
+    
+    Returns
+    -------
+    
+    """    
+    
+    trainedmodevals = get_modevals(taskmodel, runinfo)
+    controlmodevals = get_modevals(regressionmodel, runinfo)
+    
+    ff = runinfo.analysisfolder(taskmodel)
+    
+    fig = plot_compvp(trainedmodevals, controlmodevals, taskmodel, regcomp = True)
+    
+    os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_notypo_legcols_splitviolin.pdf' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_notypo_legcols_splitviolin.svg' %(ff))
+    
+    print('figure saved')
+    
+    trainedmodevals_ee = get_modevals_ee(taskmodel, runinfo)
+    controlmodevals_ee = get_modevals_ee(regressionmodel, runinfo)
+    
+    fig = plot_compvp_ee(trainedmodevals_ee, controlmodevals_ee, taskmodel, regcomp = True)
+    
+    os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_ee_notypo_legcols_splitviolin.pdf' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_ee_notypo_legcols_splitviolin.svg' %(ff))
     
     print('figure saved')
     
