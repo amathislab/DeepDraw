@@ -34,6 +34,7 @@ from representational_similarity_analysis import rsa_models_comp
 from polar_tcs import main as polar_tcs_main
 from tsne import main as tsne_main
 from network_dissection import main as network_dissection_main
+from unit_classification import main as unit_classification_main
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -462,18 +463,6 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                         print("Ending run since finished run for plane all")
 
                                                     if runheight:
-                                                        
-                                                        if(False):
-                                                        #try garbage collecting
-                                                            import gc
-
-                                                            def garbage_collect():
-                                                                print("Collecting...")
-                                                                n = gc.collect()
-                                                                print("Number of unreachable objects collected by GC:", n)
-                                                                print("Uncollectable garbage:", gc.garbage)
-                                                            
-                                                            garbage_collect()
 
                                                         if(do_results):
                                                             print('running analysis for model %s plane %s...' %(modelname, runinfo.planestring()))
@@ -565,6 +554,12 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                 if(False):
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
+
+                                                                if(False):
+                                                                    print('running unit classification...')
+                                                                    unit_classification_main(model_to_analyse, runinfo)
+                                                                else:
+                                                                    print('unit classification already exists')
 
                                                                 if(i == 1 and runinfo.planestring() == 'horall' and not control):
                                                                     if(False):

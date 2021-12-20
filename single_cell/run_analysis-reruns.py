@@ -25,7 +25,7 @@ if method == 'parallel':
 
     #INCLUDING RESULTS
     parsets = [
-        (False, False, True, False, ['S'], ['task'], 301),
+        #(False, False, True, False, ['S'], ['task'], 301),
         (False, False, True, False, ['ST'], ['task'], 307),
         (False, False, True, False, ['LSTM'], ['task'], 315),
         #(False, True, True, False, ['S'], ['regression'], 312),

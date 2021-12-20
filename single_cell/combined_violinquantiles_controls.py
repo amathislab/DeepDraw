@@ -36,6 +36,7 @@ mmod = 'std'
 tcoff = 32
 
 modnames = ['Dir', 'Vel', 'Dir x Vel', 'Acc', 'Labels']
+combined_modnames = ['Dir', 'Speed', 'Cart Pos', 'Polar Pos', 'Labels']
 nmods = len(modnames)
 
 # %% Get Model Evaluations
@@ -82,6 +83,53 @@ def get_modevals(model, runinfo):
         
     return modevals
 
+
+def get_combined_modevals(model, runinfo):
+    ''' Read in tuning curve fits from saved numpy files
+    
+    Arguments
+    ---------
+    model : dict, information about current model
+    runinfo : RunInfo (extension of dict), information about experimental run
+    
+    Returns
+    -------
+    modevals : list of lists containing tuning curve test r2 strengths for five different model types to be plotted
+        Outer list: layers; Inner list: Model types, containing np.array of r2 strengths
+        
+    '''
+    
+    expf={
+          'vel': runinfo.resultsfolder(model, 'vel'),
+          'ee': runinfo.resultsfolder(model, 'ee'),
+          'eepolar': runinfo.resultsfolder(model, 'eepolar'),
+          'labels': runinfo.resultsfolder(model, 'labels'),
+    }
+    
+    # READ IN OF REGS AND THRESHOLD, SAVE TEXT FILE
+    modevals = []
+    
+    for i in range(nmods):
+        modevals.append([])
+    
+    for ilayer in np.arange(0,model['nlayers'] + 1):
+        
+        dvevals = np.load(os.path.join(expf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'vel', mmod, runinfo.planestring())))
+        eeevals = np.load(os.path.join(expf['ee'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'ee', 'std',runinfo.planestring())))
+        eepolarevals = np.load(os.path.join(expf['eepolar'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'eepolar', mmod, runinfo.planestring())))
+        labevals = np.load(os.path.join(expf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
+        
+        modevals[0].append(dvevals[...,1,1]) #dir
+        modevals[1].append(dvevals[...,2,1]) #vel
+        #modevals[2].append(dvevals[...,3,1]) #dir + vel
+        #modevals[3].append(accevals[...,2,1]) #acc
+        modevals[2].append(eeevals[...,0,1])
+        modevals[3].append(eepolarevals[...,3,1])
+        modevals[4].append(labevals[:,0]) #labels
+        
+        
+    return modevals
+
 # %% COMPARISON VIOLIN PLOT 
     
 def clip(vp, lr):
@@ -95,7 +143,7 @@ def clip(vp, lr):
             b.get_paths()[0].vertices[:, 0] = np.clip(b.get_paths()[0].vertices[:, 0], m, np.inf)
        
            
-def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False):
+def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False, modnames = modnames, ifsets_to_quantile = [0,3]):
     ''' Plot the comparison violin plot showing the distribution of tuning strengths
     
     Arguments
@@ -181,7 +229,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False)
         q = 0.9
         marker = 's'
         
-        for i in [0,3]:
+        for i in ifsets_to_quantile:
             mod = modevals[i]
 
             mod = [x[x != 1] for x in mod]
@@ -418,7 +466,7 @@ def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_notypo_legcols_splitviolin.pdf' %(ff))
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_notypo_legcols_splitviolin.svg' %(ff))
     
-    print('figure saved')
+    print('tr reg kinematics violin figure saved')
     
     trainedmodevals_ee = get_modevals_ee(taskmodel, runinfo)
     controlmodevals_ee = get_modevals_ee(regressionmodel, runinfo)
@@ -429,6 +477,17 @@ def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_ee_notypo_legcols_splitviolin.pdf' %(ff))
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_ee_notypo_legcols_splitviolin.svg' %(ff))
     
-    print('figure saved')
+    print('tr reg position figure saved')
+
+    trainedmodevals_combined = get_combined_modevals(taskmodel, runinfo)
+    controlmodevals_combined = get_combined_modevals(regressionmodel, runinfo)
+
+    fig = plot_compvp(trainedmodevals_combined, controlmodevals_combined, taskmodel, regcomp = True, modnames=combined_modnames, ifsets_to_quantile=[0,2])
+    
+    os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.pdf' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.svg' %(ff))
+    
+    print('tr reg kinematics combined violin figure saved')
     
     plt.close('all')

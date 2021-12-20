@@ -21,7 +21,7 @@ cka_dfs = [pd.read_csv(filepath, header=[0,1], index_col=0) for filepath in cka_
 #print(cka_dfs[0])
 
 modelnames = ['S', 'ST', 'LSTM']
-colors = ['C0', 'green', 'C4']
+colors = ['C0', 'C2', 'C4']
 #offsets = [-0.2, 0, 0.2]
 
 max_nlayers = 8*6*5*3
@@ -64,7 +64,7 @@ for cka_df, color, modelname in zip(cka_dfs, colors, modelnames):
     #print(mask)
     #print(type(mask))
 
-    ax.errorbar(poss[mask], cka_means[mask], cka_err[mask], marker="D", capsize=3.0, label=modelname)
+    ax.errorbar(poss[mask], cka_means[mask], cka_err[mask], marker="D", capsize=3.0, label=modelname, color=color)
 
 #ax.legend(['S','ST','LSTM'])
 ax.legend()
