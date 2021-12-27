@@ -123,7 +123,7 @@ def get_combined_modevals(model, runinfo):
         modevals[1].append(dvevals[...,2,1]) #vel
         #modevals[2].append(dvevals[...,3,1]) #dir + vel
         #modevals[3].append(accevals[...,2,1]) #acc
-        modevals[2].append(eeevals[...,0,1])
+        modevals[2].append(eeevals[...,0,1]) #ee
         modevals[3].append(eepolarevals[...,3,1])
         modevals[4].append(labevals[:,0]) #labels
         

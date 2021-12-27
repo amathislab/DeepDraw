@@ -563,7 +563,7 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
     index = pd.MultiIndex.from_product((
                 modelnames,
                 list(range(nlayers)),
-                dec_tcnames),
+                dec_tcnames + ['ee_mean']),
                 names = ('model', 'layer', 'tc'))
     df = pd.DataFrame(index=index, columns=colnames)
     
@@ -635,6 +635,9 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
 
                 df.loc[(mname, ilayer, tcname), 'r2'] = layerevals[j]
                 df.loc[(mname, ilayer, tcname), 'RMSE'] = layerevals_RMSE[j]
+
+            df.loc[(mname, ilayer, 'ee_mean'), 'r2'] = (layerevals[0]+layerevals[1])/2
+            df.loc[(mname, ilayer, 'ee_mean'), 'RMSE'] = (layerevals_RMSE[0]+layerevals_RMSE[1])/2
                 
     analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
     os.makedirs(analysisfolder, exist_ok=True)
@@ -1109,8 +1112,8 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     plt.errorbar(x, trainedlabels, yerr=errs_trainedlabels, color=colorselector(model['cmap'], 'acc'), linestyle='-.',marker='D', capsize=3.0)
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector('Greys_r', 'acc'), linestyle='-.', marker='D', capsize=3.0)
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1180,8 +1183,9 @@ def plotcomp_tr_reg_dir_accs(tcfdf, tcf, model, regressionmodel):
     plt.errorbar(x, trainedlabels, yerr=errs_trainedlabels, color=colorselector(model['cmap'], 'acc'), linestyle='-.',marker='D', capsize=3.0)
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector(regressionmodel['regression_cmap'], 'acc'), linestyle='-.', marker='D', capsize=3.0)
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1264,8 +1268,9 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
     plt.errorbar(x, mean_trainedlabels, yerr=errs_trainedlabels, color=combined_colorselector(model['cmap'], tcfs[1]), linestyle='-.',marker='D', capsize=3.0, label='mean trained pos')
     plt.errorbar(x, mean_controllabels, yerr=errs_controllabels, color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[1]), linestyle='-.', marker='D', capsize=3.0, label='mean controls dir')
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1352,8 +1357,9 @@ def plotcomp_ees(tcfdf, model):
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector_ee('Greys_r', 'eepolar'), linestyle='-.', marker='D', capsize=3.0)
         
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')\
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1426,8 +1432,9 @@ def plotcomp_tr_reg_ees(tcfdf, model, regressionmodel):
     plt.errorbar(x, controllabels, yerr=errs_controllabels, color=colorselector_ee(regressionmodel['regression_cmap'], 'eepolar'), linestyle='-.', marker='D', capsize=3.0)
         
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1496,8 +1503,9 @@ def plotcomp_decoding(tcfdf, tcf, model):
     plt.errorbar(x, traineddirs_mean, yerr=errs_traineddirs, color=colorselector_dec(model['cmap'], tcf), marker='D', capsize=3.0, label='mean trained')
     plt.errorbar(x, controldirs_mean, yerr=errs_controldirs, color=colorselector_dec('Greys_r', tcf), marker='D', capsize=3.0, label='mean controls')
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1571,8 +1579,9 @@ def plotcomp_tr_reg_decoding(tcfdf, tcf, model, regressionmodel):
     plt.errorbar(x, traineddirs_mean, yerr=errs_traineddirs, color=colorselector_dec(model['cmap'], tcf), marker='D', capsize=3.0, label='mean trained')
     plt.errorbar(x, controldirs_mean, yerr=errs_controldirs, color=colorselector_dec(regressionmodel['regression_cmap'], tcf), marker='D', capsize=3.0, label='mean controls')
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     handles, _ = ax.get_legend_handles_labels()
@@ -1660,8 +1669,9 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     line_meancontrolsvar2,_,_ = plt.errorbar(x, controlvars2_mean, yerr=errs_controlvars2, color=colorselector_dec(regressionmodel['regression_cmap'], tcfs[1]), marker='D', linestyle='dotted', capsize=3.0, label='Mean Decod.')
 
     plt.ylabel('r2 score')
-    plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-               horizontalalignment = 'right')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
     plt.ylim((-0.1,1))
     
     #handles, _ = ax.get_legend_handles_labels()
@@ -1782,6 +1792,12 @@ def decoding_tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     #fig.savefig(os.path.join(folder, 'decoding_diracc_comp_tr_reg_normalized.svg'))
     fig.savefig(os.path.join(folder, 'decoding_dirvel_comp_tr_reg.pdf'))
     fig.savefig(os.path.join(folder, 'decoding_dirvel_comp_tr_reg.svg'))
+
+    ###COMBINED DECODING POS AND EE PLOT
+    #df_r2['ee_mean'] = df_r2[['ee_x', 'ee_y']].mean(axis=1)
+    fig = plotcomp_tr_reg_decoding_twovars(df_r2, ['dir', 'ee_mean'], model, regressionmodel)
+    fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined.pdf'))
+    fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined.svg'))
 
 def tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     ''' Saves plots comparing 90% quantiles for the model for various tuning feature types
@@ -2105,7 +2121,7 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo):
         print('decoding comparisons already created already analyzed')
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
-    if(True):
+    if(False):
     #if(runinfo.default_run):
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'kindiffs_tr_reg')
@@ -2120,11 +2136,12 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo):
     #if(runinfo.default_run):
     if(True):
         if decoding_df is None:
-            analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs_tr_reg')
+            analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
             #SWITCH FOR NORMALIZATION
             #decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_tr_reg_df_normalized.csv'),
             decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_df.csv'),
                              header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
+            print(decoding_df)
         print('creating decoding kindiffs plots trained & reg')
         decoding_tcctrlcompplots_tr_reg(decoding_df, taskmodel, regressionmodel, runinfo)
     else:

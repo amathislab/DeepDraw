@@ -4,7 +4,8 @@
 
 from controls_main import main
 
-method = 'parallel' # one of ['sequential', 'parallel']
+#method = 'parallel' # one of ['sequential', 'parallel']
+method = 'sequential'
 
 # %% TO RUN IN PARALLEL
 
@@ -25,7 +26,7 @@ if method == 'parallel':
 
     #INCLUDING RESULTS
     parsets = [
-        #(False, False, True, False, ['S'], ['task'], 301),
+        (False, False, True, False, ['S'], ['task'], 301),
         (False, False, True, False, ['ST'], ['task'], 307),
         (False, False, True, False, ['LSTM'], ['task'], 315),
         #(False, True, True, False, ['S'], ['regression'], 312),
@@ -52,10 +53,10 @@ else:
     print("running main for ST TASK models...")
     main(False, False, True, False, ['ST'], tasks=['task'], expid=307)
     print("running main for LSTM TASK models...")
-    main(False, False, True, False, ['LSTM'], tasks=['task'], expid=306)
+    main(False, False, True, False, ['LSTM'], tasks=['task'], expid=315)
     print("running main for S REG models...")
-    main(False, False, True, False, ['LSTM'], tasks=['regression'], expid=312)
+    main(False, False, True, False, ['S'], tasks=['regression'], expid=301)
     print("running main for ST REG models...")
-    main(False, False, True, False, ['ST'], tasks=['regression'], expid=313)
+    main(False, False, True, False, ['ST'], tasks=['regression'], expid=307)
     print("running main for LSTM REG models...")
-    main(False, False, True, False, ['ST'], tasks=['regression'], expid=315)
+    main(False, False, True, False, ['LSTM'], tasks=['regression'], expid=315)

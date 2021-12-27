@@ -391,6 +391,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                     print("Working on regression models...")
                     model['base'] = model['base_regression']
                     model['regression_task'] = True
+                    model['color'] = model['regression_color']
+                    model['cmap'] = model['regression_cmap']
                 
                 if startmodel == imodel:
                     print("Running model ", imodel)
