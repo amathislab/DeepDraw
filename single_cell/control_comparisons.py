@@ -2018,8 +2018,10 @@ def ind_neuron_invars_comp(model, runinfo):
     
     figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.pdf'))
     figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.svg'))
+    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.png'))
     figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.pdf'))
     figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.svg'))
+    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.png'))
     
     df_hor.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_hor.csv'))
     df_vert.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_vert.csv'))
@@ -2088,9 +2090,9 @@ def main(model, runinfo):
     else:
         print('decoding kindiffs plots already made')
 
-    if(runinfo.default_run):    
+    #if(runinfo.default_run):    
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pd_deviation'))):
-    #if(True):
+    if(False):
         print('computing deviation measure for PDs')
         pd_deviation(model, runinfo)
         print('df saved')
@@ -2113,7 +2115,7 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo):
         print('kinetic and label embeddings already analyzed')
     
     #if(runinfo.default_run):
-    if(True):
+    if(False):
         print('compiling dataframe for decoding comparions trained & reg...')
         decoding_df = compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo)
         
@@ -2134,7 +2136,7 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo):
 
     #decoding kindiffs plots
     #if(runinfo.default_run):
-    if(True):
+    if(False):
         if decoding_df is None:
             analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
             #SWITCH FOR NORMALIZATION
@@ -2150,9 +2152,9 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo):
 def generalizations_comparisons_main(model, runinfo):
     """main for comparing features that describe all planes"""
     
-    if(runinfo.default_run):
+    #if(runinfo.default_run):
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False))):
-    #if(True):
+    if(True):
         print('running individual neuron invars comparison...')
         ind_neuron_invars_comp(model, runinfo)
         print('saved plots')
