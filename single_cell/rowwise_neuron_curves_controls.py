@@ -19,7 +19,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import label_binarize
 from sklearn.svm import LinearSVC
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 import time
 import resource
 import os
@@ -44,7 +44,8 @@ def compute_metrics(y, pred):
     
     Returns
     -------
-    [rmse, r2, cor] : prediction metrics
+    OLD: [rmse, r2, cor] : prediction metrics
+    NEW: [rmse, r2, cor] : prediction metrics
     """
     try:
         rmse = np.sqrt(mean_squared_error(y.flatten(), pred.flatten()))
@@ -650,12 +651,14 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std', pool=None):
     
     return trainevals, testevals
 
-def tune_decoding(X, fset, Y, centers, ilayer, mmod):
+def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
+
+    print("Running decoding with alpha parameter %f ..." %alpha)
 
     if(len(X.shape) > 1):
         X = X[..., centers]
     
-    print("initial shape of Y %s" %str(Y.shape))
+    #print("initial shape of Y %s" %str(Y.shape))
 
     # Resize Y so that feature maps are appended as new rows in first feature map
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
@@ -682,8 +685,8 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
 
         Y = Y.reshape((Y.shape[0], -1))
         
-    print("final shape of X %s" %str(X.shape))
-    print("final shape of Y %s" %str(Y.shape))
+    #print("final shape of X %s" %str(X.shape))
+    #print("final shape of Y %s" %str(Y.shape))
     
 
     #switch kin vars / labels to Y and neuron firing ratest to X
@@ -724,8 +727,13 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
         for target in range(Y_train.shape[1]):
 
             if fset != 'labels':
-
-                lm = LinearRegression().fit(X_train, Y_train[:,target])
+                
+                if alpha is None:
+                    lm = LinearRegression().fit(X_train, Y_train[:,target])
+                
+                else:
+                    lm = Ridge(alpha = alpha).fit(X_train, Y_train[:,target])
+                    print("Running regression with alpha %f ..." %alpha)
 
                 trainevals.append(compute_metrics(Y_train[:, target], lm.predict(X_train)))
                 testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
@@ -772,7 +780,7 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod):
     return (trainevals, testevals, coefs)
 
 
-def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=None):
+def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=None, alpha=None):
     """Performs several layer-wide calculations for fitting the tuning curves and saves output to file
     
     Arguments
@@ -812,10 +820,15 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=
     centers = get_centers(lo.shape[2], ilayer, model)
     
     if mmod=='decoding':
-        trainevals, testevals, coefs = tune_decoding(X, fset, lo, centers, ilayer, mmod)
+        trainevals, testevals, coefs = tune_decoding(X, fset, lo, centers, ilayer, mmod, alpha)
 
         print('saving decoding reg coefs')
-        np.save('%s/%s_coefs.npy' %(savepath, savename), coefs)       
+        if alpha is None:
+            savefile = '%s/%s_coefs.npy' %(savepath, savename)
+        else:
+            savefile = '%s/%s_a%d_coefs.npy' %(savepath, savename, int(alpha*1000))
+
+        np.save(savefile, coefs)       
 
         #savename = '%s_normalized' %savename
 
@@ -834,9 +847,16 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=
             testevals = np.empty((0, nmods, nmets))
         
     print("Layer %d Completed!" %ilayer)
-    
-    np.save('%s/%s_train.npy' %(savepath, savename), trainevals)        
-    np.save('%s/%s_test.npy' %(savepath, savename), testevals)
+
+    if alpha is None:
+        savefile_train = '%s/%s_train.npy' %(savepath, savename)
+        savefile_test = '%s/%s_test.npy' %(savepath, savename)
+    else:
+        savefile_train = '%s/%s_a%d_train.npy' %(savepath, savename,  int(alpha*1000))
+        savefile_test = '%s/%s_a%d_test.npy' %(savepath, savename,  int(alpha*1000))
+
+    np.save(savefile_train, trainevals)        
+    np.save(savefile_test, testevals)
     print("files saved")
 
 # %% DATA READIN
@@ -960,12 +980,14 @@ def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', '
 
 # %% MAIN
 
-def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None):
+def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None, alpha = None):
 
     assert fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang'\
         or fset == 'labels' or fset=='angvel' or fset=='ee', "Invalid fset!!!"
         
     assert mmod == 'std' or mmod=='decoding', 'Invalid mmod!!!'
+
+    assert mmod == 'decoding' or alpha == 0, "alpha values only accepted for decoding"
     
     modelname = model['name']
     nlayers = model['nlayers']
@@ -977,9 +999,9 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None)
     X, xyplmvt = X_data(fset, runinfo, datafolder=runinfo.datafolder(model))
     
     np.random.seed(42)
-        
+    
     for ilayer in np.arange(startlayer, min(endlayer, nlayers)):
-        tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, pool=pool)
+        tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, pool=pool, alpha=alpha)
         
 if __name__=='__main__':
     

@@ -57,7 +57,8 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 
 fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar',]
 #decoding_fsets = []
-decoding_fsets = ['ee', 'eepolar', 'vel', 'acc', 'labels']
+#decoding_fsets = ['ee', 'eepolar', 'vel', 'acc', 'labels']
+decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
 #decoding_fsets = ['labels']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
@@ -246,7 +247,7 @@ runinfo = RunInfo({'expid': 301, #internal experiment id
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 2, #0 (least), 1, 2 (most)
-                   'model_experiment_id': 32, #as per Pranav's model generation
+                   'model_experiment_id': 'auto', #as per Pranav's model generation
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
                    'default_run': False, #only variable that is 'trial'-dependent,
@@ -256,13 +257,16 @@ runinfo = RunInfo({'expid': 301, #internal experiment id
             })
 
 exp_par_lookup = {
-    301: {'datafraction': 0.5},
-    306: {'datafraction': 0.1},
-    307: {'datafraction': 0.5},
-    312: {'datafraction': 0.1},
-    313: {'datafraction': 0.1},
-    315: {'datafraction': 0.1},
-    316: {'datafraction': 0.5}
+    301: {'datafraction': 0.5, 'model_experiment_id' : 22}, #S action reg
+    306: {'datafraction': 0.1, 'model_experiment_id' : 22},
+    307: {'datafraction': 0.5, 'model_experiment_id' : 22}, #ST action reg
+    312: {'datafraction': 0.1, 'model_experiment_id' : 22},
+    313: {'datafraction': 0.1, 'model_experiment_id' : 22},
+    315: {'datafraction': 0.1, 'model_experiment_id' : 32}, #LSTM action reg
+    316: {'datafraction': 0.5, 'model_experiment_id' : 22}, #S decoding
+    317: {'datafraction': 1.0, 'model_experiment_id' : 22},
+    318: {'datafraction': 0.5, 'model_experiment_id' : 22}, #ST Decoding
+    319: {'datafraction': 0.1, 'model_experiment_id' : 32}, #LSTM Decoding
 }
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
@@ -282,6 +286,10 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
         runinfo['expid'] = expid
         if runinfo['datafraction'] == 'auto':
             runinfo['datafraction'] = exp_par_lookup[expid]['datafraction']
+
+    if runinfo['model_experiment_id'] == 'auto':
+        print(expid, exp_par_lookup[expid])
+        runinfo['model_experiment_id'] = exp_par_lookup[expid]['model_experiment_id']
 
     print("Running Experiment %d with datafraction %.2f" %(expid, runinfo['datafraction']))
 
@@ -434,13 +442,12 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                 if runtype:
                                     if(do_data):
                                         #if(not os.path.exists(runinfo.datafolder(model_to_analyse))):
-                                        #if(True):
-                                        if(default_run):
+                                        if(True):
+                                        #if(default_run):
                                             print('generating output for model %s ...' %modelname)
                                             modeloutputs_main(model_to_analyse, runinfo)
                                         else:
                                             print('data for model %s already generated' %modelname)
-
                                     
                                     if(do_results or do_analysis):
                                         
@@ -503,7 +510,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                             for dfset in decoding_fsets:
                                                                 #if(default_run):
-                                                                if(True):
+                                                                if(False):
                                                                 #if(False):
                                                                     print('decoding %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                                                     tuningcurves_main(dfset,
@@ -511,6 +518,16 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                                     model_to_analyse,
                                                                                     mmod='decoding'
                                                                                     )
+                                                                elif(True and height == 'all'): 
+                                                                    for alpha in [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]:
+                                                                    #for alpha in [0]:
+                                                                        print('decoding %s analysis for model %s plane %s with regularization par %f...' %(fset, modelname, runinfo.planestring(), alpha))
+                                                                        tuningcurves_main(dfset,
+                                                                                        runinfo_to_analyse,
+                                                                                        model_to_analyse,
+                                                                                        mmod='decoding',
+                                                                                        alpha=alpha
+                                                                                        )
                                                                 else:
                                                                     print('decoding %s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))                                                  
 
@@ -520,7 +537,14 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                             #print(evals.shape)
 
                                                             #check to make sure that this model and plane combination has any samples
-                                                            if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                            try:
+                                                                has_samples = ( len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0 )
+                                                            except FileNotFoundError:
+                                                                try:
+                                                                    has_samples = ( len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'decoding_vel'), 'l%d_%s_mets_%s_%s_a0_test.npy' %(0, 'vel', 'decoding', runinfo_to_analyse.planestring())))) > 0 )
+                                                                except FileNotFoundError as e:
+                                                                    print("No files found for this plane", e)
+                                                            if(has_samples):
                                                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
 
                                                                 print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
@@ -592,16 +616,16 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                 else:
 
                                                                     #check to make sure that this model and plane combination has any samples
-                                                                    if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                                    #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                                    if(False):
                                                                 
                                                                         if(False):  
                                                                             print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
-
                                                                 if (i==5):
                                                                     if(control):
-                                                                        if(True):
+                                                                        if(False):
                                                                             comparisons_main(model, runinfo)
                                                                         else:
                                                                             print('skipping comparisons')
@@ -609,7 +633,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                         if(runinfo.planestring() == 'horall'):
                                                                             print('combining rsa results for all models')
                                                                             #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
-                                                                            if(True):
+                                                                            if(False):
                                                                             #if(default_run):
                                                                                 rsa_models_comp(model, runinfo)
                                                                             else:
@@ -617,6 +641,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     else:
                                                                         if('all' in runinfo.planestring()):
                                                                             if(True):
+                                                                            #if(False):
                                                                                 comparisons_tr_reg_main(model, regressionmodel, runinfo)
                                             else:
                                                 runheight = True
@@ -627,14 +652,15 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                     runheight = True
 
                                                 if runheight:
-                                                    if(True):
+                                                    if(False):
+                                                    #if(True):
                                                         print('launching analysis of nodes\' generalizational capacity...')
                                                         generalization_main(model_to_analyse, runinfo)
 
                                                     if(i==5):
                                                         if(control):
-                                                            if(True):
-                                                            #if(False):
+                                                            #if(True):
+                                                            if(False):
                                                                 generalizations_comparisons_main(model, runinfo)
                                                         else:
                                                             pass

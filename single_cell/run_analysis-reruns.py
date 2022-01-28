@@ -5,7 +5,7 @@
 from controls_main import main
 
 #method = 'parallel' # one of ['sequential', 'parallel']
-method = 'sequential'
+method = 'parallel'
 
 # %% TO RUN IN PARALLEL
 
@@ -32,9 +32,11 @@ if method == 'parallel':
         #(False, True, True, False, ['S'], ['regression'], 312),
         #(False, True, True, False, ['ST'], ['regression'], 313),
         #(False, True, True, False, ['LSTM'], ['regression'], 315),
-        (False, False, True, False, ['S'], ['regression'], 301),
-        (False, False, True, False, ['ST'], ['regression'], 307),
-        (False, False, True, False, ['LSTM'], ['regression'], 315),
+        #(False, False, True, False, ['S'], ['regression'], 301),
+        #(False, False, True, False, ['ST'], ['regression'], 307),
+        #(False, False, True, False, ['S'], ['task'], 316),
+        #(False, False, True, False, ['ST'], ['task'], 318),
+        #(False, False, True, False, ['LSTM'], ['task'], 319),
     ]
 
     running_tasks = []
@@ -60,3 +62,9 @@ else:
     main(False, False, True, False, ['ST'], tasks=['regression'], expid=307)
     print("running main for LSTM REG models...")
     main(False, False, True, False, ['LSTM'], tasks=['regression'], expid=315)
+    print("running main for DECODING TASK S models...")
+    main(False, False, True, False, ['S'], tasks=['task'], expid=316)
+    print("running main for DECODING TASK ST models...")
+    main(False, False, True, False, ['ST'], tasks=['task'], expid=318)
+    print("running main for DECODING TASK LSTM models...")
+    main(False, False, True, False, ['LSTM'], tasks=['task'], expid=319)

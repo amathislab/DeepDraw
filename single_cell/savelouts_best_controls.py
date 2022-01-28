@@ -165,10 +165,10 @@ def main(modelinfo, runinfo):
     kinvars.to_hdf(datafolder + "/kinvars.hdf5", key="data")
     print("Kinvars saved")
     
-    pickle.dump(data, open(datafolder + "/data.pkl", "wb"))
+    pickle.dump(data, open(datafolder + "/data.pkl", "wb"), protocol=4)
     print("MF saved")
     
-    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"))
+    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"), protocol=4)
     print("Labels saved")
     
     #layers = []

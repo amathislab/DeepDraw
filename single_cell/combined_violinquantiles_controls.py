@@ -170,7 +170,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
         controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
     else:
         controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
-    cmaps = [trainedcmap, controlcmap]
+    #cmaps = [trainedcmap, controlcmap]
     
     ct = 0.6
     cidx = [i*(1-ct)/(nmods-1) for i in range(nmods)] #Blues_r option
@@ -210,8 +210,12 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
                     part.set_facecolor(cmap(cidx[i]))
                     part.set_edgecolor(cmap(cidx[i]))
                 else:
-                    part.set_facecolor(cmap(cidx[ccolorindex]))
-                    part.set_edgecolor(cmap(cidx[ccolorindex]))
+                    if not regcomp:
+                        part.set_facecolor(cmap(cidx[ccolorindex]))
+                        part.set_edgecolor(cmap(cidx[ccolorindex]))
+                    else:
+                        part.set_facecolor(cmap(cidx[i]))
+                        part.set_edgecolor(cmap(cidx[i]))
                 part.set_alpha(alpha[1])
                 part.set_zorder(zorder)
     
@@ -248,7 +252,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     if not regcomp:
         plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
     else:
-        plt.legend([patches[5], patches[ccolorindex]], ['Task', 'Decoding'], loc='upper right', bbox_to_anchor=(0.87, 1))
+        plt.legend([patches[5], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.87, 1))
 
     return fig
 
@@ -357,8 +361,12 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
                     part.set_facecolor(cmap(cidx[i]))
                     part.set_edgecolor(cmap(cidx[i]))
                 else:
-                    part.set_facecolor(cmap(cidx[ccolorindex]))
-                    part.set_edgecolor(cmap(cidx[ccolorindex]))
+                    if not regcomp:
+                        part.set_facecolor(cmap(cidx[ccolorindex]))
+                        part.set_edgecolor(cmap(cidx[ccolorindex]))
+                    else:
+                        part.set_facecolor(cmap(cidx[i]))
+                        part.set_edgecolor(cmap(cidx[i]))
                 part.set_alpha(alpha[1])
                 part.set_zorder(zorder)
             
@@ -397,7 +405,7 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     if not regcomp:
         plt.legend([patches[2], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
     else:
-        plt.legend([patches[2], patches[ccolorindex]], ['Task', 'Decoding'], loc='upper right', bbox_to_anchor=(0.87, 1))
+        plt.legend([patches[2], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.87, 1))
 
     return fig
         
