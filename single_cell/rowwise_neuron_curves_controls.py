@@ -44,8 +44,7 @@ def compute_metrics(y, pred):
     
     Returns
     -------
-    OLD: [rmse, r2, cor] : prediction metrics
-    NEW: [rmse, r2, cor] : prediction metrics
+    [rmse, r2, cor] : prediction metrics
     """
     try:
         rmse = np.sqrt(mean_squared_error(y.flatten(), pred.flatten()))
@@ -60,6 +59,23 @@ def compute_metrics(y, pred):
     assert r2 <=1 or np.isnan(r2), 'illegal r2 score!!!! %s %s %s' %(r2, y[:10], pred[:10])
     
     return [rmse, r2, cor]
+
+def compute_dist_metric(y, pred):
+    """ Computes RMSE, R2, and correlation performance metrics given true and predicted values 
+    
+    Parameters
+    ----------
+    y : np.array of floats [nr_samples, n_features], unit activations 
+    pred : np.array of floats [nr_samples, n_features], corresponding predicted values
+    
+    Returns
+    -------
+    dist: int, mean distance between y and pred
+    """
+
+    dist = np.linalg.norm(y - pred, axis=1)
+    mean_dist = dist.mean(axis=0)
+    return mean_dist
     
 def lstring(ilayer):
     if ilayer==-1:
@@ -652,6 +668,17 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std', pool=None):
     return trainevals, testevals
 
 def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
+    """ Computes decoding accuracies for given kinetic variable
+
+    Arguments
+    ----------
+
+    Returns
+    -------
+    trainevals : np.array of floats [nr_features, 3]
+    testevals : np.array of floats [nr_features, 3]
+    coefs : np.array of floats [nr_features, nr_coefs] 
+    """
 
     print("Running decoding with alpha parameter %f ..." %alpha)
 
@@ -722,6 +749,9 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     
     assert Y_train.shape[1] > 1, 'Y is supposed to have multiple targets/columns'
 
+    if(fset == 'ee'):
+        ee_lms = []
+
     if (len(Y_train) >= 1 and len(Y_test)  >= 1):
 
         for target in range(Y_train.shape[1]):
@@ -739,6 +769,9 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
                 testevals.append(compute_metrics(Y_test[:, target], lm.predict(X_test)))
 
                 coefs.append(lm.coef_.copy())
+
+                if fset == 'ee':
+                    ee_lms.append(lm)
 
             else:
                 svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
@@ -767,7 +800,7 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
                 trainevals.append(np.array([(nodetraineval-0.5)*2]*3))
                 testevals.append(np.array([(nodetesteval-0.5)*2]*3))
                 coefs.append([np.nan]*3)
-
+            
     else:
         trainevals.append([np.nan]*3)
         testevals.append([np.nan]*3)
@@ -776,6 +809,19 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     trainevals = np.vstack(trainevals)
     testevals = np.vstack(testevals)
     coefs = np.vstack(coefs)
+
+    #for ees: compute "mean distance" metric and store in previous PPC columns
+    if fset == 'ee':
+        Y_train_pred = np.hstack([ee_lms[i].predict(X_train).reshape(-1,1) for i in range(2)])
+        Y_test_pred = np.hstack([ee_lms[i].predict(X_test).reshape(-1,1) for i in range(2)])
+
+        print("Shape of Y_train_pred: ", Y_train_pred.shape)
+        assert Y_train_pred.shape[1] == 2 and len(Y_train_pred.shape) == 2, "unexpected shape of predictions, Y_train_pred shape " + str(Y_train_pred.shape)
+
+        trainevals[:,2] = compute_dist_metric(Y_train, Y_train_pred)
+        testevals[:,2] = compute_dist_metric(Y_test, Y_test_pred)
+
+        print("Rewrote the PPC column :)")
 
     return (trainevals, testevals, coefs)
 

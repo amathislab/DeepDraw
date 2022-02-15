@@ -6,15 +6,6 @@ Created on Tue Sep  3 15:31:24 2019
 @author: kai
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 26 15:23:52 2019
-
-@author: kai
-
-"""
-
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -85,6 +76,12 @@ def format_axis(ax):
     ax.xaxis.set_tick_params(size=6)
     ax.yaxis.set_tick_params(size=6)
     
+    ## SET AXIS WIDTHS
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(1.5)
+
+    # increase tick width
+    ax.tick_params(width=1.5)
     
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
@@ -150,7 +147,6 @@ def get_pds_sp(model, runinfo, r2threshold =  None):
     fset = 'vel'
     mmod = 'std'
     
-    
     ##SAVE PDs & R2s
     pds = []
     for ilayer in range(nlayers):
@@ -206,7 +202,6 @@ def sl_to_string(slgreater, sllesser = None):
         for i in range(sllesser):
             slstring = slstring + '-'
     return slstring
-
 
 # %% COMPILE PANDAS
 
@@ -476,7 +471,7 @@ def compile_decoding_comparisons_df(model, runinfo, alpha=None):
     
     nlayers = model['nlayers'] + 1
     
-    colnames = ['r2', 'RMSE']#, 'ee', 'eepolar']
+    colnames = ['r2', 'RMSE', 'PCC/dist']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     
@@ -566,6 +561,7 @@ def compile_decoding_comparisons_df(model, runinfo, alpha=None):
 
                 df.loc[(mname, ilayer, tcname), 'r2'] = layerevals[j]
                 df.loc[(mname, ilayer, tcname), 'RMSE'] = layerevals_RMSE[j]
+                df.loc[(mname, ilayer, tcname), 'PCC/dist'] = layerevals_RMSE[j]
                 
     analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')
     os.makedirs(analysisfolder, exist_ok=True)
@@ -578,8 +574,9 @@ def compile_decoding_comparisons_df(model, runinfo, alpha=None):
     else:
         savefile = os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_a%d.csv' %alpha)
 
-    df.to_csv()
-        
+    #df.to_csv()
+    df.to_csv(savefile)
+
     return df
 
 def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, alpha = None):
@@ -594,8 +591,9 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, 
     
     nlayers = taskmodel['nlayers'] + 1
     
-    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
+    #colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
+    colnames = ['r2', 'RMSE', 'PCC/dist']
     taskmodelbase = taskmodel['base']
     regressionmodelbase = regressionmodel['base']
     
@@ -684,16 +682,31 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, 
 
             layerevals_RMSE.append(decoding_acc_evals[0,0]) #acc_r
             layerevals_RMSE.append(decoding_acc_evals[1,0]) #acc_theta  
+
+            layerevals_PCC = []
+            layerevals_PCC.append(decoding_ee_evals[0,2]) #ee_x
+            layerevals_PCC.append(decoding_ee_evals[1,2]) #ee_y
+
+            layerevals_PCC.append(decoding_eepolar_evals[0,2]) #eepolar_r
+            layerevals_PCC.append(decoding_eepolar_evals[1,2]) #eepolar_theta
+
+            layerevals_PCC.append(decoding_vel_evals[0,2]) #vel
+            layerevals_PCC.append(decoding_vel_evals[1,2]) #dir
+
+            layerevals_PCC.append(decoding_acc_evals[0,2]) #acc_r
+            layerevals_PCC.append(decoding_acc_evals[1,2]) #acc_theta  
         
-            #layerevals_RMSE.append(decoding_labels_evals[0,0]) #labels
+            #layerevals_PCC.append(decoding_labels_evals[0,0]) #labels
 
             for j, tcname in enumerate(dec_tcnames):
 
                 df.loc[(mname, ilayer, tcname), 'r2'] = layerevals[j]
                 df.loc[(mname, ilayer, tcname), 'RMSE'] = layerevals_RMSE[j]
+                df.loc[(mname, ilayer, tcname), 'PCC/dist'] = layerevals_PCC[j]
 
             df.loc[(mname, ilayer, 'ee_mean'), 'r2'] = (layerevals[0]+layerevals[1])/2
             df.loc[(mname, ilayer, 'ee_mean'), 'RMSE'] = (layerevals_RMSE[0]+layerevals_RMSE[1])/2
+            df.loc[(mname, ilayer, 'ee_mean'), 'PCC/dist'] = (layerevals_PCC[0]+layerevals_PCC[1])/2
                 
     analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
     os.makedirs(analysisfolder, exist_ok=True)
@@ -709,7 +722,6 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, 
     df.to_csv(savefile)
         
     return df
-
 
 def pairedt_quantiles(df, model, runinfo):
     ''' Saves a dataframe with results from paired ttest comapring 90 percent quantiles of different kinematic tuning curves
@@ -927,9 +939,8 @@ def pd_deviation(model, runinfo):
     ---------
     model : dict, information about model type
     runinfo : RunInfo (extension of dict)
-    
-    
     '''
+
     nlayers = model['nlayers'] + 1
     
     layers = ['Sp.'] + ['L%d' %i for i in np.arange(1,nlayers)]
@@ -1062,7 +1073,10 @@ def combined_colorselector(cmapname, tcf, ct = 0.4):
     color values
     '''
     
-    tcnames = ['dir', 'vel', 'ee', 'eepolar', 'labels']
+    if tcf != 'acc' and tcf != 'dirvel':
+        tcnames = ['dir', 'vel', 'ee', 'eepolar', 'labels']
+    else:
+        tcnames = ['dir', 'vel', 'dirvel', 'acc', 'labels']
     nmods = len(tcnames)
     tci = tcnames.index(tcf)
     
@@ -1276,7 +1290,8 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
     fig : plt.figure
     '''
     
-    fig = plt.figure(figsize=(12,5.5), dpi=300)   
+    #fig = plt.figure(figsize=(12,5.5), dpi=300)   
+    fig = plt.figure(figsize=(9,5), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -1340,8 +1355,8 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
 
     #print(handles)
 
-    leg1 = plt.legend(handles[[20, 21, 22, 23]], ['%s Recog.' %tcnames_fancy[tcfs[0]], '%s Decod.' %tcnames_fancy[tcfs[0]], \
-                '%s Recog.' %tcnames_fancy[tcfs[1]], '%s Decod.' %tcnames_fancy[tcfs[1]]])
+    leg1 = plt.legend(handles[[20, 21, 22, 23]], ['%s ART' %tcnames_fancy[tcfs[0]], '%s TDT' %tcnames_fancy[tcfs[0]], \
+                '%s ART' %tcnames_fancy[tcfs[1]], '%s TDT' %tcnames_fancy[tcfs[1]]])
 
     #plt.legend(handles[[0,1,10,11]], ['Ind Trained', 'Ind Dec', \
     #        'mean of trained', 'mean of controls'])
@@ -1674,7 +1689,8 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     fig : plt.figure
     '''
     
-    fig = plt.figure(figsize=(12,5.5), dpi=300)   
+    #fig = plt.figure(figsize=(12,5.5), dpi=300)   
+    fig = plt.figure(figsize=(9,5), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -1743,7 +1759,7 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     #handles = np.array(handles)
 
     first_legend = plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1, line_meantrainedvar2, line_meancontrolsvar2], \
-        labels=['%s Recog.' %dec_tcnames_fancy[tcfs[0]], '%s Decod.' %dec_tcnames_fancy[tcfs[0]], '%s Recog.' %dec_tcnames_fancy[tcfs[1]], '%s Decod.' %dec_tcnames_fancy[tcfs[0]] ], loc="upper right")
+        labels=['%s Recog.' %dec_tcnames_fancy[tcfs[0]], '%s Decod.' %dec_tcnames_fancy[tcfs[0]], '%s Recog.' %dec_tcnames_fancy[tcfs[1]], '%s Decod.' %dec_tcnames_fancy[tcfs[1]] ], loc="upper right")
     ax.add_artist(first_legend)
 
     plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
@@ -1787,7 +1803,6 @@ def decoding_tcctrlcompplots(df, model, runinfo, alpha = None):
             fig.savefig(os.path.join(folder, 'decoding_%s_comp_a%d.pdf' %(tcname, int(alpha*1000))))
             fig.savefig(os.path.join(folder, 'decoding_%s_comp_a%d.svg' %(tcname, int(alpha*1000))))
             fig.savefig(os.path.join(folder, 'decoding_%s_comp_a%d.png' %(tcname, int(alpha*1000))))
-
 
         tcdf_RMSE = df.loc[(slice(None), slice(None), tcname), 'RMSE']#.reset_index(level=2, drop=True)
         
@@ -1926,9 +1941,11 @@ def tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     tcf=None
     tcdf = df.loc[(slice(None), slice(None), ['dir', 'acc']), 'q90']#.reset_index(level=2, drop=True)
     
-    fig = plotcomp_tr_reg_dir_accs(tcdf, tcf, model, regressionmodel)
-    fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend.pdf'))
-    fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend.svg'))
+    #fig = plotcomp_tr_reg_dir_accs(tcdf, tcf, model, regressionmodel)
+    fig = plotcomp_tr_reg_twovars(tcdf, ['dir', 'acc'], model, regressionmodel)
+    fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.pdf'))
+    fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.png'))
+    fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.svg'))
     
     eedf = df.loc[(slice(None), slice(None), ['ee', 'eepolar']), 'q90']
     
@@ -2158,8 +2175,8 @@ def main(model, runinfo):
     else:
         print('kinetic and label embeddings already analyzed')
     
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
         print('compiling dataframe for decoding comparions...')
         for alpha in alphas:
             decoding_df = compile_decoding_comparisons_df(model, runinfo, alpha)
@@ -2191,8 +2208,8 @@ def main(model, runinfo):
         print('kindiffs plots already made')
 
     #decoding kindiffs plots
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
         for alpha in alphas:
             if decoding_df is None:
                 analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')
@@ -2221,8 +2238,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     decoding_df = None
     
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
-    #if(runinfo['height'] == 'all'):
-    if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
     #if(False):
         print('compiling dataframe for comparions trained & reg...')
         df = compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo)
@@ -2231,8 +2248,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         print('kinetic and label embeddings already analyzed')
     
     #if(runinfo.default_run):
-    if(runinfo['height'] == 'all'):
-    #if(False):
+    #if(runinfo['height'] == 'all'):
+    if(False):
         for alpha in alphas:
             print('compiling dataframe for decoding comparions trained & reg...')
             decoding_df = compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, alpha)
@@ -2241,8 +2258,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         print('decoding comparisons already created already analyzed')
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
-    #if(runinfo['height'] == 'all'):
-    if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'kindiffs_tr_reg')
             df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_comparisons_reg_tr_df.csv'),
@@ -2254,8 +2271,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
 
     #decoding kindiffs plots
     #if(runinfo.default_run):
-    #if(False):
-    if(runinfo['height'] == 'all'):
+    if(False):
+    #if(runinfo['height'] == 'all'):
         for alpha in alphas:
             if decoding_df is None:
                 analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')

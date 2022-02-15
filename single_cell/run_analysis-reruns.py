@@ -37,6 +37,9 @@ if method == 'parallel':
         #(False, False, True, False, ['S'], ['task'], 316),
         #(False, False, True, False, ['ST'], ['task'], 318),
         #(False, False, True, False, ['LSTM'], ['task'], 319),
+        #(False, False, True, False, ['S'], ['regression'], 316),
+        #(False, False, True, False, ['ST'], ['regression'], 318),
+        #(False, False, True, False, ['LSTM'], ['regression'], 319),
     ]
 
     running_tasks = []

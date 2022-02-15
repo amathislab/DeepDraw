@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
+import pandas as pd
 
 def unit_classification_plot(modelinfo, runinfo):
 
@@ -408,12 +409,74 @@ def unit_classification_plot_combined(modelinfo, runinfo):
     fig.savefig(os.path.join(ff, 'unit_classification_combined.png'))
     fig.savefig(os.path.join(ff, 'unit_classification_combined.svg'))
 
+def unit_classification_savedata(modelinfo, runinfo):
+
+    r2threshold = 0.2 #threshold above which units are counted as tuned for a particular feature
+    nlayers = modelinfo['nlayers']
+    nlayers += 1
+    t_stride = 2
+    ntime=320
+    metrics = ['RMSE', 'r2', 'PCC']
+    nmetrics = len(metrics)
+    fset = 'vel'
+    mmod = 'std'
+    tcoff = 32
+
+    expf={
+        'vel': runinfo.resultsfolder(modelinfo, 'vel'),
+        'ee': runinfo.resultsfolder(modelinfo, 'ee'),
+        'acc': runinfo.resultsfolder(modelinfo, 'acc'),
+        'labels': runinfo.resultsfolder(modelinfo, 'labels')
+    }
+    # %% READ IN OF REGS AND THRESHOLD
+    bes = []
+
+    for ilayer in np.arange(0,nlayers):
+        
+        dvevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(expf['vel'], ilayer, 'vel', mmod, runinfo.planestring() ))        
+        eeevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(expf['ee'], ilayer, 'ee', mmod, runinfo.planestring()))
+        accevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(expf['acc'], ilayer, 'acc', mmod, runinfo.planestring()))
+        labevals = np.load('%s/l%d_%s_mets_%s_%s_test.npy' %(expf['labels'], ilayer, 'labels', mmod, runinfo.planestring()))
+        
+        modevals = np.zeros(dvevals.shape[:len(dvevals.shape) - 2] + tuple([8]))
+        modevals[...,0] = dvevals[...,1,1] #dir
+        modevals[...,1] = dvevals[...,2,1] #vel
+        modevals[...,2] = dvevals[...,3,1] #dir x vel
+        modevals[...,3] = eeevals[...,0,1] #ee cart
+        modevals[...,4] = eeevals[...,3,1] #ee polar 
+        modevals[...,5] = accevals[...,2,1] #acc
+        modevals[...,6] = labevals[...,0,0] #labels
+        
+        modevals = np.where((modevals > r2threshold) & (modevals != 1), True, False)
+        modevals[...,7] = np.ones(dvevals[...,1,1].shape)
+        
+        bes.append(modevals)
+
+    # %% CLASSIFICATION
+    groupnames = ['Dir.', 'Vel.', 'Dir. x Vel.', 'Pos. Cart.', 'Pos. Polar', 'Acc.', 'Labels', 'Total']
+
+    df = pd.DataFrame(index = range(nlayers), columns=groupnames)
+
+    for ilayer, be in enumerate(bes):
+        for j in range(len(groupnames)):
+            df.loc[ilayer, groupnames[j]] = np.sum(bes[ilayer][...,j])
+
+    ff = os.path.join(runinfo.analysisfolder(modelinfo), 'unit_classification')
+    os.makedirs(ff, exist_ok=True)
+
+    df.to_csv(os.path.join(ff, 'unit_classification_dataset.csv'))
+    df.to_pickle(os.path.join(ff, 'unit_classification_dataset.pkl'))
+
 def main(modelinfo, runinfo):
 
-    if(True):
+    if(False):
         print("Kinematics unit classification plot")
         unit_classification_plot(modelinfo, runinfo)
 
-    if(True):
+    if(False):
         print("Combined unit classification plot")
         unit_classification_plot_combined(modelinfo, runinfo)
+
+    if(True):
+        print("Combined unit classification plot")
+        unit_classification_savedata(modelinfo, runinfo)

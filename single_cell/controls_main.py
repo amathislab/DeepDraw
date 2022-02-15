@@ -23,7 +23,7 @@ except ModuleNotFoundError as e:
     print('proceeding without savelouts , this will only work if no data is being generated')
 
 from rowwise_neuron_curves_controls import main as tuningcurves_main
-from combined_violinquantiles_controls import comp_violin_main, comp_tr_reg_violin_main
+from combined_violinquantiles_controls import comp_violin_main, comp_tr_reg_violin_main, comp_tr_reg_violin_main_newplots
 from control_comparisons import main as comparisons_main
 from control_comparisons import comparisons_tr_reg_main
 from control_comparisons import generalizations_comparisons_main
@@ -58,7 +58,8 @@ basefolder = '/media/data/DeepDraw/revisions/analysis-data/' #end on analysis-da
 fsets = ['vel', 'acc', 'labels', 'ee', 'eepolar',]
 #decoding_fsets = []
 #decoding_fsets = ['ee', 'eepolar', 'vel', 'acc', 'labels']
-decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
+#decoding_fsets = ['ee', 'eepolar', 'vel', 'acc']
+decoding_fsets = ['ee']
 #decoding_fsets = ['labels']
 orientations = ['hor', 'vert']
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,
@@ -267,6 +268,7 @@ exp_par_lookup = {
     317: {'datafraction': 1.0, 'model_experiment_id' : 22},
     318: {'datafraction': 0.5, 'model_experiment_id' : 22}, #ST Decoding
     319: {'datafraction': 0.1, 'model_experiment_id' : 32}, #LSTM Decoding
+    320: {'datafraction': 0.05, 'model_experiment_id' : 32}, #LSTM CKA only (no tuning curves)
 }
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
@@ -544,7 +546,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     has_samples = ( len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(model_to_analyse, 'decoding_vel'), 'l%d_%s_mets_%s_%s_a0_test.npy' %(0, 'vel', 'decoding', runinfo_to_analyse.planestring())))) > 0 )
                                                                 except FileNotFoundError as e:
                                                                     print("No files found for this plane", e)
-                                                            if(has_samples):
+                                                            
+                                                            #if(has_samples):
+                                                            if(True):
                                                                 print('compiling results and generating graphs for model %s plane %s...' %(modelname, runinfo.planestring()))
 
                                                                 print('generating polar tuning curve plots for model %s plane %s ...' %(modelname, runinfo.planestring()))
@@ -581,6 +585,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
+                                                                #if(True):
                                                                 if(False):
                                                                     print('running unit classification...')
                                                                     unit_classification_main(model_to_analyse, runinfo)
@@ -623,6 +628,19 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                             print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
+                                                                    #if(True):
+                                                                    #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                                    if(False):        
+                                                                        #if(True):
+                                                                        if(runinfo.planestring() == 'horall'):
+                                                                        #if(False):
+                                                                            print("doing trreg cka for model %s plane %s ... " %(modelname, runinfo.planestring()))
+                                                                            rsa_main(model_to_analyse, regressionmodel, runinfo, trreg=True)
+
+                                                                    if(False):
+                                                                        print("making new violin plots")
+                                                                        comp_tr_reg_violin_main_newplots(trainedmodel, regressionmodel, runinfo)
+
                                                                 if (i==5):
                                                                     if(control):
                                                                         if(False):
@@ -639,10 +657,16 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                             else:
                                                                                 print('rsa models comp already completed')
                                                                     else:
-                                                                        if('all' in runinfo.planestring()):
+                                                                        if(runinfo.planestring() == 'horall'):
                                                                             if(True):
                                                                             #if(False):
                                                                                 comparisons_tr_reg_main(model, regressionmodel, runinfo)
+
+                                                                            if(False):
+                                                                            #if(True):
+                                                                                print("combining trreg RSA results for all models")
+                                                                                rsa_models_comp(model, runinfo, trreg=True)
+
                                             else:
                                                 runheight = True
 
@@ -754,4 +778,3 @@ if __name__=='__main__':
     print("Working on the following tasks: ", tasks)
 
     main(args.data, args.results, args.analysis, args.regression_task, include, tasks= tasks, expid= args.expid)
-# %%

@@ -136,7 +136,6 @@ def main(task_models, regression_models, runinfo, modelinfo):
             print('making histogram for ilayer %d / nlayers %d ...' %(ilayer, nlayers))
             df_nlayers = df.loc[df[('nlayers', 'nlayers')] == nlayers]
             #print(df_nlayers)
-            
 
             layer_cka_scores = df_nlayers[('cka_scores', str(ilayer))].values
             print(layer_cka_scores)

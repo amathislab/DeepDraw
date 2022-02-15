@@ -171,7 +171,9 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     else:
         controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
     #cmaps = [trainedcmap, controlcmap]
-    
+
+    ## SET OTHER PLOTTING VARIABLES
+
     ct = 0.6
     cidx = [i*(1-ct)/(nmods-1) for i in range(nmods)] #Blues_r option
     #plot figure
@@ -253,6 +255,133 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
         plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
     else:
         plt.legend([patches[5], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.87, 1))
+
+    return fig
+
+def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = False, modnames = modnames, ifsets_to_quantile = [0,3]):
+    ''' Plot the comparison violin plot showing the distribution of tuning strengths
+    
+    Arguments
+    ---------
+    trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
+    controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
+    trainedmodel : dict
+    
+    Returns
+    -------
+    fig : plt.figure, comparison violin plot
+    '''
+
+    print("Regcomp: ", regcomp)
+       
+    nlayers = trainedmodel['nlayers'] + 1
+    
+    space = 0.8
+    width = 0.6
+    #lspace = space*nmods + 1
+    lspace = space*nmods + 1.6
+    
+    trainedcmap = matplotlib.cm.get_cmap(trainedmodel['cmap']) #spatial_temporal    
+
+    if not regcomp:
+        controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
+    else:
+        controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
+    #cmaps = [trainedcmap, controlcmap]
+
+    ## SET OTHER PLOTTING VARIABLES
+    
+    ct = 0.6
+    cidx = [i*(1-ct)/(nmods-1) for i in range(nmods)] #Blues_r option
+    #plot figure
+    fig = plt.figure(figsize=(18,6), dpi=200)
+    ax1 = fig.add_subplot(111)
+    
+    plt.xticks(np.arange(lspace/2,nlayers*lspace + 1,lspace), 
+               ['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers)])
+    
+    ax1.set_ylabel('r2 or classification score')
+    ax1.set_ylim(-0.11, 1.1)
+    vps = []
+    patches = []
+    
+    ccolorindex = 3
+    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+        for i, mod in enumerate(modevals):
+            
+            #print(mod)
+            mod = [x.reshape((-1,)) for x in mod]
+            #for x in mod:
+            #    print(x.shape)
+
+            ##exclude r2 == 1 scores and r2 < -0.1
+            mod = [x[(x != 1) & (x > -0.1)] for x in mod]
+            
+            vp = ax1.violinplot(mod,
+                positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
+                showextrema = False,
+                showmedians = False,
+                showmeans = False,
+                widths=width)
+            
+            for part in vp['bodies']:
+                if lr == 'l':
+                    part.set_facecolor(cmap(cidx[i]))
+                    part.set_edgecolor(cmap(cidx[i]))
+                else:
+                    if not regcomp:
+                        part.set_facecolor(cmap(cidx[ccolorindex]))
+                        part.set_edgecolor(cmap(cidx[ccolorindex]))
+                    else:
+                        part.set_facecolor(cmap(cidx[i]))
+                        part.set_edgecolor(cmap(cidx[i]))
+                part.set_alpha(alpha[1])
+                part.set_zorder(zorder)
+    
+            try:
+                clip(vp, lr)
+            except IndexError as e:
+                print(e)
+                print("not enough samples for ", lr)
+                print(vp)            
+            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            
+            vps.append(vp)
+            
+        #Quantiles
+        q = 0.9
+        marker = 's'
+        
+        for i in ifsets_to_quantile:
+            mod = modevals[i]
+
+            mod = [x[x != 1] for x in mod]
+            
+            q90s = np.zeros((nlayers,))
+            
+            for ilayer, layer in enumerate(mod):
+                q90s[ilayer] = np.quantile(layer, q)
+                
+            ax1.plot([ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
+                      q90s, color=cmap(cidx[i]), marker=marker, alpha=alpha[0])
+
+    
+    format_axis(plt.gca())
+
+    ## SET AXIS WIDTHS
+    for axis in ['top','bottom','left','right']:
+        ax1.spines[axis].set_linewidth(1.5)
+
+    # increase tick width
+    ax1.tick_params(width=1.5)
+
+
+    leg = plt.legend(patches[5:], modnames, loc='upper right')
+    ax1.add_artist(leg)
+    if not regcomp:
+        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
+    else:
+        plt.legend([patches[5], patches[ccolorindex]], ['ART', 'TDT'], loc='upper right', bbox_to_anchor=(0.82, 1))
 
     return fig
 
@@ -495,6 +624,38 @@ def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
     os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.pdf' %(ff))
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.svg' %(ff))
+    
+    print('tr reg kinematics combined violin figure saved')
+    
+    plt.close('all')
+
+
+def comp_tr_reg_violin_main_newplots(taskmodel, regressionmodel, runinfo):
+    """Saves the violin plots comparing distribution of test scores for trained and control models 
+
+    Arguments
+    ---------
+    trainedmodel : dict, information about trained model
+    controlmodel : dict, information about control
+    runinfo : RunInfo (extends dict)
+    
+    Returns
+    -------
+    
+    """    
+    
+    ff = runinfo.analysisfolder(taskmodel)
+
+    trainedmodevals_combined = get_combined_modevals(taskmodel, runinfo)
+    controlmodevals_combined = get_combined_modevals(regressionmodel, runinfo)
+
+    fig = plot_compvp_v3(trainedmodevals_combined, controlmodevals_combined, taskmodel, \
+        regcomp = True, modnames=combined_modnames, ifsets_to_quantile=[0,2])
+    
+    os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.pdf' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.png' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.svg' %(ff))
     
     print('tr reg kinematics combined violin figure saved')
     

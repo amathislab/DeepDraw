@@ -85,7 +85,7 @@ def models_cka_matrix(modelA, modelB, runinfo):
     return cka_matrix
 
 
-def main(trainedmodel, controlmodel, runinfo):
+def main(trainedmodel, controlmodel, runinfo, trreg= False):
     '''Calculate the CKA and CCA scores of a given trained and control model for every layer and save output
     
     Arguments
@@ -112,14 +112,24 @@ def main(trainedmodel, controlmodel, runinfo):
         
         print("Layer %d " %(ilayer + 1))
         print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
+
+        if(trreg and X.shape[0] > Y.shape[0]):
+            print("Warning: Uneven shapes for trreg CKA - will truncate X shape")
+            X = X[:Y.shape[0]]
+
             
         cka_from_examples = cka(gram_linear(X), gram_linear(Y))
         cca_from_features = cca(X, Y)
             
         cka_matrix[0, ilayer + 1] = cka_from_examples
         cca_matrix[0, ilayer + 1] = cca_from_features
+
+    if not trreg:
+        foldername = 'rsa'
+    else:
+        foldername = 'rsa_trreg'
     
-    folder = runinfo.analysisfolder(trainedmodel, 'rsa')
+    folder = runinfo.analysisfolder(trainedmodel, foldername)
     os.makedirs(folder, exist_ok=True)
     
     np.save(os.path.join(folder, 'cka_matrix.npy'), cka_matrix)
@@ -140,7 +150,7 @@ def main(trainedmodel, controlmodel, runinfo):
     
     plt.close('all')
     
-def rsa_models_comp(model, runinfo):
+def rsa_models_comp(model, runinfo, trreg=False):
     ''' Combine the saved RSA scores of all implementations into a single plot
     
     Arguments
@@ -159,17 +169,23 @@ def rsa_models_comp(model, runinfo):
     
     cka = np.zeros((5, nlayers))
     cca = np.zeros((5, nlayers))
+
+    if not trreg:
+        foldername = 'rsa'
+    else:
+        foldername = 'rsa_trreg'
     
     for imodel, mname in enumerate(modelnames):
         model['name'] = mname
-        model_cka = np.load(os.path.join(runinfo.analysisfolder(model, 'rsa'), 'cka_matrix.npy'))
-        model_cca = np.load(os.path.join(runinfo.analysisfolder(model, 'rsa'), 'cca_matrix.npy'))
+        model_cka = np.load(os.path.join(runinfo.analysisfolder(model, foldername), 'cka_matrix.npy'))
+        model_cca = np.load(os.path.join(runinfo.analysisfolder(model, foldername), 'cca_matrix.npy'))
+
+        print(mname, model_cka.shape)
         
         cka[imodel] = model_cka
         cca[imodel] = model_cca
         
-    folder = runinfo.sharedanalysisfolder(model, 'rsa')
-    
+    folder = runinfo.sharedanalysisfolder(model, foldername)    
     os.makedirs(folder, exist_ok=True)
     
     np.save(os.path.join(folder, 'cka_matrix.npy'), cka)
