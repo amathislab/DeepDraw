@@ -290,6 +290,25 @@ def compile_comparisons_df(model, runinfo):
                 df.loc[(mname, ilayer, tcname), 'min'] = layerevals[j].min()                
                 df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(layerevals[j], 0.9)
                 df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(layerevals[j], 0.10)
+
+                if ilayer == 0:
+                    firsthalf = layerevals[j][:layerevals.shape[0]//2]
+                    secondhalf = layerevals[j][layerevals.shape[0]//2:]
+                    df.loc[(mname, 11, tcname), 'mean'] = firsthalf.mean()
+                    df.loc[(mname, 11, tcname), 'median'] = np.median(firsthalf)
+                    df.loc[(mname, 11, tcname), 'std'] = firsthalf.mean()               
+                    df.loc[(mname, 11, tcname), 'max'] = firsthalf.max()                
+                    df.loc[(mname, 11, tcname), 'min'] = firsthalf.min()                
+                    df.loc[(mname, 11, tcname), 'q90'] = np.quantile(firsthalf, 0.9)
+                    df.loc[(mname, 11, tcname), 'q10'] = np.quantile(firsthalf, 0.10)
+                    
+                    df.loc[(mname, 12, tcname), 'mean'] = secondhalf.mean()
+                    df.loc[(mname, 12, tcname), 'median'] = np.median(secondhalf)
+                    df.loc[(mname, 12, tcname), 'std'] = secondhalf.mean()               
+                    df.loc[(mname, 12, tcname), 'max'] = secondhalf.max()                
+                    df.loc[(mname, 12, tcname), 'min'] = secondhalf.min()                
+                    df.loc[(mname, 12, tcname), 'q90'] = np.quantile(secondhalf, 0.9)
+                    df.loc[(mname, 12, tcname), 'q10'] = np.quantile(secondhalf, 0.10)
                 
                 
                 if(ilayer == nlayers - 1 and tcname == 'labels'):
@@ -340,7 +359,7 @@ def compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
     
     nlayers = taskmodel['nlayers'] + 1
     
-    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
+    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10', 'excluded n']#, 'ee', 'eepolar']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     taskmodelbase = taskmodel['base']
     regressionmodelbase = regressionmodel['base']
@@ -412,17 +431,38 @@ def compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
             
             for j, tcname in enumerate(tcnames):
 
-                #exclude r2 == 1 scores
-                layerevals[j] = layerevals[j][layerevals[j] != 1]
+                if ilayer == 0:
+                    print("saving special stats for spindle input layer")
+                    print("shape of layerevals[j]", layerevals[j].shape)
+                    firsthalf = layerevals[j][:,0]
+                    secondhalf = layerevals[j][:,1]
+                    df.loc[(mname, 11, tcname), 'mean'] = firsthalf.mean()
+                    df.loc[(mname, 11, tcname), 'median'] = np.median(firsthalf)
+                    df.loc[(mname, 11, tcname), 'std'] = firsthalf.std()               
+                    df.loc[(mname, 11, tcname), 'max'] = firsthalf.max()                
+                    df.loc[(mname, 11, tcname), 'min'] = firsthalf.min()                
+                    df.loc[(mname, 11, tcname), 'q90'] = np.quantile(firsthalf, 0.9)
+                    df.loc[(mname, 11, tcname), 'q10'] = np.quantile(firsthalf, 0.10)
+                    
+                    df.loc[(mname, 12, tcname), 'mean'] = secondhalf.mean()
+                    df.loc[(mname, 12, tcname), 'median'] = np.median(secondhalf)
+                    df.loc[(mname, 12, tcname), 'std'] = secondhalf.std()               
+                    df.loc[(mname, 12, tcname), 'max'] = secondhalf.max()                
+                    df.loc[(mname, 12, tcname), 'min'] = secondhalf.min()                
+                    df.loc[(mname, 12, tcname), 'q90'] = np.quantile(secondhalf, 0.9)
+                    df.loc[(mname, 12, tcname), 'q10'] = np.quantile(secondhalf, 0.10)
 
-                df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
-                df.loc[(mname, ilayer, tcname), 'median'] = np.median(layerevals[j])
-                df.loc[(mname, ilayer, tcname), 'std'] = layerevals[j].mean()               
-                df.loc[(mname, ilayer, tcname), 'max'] = layerevals[j].max()                
-                df.loc[(mname, ilayer, tcname), 'min'] = layerevals[j].min()                
-                df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(layerevals[j], 0.9)
-                df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(layerevals[j], 0.10)
-                
+                #exclude r2 == 1 scores
+                levs_kept = layerevals[j][(layerevals[j] != 1) & (layerevals[j] > -0.1)]
+
+                df.loc[(mname, ilayer, tcname), 'mean'] = levs_kept.mean()
+                df.loc[(mname, ilayer, tcname), 'median'] = np.median(levs_kept)
+                df.loc[(mname, ilayer, tcname), 'std'] = levs_kept.std()               
+                df.loc[(mname, ilayer, tcname), 'max'] = levs_kept.max()                
+                df.loc[(mname, ilayer, tcname), 'min'] = levs_kept.min()                
+                df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(levs_kept, 0.9)
+                df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(levs_kept, 0.10)
+                df.loc[(mname, ilayer, tcname), 'excluded n'] = sum((layerevals[j].flatten() == 1) | (layerevals[j].flatten() < -0.1))
                 
                 if(ilayer == nlayers - 1 and tcname == 'labels'):
                     #print('recording label stats')
@@ -723,7 +763,7 @@ def compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, 
         
     return df
 
-def pairedt_quantiles(df, model, runinfo):
+def pairedt_quantiles(df, model, runinfo, regressionmodel = None):
     ''' Saves a dataframe with results from paired ttest comapring 90 percent quantiles of different kinematic tuning curves
     between trained and control models of a particular model type
     
@@ -740,19 +780,29 @@ def pairedt_quantiles(df, model, runinfo):
     
     layers = list(range(nlayers))
     index = pd.MultiIndex.from_product((layers, tcnames))
-    columns = ['pv']
+    #columns = ['pv', 'n']
+    columns = ['t stat', 'p-value', 'Bonferroni', 'n']
     pt_df = pd.DataFrame(index = index, columns = columns)
     
     modelbase = model['base']
     
     trainednamer = lambda i: modelbase + '_%d' %i
-    controlnamer = lambda i: modelbase + '_%dr' %i
+    
+    if regressionmodel is not None:
+        regressionmodelbase = regressionmodel['base']
+        #regressionmodelnames = [regressionmodelbase + '_%d' %i for i in np.arange(1,6)]
+        controlnamer = lambda i: regressionmodelbase + '_%d' %i 
+    else:
+        controlnamer = lambda i: modelbase + '_%dr' %i 
+
     modelnames = [namer(i) for i in np.arange(1,6) for namer in (trainednamer, controlnamer)]
     trainednames = [trainednamer(i) for i in np.arange(1,6)]
+
+    n_comparisons = nlayers
     
     from scipy.stats import ttest_rel
     for ilayer in layers:
-        for tcname in enumerate(tcnames):
+        for tcname in tcnames:
             trainedscores = []
             controlscores = []
             for name in modelnames:
@@ -760,12 +810,23 @@ def pairedt_quantiles(df, model, runinfo):
                     trainedscores.append(df.loc[(name, ilayer, tcname), 'q90'])
                 else:
                     controlscores.append(df.loc[(name, ilayer, tcname), 'q90'])
-            pt_df.loc[(ilayer, tcname), 'pv'] = ttest_rel(trainedscores, controlscores)[1]
-    
-    analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
+
+            print('trainedscores', trainedscores)
+            print('controlscores', controlscores)
+            t_stats = ttest_rel(trainedscores, controlscores)
+            print('tstats', t_stats)
+            pt_df.loc[(ilayer, tcname), 't stat'] = t_stats[0]
+            pt_df.loc[(ilayer, tcname), 'p-value'] = t_stats[1]
+            pt_df.loc[(ilayer, tcname), 'Bonferroni'] = t_stats[1]*n_comparisons
+            pt_df.loc[(ilayer, tcname), 'n'] = 5
+
+    if regressionmodel is None:
+        analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
+    else:
+        analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs_tr_reg')
     pt_df.to_csv(os.path.join(analysisfolder, model['base'] + '_pairedt_df.csv'))
     
-def pairedt_comp(model, runinfo):
+def pairedt_comp(model, runinfo, regressionmodel = None):
     ''' Saves a dataframe with results from paired ttest comapring individual test scores of different 
     kinematic tuning curves between trained and control models of a particular model type
     
@@ -788,6 +849,10 @@ def pairedt_comp(model, runinfo):
             ['p-value', 'sl']),
         names=('layer', 'testtype', 'sig_measure'))
     modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
+
+    if regressionmodel is not None:
+        regressionmodelbase = regressionmodel['base']
+        regressionmodelnames = [regressionmodelbase + '_%d' %i for i in np.arange(1,6)]
     
     index = pd.MultiIndex.from_product((
                 modelnames,
@@ -800,17 +865,23 @@ def pairedt_comp(model, runinfo):
         
         trainedmodel = model.copy()
         trainedmodel['name'] = mname
-        controlmodel = model.copy()
-        controlmodel['name'] = mname + 'r'
+        if regressionmodel is None:
+            controlmodel = model.copy()
+            controlmodel['name'] = mname + 'r'
+        else:
+            controlmodel = regressionmodel.copy()
+            controlmodel['name'] = regressionmodelnames[trial] + 'r'
         
         trainedexpf={
               'vel': runinfo.resultsfolder(trainedmodel, 'vel'),
+              'ee': runinfo.resultsfolder(trainedmodel, 'ee'),
               'acc': runinfo.resultsfolder(trainedmodel, 'acc'),
               'labels': runinfo.resultsfolder(trainedmodel, 'labels')
         }
         
         controlexpf={
               'vel': runinfo.resultsfolder(controlmodel, 'vel'),
+              'ee': runinfo.resultsfolder(controlmodel, 'ee'),
               'acc': runinfo.resultsfolder(controlmodel, 'acc'),
               'labels': runinfo.resultsfolder(controlmodel, 'labels')
         }
@@ -818,20 +889,24 @@ def pairedt_comp(model, runinfo):
         for ilayer in np.arange(0,nlayers):
             
             dvevals = np.load(os.path.join(trainedexpf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'vel', mmod, runinfo.planestring())))
+            eeevals = np.load(os.path.join(trainedexpf['ee'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'ee', mmod, runinfo.planestring())))
             accevals = np.load(os.path.join(trainedexpf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
             labevals = np.load(os.path.join(trainedexpf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
             
             trainedlayerevals = []
             trainedlayerevals.append(dvevals[...,1,1]) #dir
             trainedlayerevals.append(dvevals[...,2,1]) #vel
-            trainedlayerevals.append(dvevals[...,3,1]) #dir + vel
+            trainedlayerevals.append(dvevals[...,3,1]) #dir + vel  
             trainedlayerevals.append(accevals[...,2,1]) #acc
             trainedlayerevals.append(labevals[...,0]) #labels
+            trainedlayerevals.append(eeevals[...,0,1]) #ee cart
+            trainedlayerevals.append(eeevals[...,3,1]) #ee polar  
 
             for i in range(len(trainedlayerevals)):
-                trainedlayerevals[i][trainedlayerevals[i] == 1] = np.nan
+                trainedlayerevals[i][(trainedlayerevals[i] == 1) & (trainedlayerevals[i] > -0.1)] = np.nan
 
             dvevals = np.load(os.path.join(controlexpf['vel'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'vel', mmod, runinfo.planestring())))
+            eeevals = np.load(os.path.join(controlexpf['ee'], 'l%d_%s_mets_%s_%s_test.npy' %( ilayer, 'ee', mmod, runinfo.planestring())))
             accevals = np.load(os.path.join(controlexpf['acc'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'acc', 'std', runinfo.planestring())))
             labevals = np.load(os.path.join(controlexpf['labels'], 'l%d_%s_mets_%s_%s_test.npy' %(ilayer, 'labels', 'std', runinfo.planestring())))
             
@@ -841,22 +916,26 @@ def pairedt_comp(model, runinfo):
             controllayerevals.append(dvevals[...,3,1]) #dir + vel
             controllayerevals.append(accevals[...,2,1]) #acc
             controllayerevals.append(labevals[...,0]) #labels 
+            controllayerevals.append(eeevals[...,0,1]) #ee cart
+            controllayerevals.append(eeevals[...,3,1]) #ee polar  
 
             for i in range(len(controllayerevals)):
-                controllayerevals[i][controllayerevals[i] == 1] = np.nan
-            
+                controllayerevals[i][(controllayerevals[i] == 1) & (controllayerevals[i]> -0.1)] = np.nan
+
             #print(tcnames)
-            for itc, tc in enumerate(tcnames[:5]):
-                #for testtype in testtypes:
-                testtype='two-sided'
-                #print(itc, len(trainedlayerevals))
-                pv = ttest_rel(trainedlayerevals[itc].flatten(), controllayerevals[itc].flatten())[1]
-                df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'p-value')] = pv
-                df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'sl')] = pv_to_sl_code(pv)
-                
-                df.loc[(trainedmodel['name'], tc), (ilayer, testtypes[1], 'p-value')] = trainedlayerevals[itc].mean()
-                df.loc[(trainedmodel['name'], tc), (ilayer, testtypes[1], 'sl')] = controllayerevals[itc].mean()
-    
+            for itc, tc in enumerate(tcnames):
+                for testtype in testtypes:
+                #testtype='two-sided'
+                    #print(itc, len(trainedlayerevals))
+                    pv = ttest_rel(trainedlayerevals[itc].flatten(), controllayerevals[itc].flatten(), nan_policy='omit', alternative=testtype)[1]
+
+                    print("mname %s , tc %s , ilayer %d , testtype %s , p-value %f" %(trainedmodel['name'], tc, ilayer, testtype, pv))
+                    df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'p-value')] = pv
+                    df.loc[(trainedmodel['name'], tc), (ilayer, testtype, 'sl')] = pv_to_sl_code(pv)
+                    
+                    #df.loc[(trainedmodel['name'], tc), (ilayer, testtypes[1], 'p-value')] = trainedlayerevals[itc].mean()
+                    #df.loc[(trainedmodel['name'], tc), (ilayer, testtypes[1], 'sl')] = controllayerevals[itc].mean()
+        
     analysisfolder = runinfo.sharedanalysisfolder(model, 'pairedt')  
     os.makedirs(analysisfolder, exist_ok=True)
     df.to_csv(os.path.join(analysisfolder, 'pairedt.csv'))
@@ -1370,7 +1449,6 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
     plt.tight_layout()
 
     return fig
-
 
 def plotcomp_ees(tcfdf, model):
     ''' Plot comparisons between 90% quantiles for trained and control models for endeffector position
@@ -2256,10 +2334,27 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         
     else:
         print('decoding comparisons already created already analyzed')
+        #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pairedt'))):
+
+    if(False):
+    #if(runinfo.default_run):    
+        print('running pairedt...')
+        pairedt_comp(taskmodel, runinfo, regressionmodel)
+        print('ks analysis saved')
         
-    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
+    else:
+        print('kinetic and label embeddings already analyzed')
+
     if(runinfo['height'] == 'all'):
-    #if(runinfo.default_run):
+        print('running paired t quantiles')
+        pairedt_quantiles(df, taskmodel, runinfo, regressionmodel)
+        print('done')
+    else:
+        print('skipping pairedt quantiles')
+
+    #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
+    #if(runinfo['height'] == 'all'):
+    if(runinfo.default_run):
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'kindiffs_tr_reg')
             df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_comparisons_reg_tr_df.csv'),
@@ -2291,7 +2386,7 @@ def generalizations_comparisons_main(model, runinfo):
     
     #if(runinfo.default_run):
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False))):
-    if(False):
+    if(True):
         print('running individual neuron invars comparison...')
         ind_neuron_invars_comp(model, runinfo)
         print('saved plots')
