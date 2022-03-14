@@ -35,7 +35,7 @@ fset = 'vel'
 mmod = 'std'
 tcoff = 32
 
-modnames = ['Dir', 'Vel', 'Dir x Vel', 'Acc', 'Labels']
+modnames = ['Dir.', 'Speed', 'Vel.', 'Acc.', 'Labels']
 combined_modnames = ['Dir', 'Speed', 'Cart Pos', 'Polar Pos', 'Labels']
 nmods = len(modnames)
 
@@ -178,6 +178,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     cidx = [i*(1-ct)/(nmods-1) for i in range(nmods)] #Blues_r option
     #plot figure
     fig = plt.figure(figsize=(14,6), dpi=200)
+    #fig = plt.figure(figsize=(18,6), dpi=200)
     ax1 = fig.add_subplot(111)
     
     plt.xticks(np.arange(lspace/2,nlayers*lspace + 1,lspace), 
@@ -198,7 +199,8 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
             #    print(x.shape)
 
             ##exclude r2 == 1 scores
-            mod = [x[x != 1] for x in mod]
+            #mod = [x[x != 1] for x in mod]
+            mod = [x[(x != 1) & (x > -0.1)] for x in mod]
             
             vp = ax1.violinplot(mod,
                 positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
@@ -252,9 +254,9 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     leg = plt.legend(patches[5:], modnames, loc='upper right')
     ax1.add_artist(leg)
     if not regcomp:
-        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
+        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.84, 1))
     else:
-        plt.legend([patches[5], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.87, 1))
+        plt.legend([patches[5], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.84, 1))
 
     return fig
 
@@ -379,7 +381,10 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     leg = plt.legend(patches[5:], modnames, loc='upper right')
     ax1.add_artist(leg)
     if not regcomp:
-        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
+        if not trainedmodel['regression_task']:
+            plt.legend([patches[5], patches[ccolorindex]], ['ART-trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
+        else:
+            plt.legend([patches[5], patches[ccolorindex]], ['TDT-trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
     else:
         plt.legend([patches[5], patches[ccolorindex]], ['ART', 'TDT'], loc='upper right', bbox_to_anchor=(0.82, 1))
 
@@ -573,6 +578,23 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_violin/comp_violin_v2_ee_notypo_legcols_splitviolin.pdf' %(ff))
     fig.savefig('%s/comp_violin/comp_violin_v2_ee_notypo_legcols_splitviolin.svg' %(ff))
+
+    trainedmodevals_combined = get_combined_modevals(trainedmodel, runinfo)
+    controlmodevals_combined = get_combined_modevals(controlmodel, runinfo)
+
+    fig = plot_compvp_v3(trainedmodevals_combined, controlmodevals_combined, trainedmodel, \
+        regcomp = False, modnames=combined_modnames, ifsets_to_quantile=[0,2])
+
+    os.makedirs('%s/comp_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_violin/comp_violin_v3.pdf' %(ff))
+    fig.savefig('%s/comp_violin/comp_violin_v3.svg' %(ff))
+
+    fig = plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, \
+        regcomp = False, modnames=modnames, ifsets_to_quantile=[0,2])
+
+    os.makedirs('%s/comp_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_violin/comp_violin_v3_kinematics.pdf' %(ff))
+    fig.savefig('%s/comp_violin/comp_violin_v3_kinematics.svg' %(ff))
     
     print('figure saved')
     

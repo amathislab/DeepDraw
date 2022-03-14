@@ -40,8 +40,8 @@ orientations = ['hor', 'vert']
 
 tcnames_fancy = {
     'dir': 'Dir.',
-    'vel': 'Vel.',
-    'dirvel': 'Dir. x Vel.',
+    'vel': 'Speed',
+    'dirvel': 'Speed',
     'acc': 'Acc.',
     'labels': 'Labels',
     'ee': 'Pos.',
@@ -54,7 +54,7 @@ dec_tcnames_fancy = {
     'eepolar_r': 'Polar Pos.',
     'eepolar_theta': 'Polar Pos. Theta',
     'ee_mean': 'Mean Pos.',
-    'vel': 'Vel.',
+    'vel': 'Speed',
     'dir': 'Dir.',
     'acc_r': 'Acc. R',
     'acc_theta': 'Acc. Theta'
@@ -359,7 +359,7 @@ def compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
     
     nlayers = taskmodel['nlayers'] + 1
     
-    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10', 'excluded n']#, 'ee', 'eepolar']
+    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10', 'excluded n', 'total n']#, 'ee', 'eepolar']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     taskmodelbase = taskmodel['base']
     regressionmodelbase = regressionmodel['base']
@@ -463,6 +463,7 @@ def compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo):
                 df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(levs_kept, 0.9)
                 df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(levs_kept, 0.10)
                 df.loc[(mname, ilayer, tcname), 'excluded n'] = sum((layerevals[j].flatten() == 1) | (layerevals[j].flatten() < -0.1))
+                df.loc[(mname, ilayer, tcname), 'total n'] = layerevals[j].size
                 
                 if(ilayer == nlayers - 1 and tcname == 'labels'):
                     #print('recording label stats')
@@ -1450,6 +1451,110 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
 
     return fig
 
+def plotcomp_twovars(tcfdf, tcfs, model):
+    ''' Plot comparisons between 90% quantiles for trained and control models for direction and acceleration 
+    on a single plot
+    
+    Arguments
+    ---------
+    tcfdf : pd.DataFrame, index and columns matching output of compile_comparisons
+    tcfs : list of strs, name of tuning feature
+    model : dict
+    
+    Returns
+    -------
+    fig : plt.figure
+    '''
+    
+    #fig = plt.figure(figsize=(12,5.5), dpi=300)   
+    fig = plt.figure(figsize=(8,6), dpi=300)   
+    ax = fig.add_subplot(111)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+    ax.set_axisbelow(True)
+    
+    trainednamer = lambda i: model['base'] + '_%d' %i
+    trainednames = [trainednamer(i) for i in np.arange(1,6)]
+    
+    controlnamer = lambda i: model['base'] + '_%dr' %i
+    controlnames = [controlnamer(i) for i in np.arange(1,6)]
+    
+    nlayers = model['nlayers']
+    
+    x = range(nlayers + 1)
+
+    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
+    t_corr = t.ppf(0.975, 4)
+    
+    print(tcfdf.head())
+
+    traineddirs = np.vstack([tcfdf.loc[(trainednames, i, tcfs[0])] for i in np.arange(nlayers+1)]).T
+    controldirs = np.vstack([tcfdf.loc[(controlnames, i, tcfs[0])] for i in np.arange(nlayers+1)]).T           
+    
+    mean_traineddirs = [tcfdf.loc[(trainednames, i, tcfs[0])].mean() for i in np.arange(nlayers+1)]
+    mean_controldirs = [tcfdf.loc[(controlnames, i, tcfs[0])].mean() for i in np.arange(nlayers+1)]
+    errs_traineddirs = [tcfdf.loc[(trainednames, i, tcfs[0])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+    errs_controldirs = [tcfdf.loc[(controlnames, i, tcfs[0])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+    
+    trainedlabels = np.vstack([tcfdf.loc[(trainednames, i, tcfs[1])] for i in np.arange(nlayers+1)]).T
+    controllabels = np.vstack([tcfdf.loc[(controlnames, i, tcfs[1])] for i in np.arange(nlayers+1)]).T
+
+    mean_trainedlabels = [tcfdf.loc[(trainednames, i, tcfs[1])].mean() for i in np.arange(nlayers+1)]
+    mean_controllabels = [tcfdf.loc[(controlnames, i, tcfs[1])].mean() for i in np.arange(nlayers+1)]
+    errs_trainedlabels = [tcfdf.loc[(trainednames, i, tcfs[1])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+    errs_controllabels = [tcfdf.loc[(controlnames, i, tcfs[1])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+
+    for i, mname in enumerate(trainednames):
+        plt.plot(x, traineddirs[i], color=combined_colorselector(model['cmap'], tcfs[0]), marker = 'o', alpha = 0.15, label='ind trained')
+        plt.plot(x, controldirs[i], color=combined_colorselector('Greys_r', tcfs[0]), marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, trainedlabels[i], color=combined_colorselector(model['cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'o', alpha = 0.15, label='ind trained')
+        plt.plot(x, controllabels[i], color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind control')
+
+    #print(traineddirs)
+    #print(errs_traineddirs)
+    
+    plt.errorbar(x, mean_traineddirs, yerr=errs_traineddirs, color=combined_colorselector(model['cmap'], tcfs[0]), marker='o', capsize=3.0, label='mean trained dir')
+    plt.errorbar(x, mean_controldirs, yerr=errs_controldirs, color=combined_colorselector('Greys_r', tcfs[0]), marker='D', capsize=3.0, label='mean controls dir')
+    plt.errorbar(x, mean_trainedlabels, yerr=errs_trainedlabels, color=combined_colorselector(model['cmap'], tcfs[1]), linestyle=(0,(5,5)), marker='o', capsize=3.0, label='mean trained pos')
+    plt.errorbar(x, mean_controllabels, yerr=errs_controllabels, color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker='D', capsize=3.0, label='mean controls dir')
+    plt.ylabel('r2 score')
+
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
+    plt.ylim((-0.1,1))
+    
+    handles, _ = ax.get_legend_handles_labels()
+    handles = np.array(handles)
+
+    #print(handles)
+
+    #leg1 = plt.legend(handles[[20, 21, 22, 23]], ['%s ART' %tcnames_fancy[tcfs[0]], '%s TDT' %tcnames_fancy[tcfs[0]], \
+    #            '%s ART' %tcnames_fancy[tcfs[1]], '%s TDT' %tcnames_fancy[tcfs[1]]])
+
+    leg1 = plt.legend(handles[[0, 20, 2, 22]], ['%s Ind.' %tcnames_fancy[tcfs[0]], '%s Mean' %tcnames_fancy[tcfs[0]], \
+                '%s Ind.' %tcnames_fancy[tcfs[1]], '%s Mean' %tcnames_fancy[tcfs[1]]])
+
+    #plt.legend(handles[[0,1,10,11]], ['Ind Trained', 'Ind Dec', \
+    #        'mean of trained', 'mean of controls'])
+    
+    #plt.legend(handles[[0,20]], ['Ind.', 'Mean'], loc='upper left')
+    print("MODEL REGRESSION TASK for model %s : %s" %(model['name'], model['regression_task']))
+    if not model['regression_task']:
+        plt.legend(handles[[20,21]], ['ART-trained', 'Controls'], loc='upper left')
+    else:
+        plt.legend(handles[[20,21]], ['TDT-trained', 'Controls'], loc='upper left')
+
+    ax.add_artist(leg1)
+
+    ax = format_axis(ax)
+    
+    plt.tight_layout()
+
+    return fig
+
 def plotcomp_ees(tcfdf, model):
     ''' Plot comparisons between 90% quantiles for trained and control models for endeffector position
     
@@ -1676,6 +1781,98 @@ def plotcomp_decoding(tcfdf, tcf, model):
 
     return fig
 
+
+def plotcomp_decoding_twovars(tcfdf, tcfs, model):
+    ''' Plot comparisons between for trained and control models for decoding
+    
+    Arguments
+    ---------
+    tcfdf : pd.DataFrame, index and columns matching output of compile_comparisons
+    tcf : str, name of tuning feature
+    model : dict
+    
+    Returns
+    -------
+    fig : plt.figure
+    '''
+    
+    fig = plt.figure(figsize=(8,6), dpi=300)   
+    ax = fig.add_subplot(111)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+    ax.set_axisbelow(True)
+    
+    trainednamer = lambda i: model['base'] + '_%d' %i
+    trainednames = [trainednamer(i) for i in np.arange(1,6)]
+    
+    controlnamer = lambda i: model['base'] + '_%dr' %i
+    controlnames = [controlnamer(i) for i in np.arange(1,6)]
+    
+    nlayers = model['nlayers']
+    
+    x = range(nlayers + 1)
+
+    #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
+    t_corr = t.ppf(0.975, 4)
+    
+    print(tcfdf.head())
+    
+    trainedvars1 = np.vstack([tcfdf.loc[(trainednames, i, tcfs[0])] for i in np.arange(nlayers+1)]).T
+    controlvars1 = np.vstack([tcfdf.loc[(controlnames, i, tcfs[0])] for i in np.arange(nlayers+1)]).T
+
+    trainedvars1_mean = [tcfdf.loc[(trainednames, i, tcfs[0])].mean() for i in np.arange(nlayers+1)]
+    controlvars1_mean = [tcfdf.loc[(controlnames, i, tcfs[0])].mean() for i in np.arange(nlayers+1)]
+    errs_trainedvars1 = [tcfdf.loc[(trainednames, i, tcfs[0])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+    errs_controlvars1 = [tcfdf.loc[(controlnames, i, tcfs[0])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+
+
+    trainedvars2 = np.vstack([tcfdf.loc[(trainednames, i, tcfs[1])] for i in np.arange(nlayers+1)]).T
+    controlvars2 = np.vstack([tcfdf.loc[(controlnames, i, tcfs[1])] for i in np.arange(nlayers+1)]).T
+
+    trainedvars2_mean = [tcfdf.loc[(trainednames, i, tcfs[1])].mean() for i in np.arange(nlayers+1)]
+    controlvars2_mean = [tcfdf.loc[(controlnames, i, tcfs[1])].mean() for i in np.arange(nlayers+1)]
+    errs_trainedvars2 = [tcfdf.loc[(trainednames, i, tcfs[1])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+    errs_controlvars2 = [tcfdf.loc[(controlnames, i, tcfs[1])].std()/np.sqrt(5) * t_corr for i in np.arange(nlayers+1)]
+
+    for i, mname in enumerate(trainednames):
+        line_indtrainedvar1, = plt.plot(x, trainedvars1[i], color=colorselector_dec(model['cmap'], tcfs[0]), marker = 'o', alpha = 0.15, label='Ind. ART')
+        line_indcontrolsvar1, = plt.plot(x, controlvars1[i], color=colorselector_dec('Greys_r', tcfs[0]), marker = 'D', alpha = 0.15, label='Ind. TDT')
+        line_indtrainedvar2, =plt.plot(x, trainedvars2[i], color=colorselector_dec(model['cmap'], tcfs[1]), marker = 'o', linestyle=(0,(5,5)), alpha = 0.15, label='Ind. ART')
+        line_indcontrolsvar2, = plt.plot(x, controlvars2[i], color=colorselector_dec('Greys_r', tcfs[1]), marker = 'D',linestyle=(0,(5,5)), alpha = 0.15, label='Ind. TDT')
+    
+    line_meantrainedvar1,_,_ = plt.errorbar(x, trainedvars1_mean, yerr=errs_trainedvars1, color=colorselector_dec(model['cmap'], tcfs[0]), marker='o', capsize=3.0, label='Mean ART')
+    line_meancontrolsvar1,_,_ = plt.errorbar(x, controlvars1_mean, yerr=errs_controlvars1, color=colorselector_dec('Greys_r', tcfs[0]), marker='D', capsize=3.0, label='Mean TDT')
+    line_meantrainedvar2,_,_ = plt.errorbar(x, trainedvars2_mean, yerr=errs_trainedvars2, color=colorselector_dec(model['cmap'], tcfs[1]), marker='o', linestyle=(0,(5,5)), capsize=3.0, label='Mean ART')
+    line_meancontrolsvar2,_,_ = plt.errorbar(x, controlvars2_mean, yerr=errs_controlvars2, color=colorselector_dec('Greys_r', tcfs[1]), marker='D', linestyle=(0,(5,5)), capsize=3.0, label='Mean TDT')
+
+    plt.ylabel('r2 score')
+    #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
+    #           horizontalalignment = 'right')
+    plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,model['nlayers']+1)])
+    plt.ylim((-0.1,1))
+
+    first_legend = plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1, line_indtrainedvar2, line_meantrainedvar2], \
+        labels=['Ind. %s ' %dec_tcnames_fancy[tcfs[0]], 'Mean %s ' %dec_tcnames_fancy[tcfs[0]], 'Ind. %s' %dec_tcnames_fancy[tcfs[1]], 'Mean %s' %dec_tcnames_fancy[tcfs[1]] ], loc="upper right")
+    ax.add_artist(first_legend)
+
+    #plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
+    if not model['regression_task']:
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Controls'], loc='upper left')
+    else:
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Controls'], loc='upper left')
+
+    #print("Handles: ", handles)
+    
+    #plt.legend(handles[[0,1,10,11]], ['Ind. Recog.', 'Ind. Decod.', \
+    #            'Mean of Recog.', 'Mean of Decod.'])
+    
+    plt.tight_layout()
+
+    return fig
+
+
 def plotcomp_tr_reg_decoding(tcfdf, tcf, model, regressionmodel):
     ''' Plot comparisons between for trained and control models for decoding
     
@@ -1900,6 +2097,36 @@ def decoding_tcctrlcompplots(df, model, runinfo, alpha = None):
 
         plt.close('all')
 
+    df_r2 = df.loc[(slice(None), slice(None), slice(None)), 'r2']
+
+    fig = plotcomp_decoding_twovars(df_r2, ['ee_x','ee_y'], model)
+
+    #NORMALIZATION
+    #fig.savefig(os.path.join(folder, 'decoding_diracc_comp_tr_reg_normalized.pdf'))
+    #fig.savefig(os.path.join(folder, 'decoding_diracc_comp_tr_reg_normalized.svg'))
+    if alpha is None:
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp.pdf'))
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp.svg'))
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp.png'))
+    else:
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp_a%d.pdf' %int(alpha*1000)))
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp_a%d.png' %int(alpha*1000)))
+        fig.savefig(os.path.join(folder, 'decoding_ee_xy_comp_a%d.svg' %int(alpha*1000)))
+
+    fig = plotcomp_decoding_twovars(df_r2, ['dir','vel'], model)
+    #NORMALIZATION
+    #fig.savefig(os.path.join(folder, 'decoding_diracc_comp_tr_reg_normalized.pdf'))
+    #fig.savefig(os.path.join(folder, 'decoding_diracc_comp_tr_reg_normalized.svg'))
+    if alpha is None:
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp.pdf'))
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp.svg'))
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp.png'))
+    else:
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp_a%d.pdf' %int(alpha*1000)))
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp_a%d.svg' %int(alpha*1000)))
+        fig.savefig(os.path.join(folder, 'decoding_dirvel_comp_a%d.png' %int(alpha*1000)))
+
+
 def decoding_tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo, alpha = None):
     ''' Saves plots comparing the decoding strengths of the model for various tuning feature types
     
@@ -2064,6 +2291,12 @@ def tcctrlcompplots(df, model, runinfo):
     ee_fig = plotcomp_ees(eedf, model)
     ee_fig.savefig(os.path.join(folder, 'tcctrlcomp_ees.pdf'))
     ee_fig.savefig(os.path.join(folder, 'tcctrlcomp_ees.svg'))
+    
+    comb_df = df.loc[(slice(None), slice(None), ['dir', 'ee']), 'q90']
+    
+    comb_fig = plotcomp_twovars(comb_df, ['dir', 'ee'], model)
+    comb_fig.savefig(os.path.join(folder, 'tcctrlcomp_comb.pdf'))
+    comb_fig.savefig(os.path.join(folder, 'tcctrlcomp_comb.svg'))
     
     plt.close('all')
 # %% COMPARE PREF DIR DIFFS AND GENERALIZATION
@@ -2253,8 +2486,8 @@ def main(model, runinfo):
     else:
         print('kinetic and label embeddings already analyzed')
     
-    #if(runinfo.default_run):
-    if(runinfo['height'] == 'all'):
+    if(runinfo.default_run):
+    #if(runinfo['height'] == 'all'):
         print('compiling dataframe for decoding comparions...')
         for alpha in alphas:
             decoding_df = compile_decoding_comparisons_df(model, runinfo, alpha)
@@ -2274,8 +2507,9 @@ def main(model, runinfo):
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
     #if(True):
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
+        print('running tcctrlcompplots for model %s ' %model['name'])
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
             df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_comparisons_df.csv'),
@@ -2286,8 +2520,8 @@ def main(model, runinfo):
         print('kindiffs plots already made')
 
     #decoding kindiffs plots
-    #if(runinfo.default_run):
-    if(runinfo['height'] == 'all'):
+    if(runinfo.default_run):
+    #if(runinfo['height'] == 'all'):
         for alpha in alphas:
             if decoding_df is None:
                 analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')

@@ -601,8 +601,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 if(control):
                                                                     #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
-                                                                    if(default_run):
+                                                                    #if(default_run):
                                                                     #if(True):
+                                                                    if(runinfo.planestring() == 'horall'):
                                                                         print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                         comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                                     else:
@@ -643,12 +644,14 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 if (i==5):
                                                                     if(control):
-                                                                        if(False):
+                                                                        #if(False):
+                                                                        if(runinfo.planestring() == 'horall'):
                                                                             comparisons_main(model, runinfo)
                                                                         else:
                                                                             print('skipping comparisons')
 
-                                                                        if(runinfo.planestring() == 'horall'):
+                                                                        #if(runinfo.planestring() == 'horall'):
+                                                                        if(False):
                                                                             print('combining rsa results for all models')
                                                                             #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
                                                                             if(False):
@@ -658,8 +661,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                                 print('rsa models comp already completed')
                                                                     else:
                                                                         if(runinfo.planestring() == 'horall'):
-                                                                            if(True):
-                                                                            #if(False):
+                                                                            #if(True):
+                                                                            if(False):
                                                                                 comparisons_tr_reg_main(model, regressionmodel, runinfo)
 
                                                                             if(False):
