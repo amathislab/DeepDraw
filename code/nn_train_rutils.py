@@ -1,5 +1,5 @@
 """
-
+Code for training and evaluationg regression models (hand localization task). 
 """
 
 import os
