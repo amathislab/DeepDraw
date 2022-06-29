@@ -45,7 +45,7 @@ def polartc(thetas, rs, ilayer, k, irow, r2, expf, fset='vel'):
     
     plt.savefig('%s/%s_l%d_%s_polar_r2_bl.pdf' %(expf, fset, ilayer + 1, k))
      
-def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
+def get_thetas_rs_from_row(polar, acts, rowidx, ilayer, model, tcoff=32):
     """Get matching thetas and activations (stored as Rs)
     
     Arguments
@@ -54,6 +54,8 @@ def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
     acts : np.array [nr_samples, nr_rows, nr_timestamps] or [nr_samples, nr_rows, nr_timestamps, nr_feature maps]
     rowidx : tuple of form (row) or (row, feature_map)
     tcoff : int, amount of time points to drop at beginning and end of sequence
+    ilayer : int, index of current layer, spindles = -1
+    model : dict, contains information about current model
     
     Return
     ------
@@ -65,7 +67,7 @@ def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
     
     thetas = polar[:,1]
 
-    centers = get_centers(acts.shape[2])
+    centers = get_centers(acts.shape[2], ilayer, model)
     
     if(len(rowidx) == 1):
         nodeselector = (slice(None),) + rowidx
@@ -74,9 +76,9 @@ def get_thetas_rs_from_row(polar, acts, rowidx, tcoff=32):
     
     acts = acts[nodeselector]
     
-    print(len(centers))
-    print(thetas.shape)
-    print(acts.shape)
+    #print(len(centers))
+    #print(thetas.shape)
+    #print(acts.shape)
     
     fmtcoff = sum(np.where(centers <= tcoff, True, False))
     
@@ -148,7 +150,7 @@ def dirvelplotpolar(thetas, vms, acts, ilayer, k, rowidx, r2, expf, fset='vel'):
     plt.savefig('%s/dirvel_l%d_%d_3dpolar_smoothen_0%d_rc_nn.pdf' %(expf, ilayer + 1, k, int(kernelfactor*100)))
     plt.close('all')
     
-def get_thetas_vms_rs_from_row(polar, acts, rowidx, tcoff=32):
+def get_thetas_vms_rs_from_row(polar, acts, rowidx,  ilayer, model, tcoff=32):
     """Get matching thetas and activations (stored as Rs)
     
     Arguments
@@ -157,6 +159,8 @@ def get_thetas_vms_rs_from_row(polar, acts, rowidx, tcoff=32):
     acts : np.array [nr_samples, nr_rows, nr_timestamps] or [nr_samples, nr_rows, nr_timestamps, nr_feature maps]
     rowidx : tuple of form (row) or (row, feature_map)
     tcoff : int, amount of time points to drop at beginning and end of sequence
+    ilayer : int, index of current layer, spindles = -1
+    model : dict, contains information about current model
     
     Returns
     -------
@@ -171,15 +175,15 @@ def get_thetas_vms_rs_from_row(polar, acts, rowidx, tcoff=32):
     vms = polar[:,0]
     thetas = polar[:,1]
 
-    centers = get_centers(acts.shape[2])
+    centers = get_centers(acts.shape[2], ilayer, model)
     
     if(len(rowidx) == 1):
         nodeselector = (slice(None),) + rowidx
     else:
         nodeselector = (slice(None),) + tuple([rowidx[0]]) + (slice(None),) + tuple([rowidx[1]])
     
-    print(nodeselector)
-    print(acts.shape)
+    #print(nodeselector)
+    #print(acts.shape)
     acts = acts[nodeselector]
 
     #select time interval
@@ -260,7 +264,7 @@ def main(model, runinfo):
         
         for k in range(kbest):         
             rowidx = dirmi[ilayer +1][k]
-            thetas, rs = get_thetas_rs_from_row(polar, lo, rowidx[0])
+            thetas, rs = get_thetas_rs_from_row(polar, lo, rowidx[0], ilayer, model)
             polartc(thetas, rs, ilayer, k, rowidx[0], rowidx[1], expf, fset=fset)
             plt.close('all')      
        
@@ -273,6 +277,6 @@ def main(model, runinfo):
         for k in range(kbest):
             print(k)
             rowidx = dvmi[il + 1][k]
-            thetas, vms, rs = get_thetas_vms_rs_from_row(polar, lo, rowidx[0])
+            thetas, vms, rs = get_thetas_vms_rs_from_row(polar, lo, rowidx[0], il, model)
             dirvelplotpolar(thetas, vms, rs, il, k, rowidx[0], rowidx[1], expf, fset=fset)
                

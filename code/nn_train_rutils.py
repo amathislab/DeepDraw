@@ -1,4 +1,5 @@
 """
+Code for training and evaluationg regression models (hand localization task). 
 """
 
 import os
@@ -6,28 +7,35 @@ import copy
 import h5py
 import yaml
 
-
 import numpy as np
 import tensorflow as tf
+from kinematics_decoding import set_kin_dimensions
 
 
-class Dataset():
-    """Defines a dataset object with simple routines to generate batches."""
+class RDataset():
+    """Defines a dataset object for regression, with simple routines to generate batches."""
 
-    def __init__(self, path_to_data=None, data=None, dataset_type='train', key='spindle_firing', fraction=None):
+    def __init__(self, path_to_data=None, data=None, dataset_type='train', 
+            key='spindle_info', fraction=None, target_key='endeffector_coords', n_out_time=320):
         """Set up the `Dataset` object.
+
         Arguments
         ---------
         path_to_data : str, absolute location of the dataset file.
+        data: dict, optionally provide dataset directly as {'data': np.array, 'targets': np.array}
         dataset_type : {'train', 'test'} str, type of data that will be used along with the model.
         key : {'endeffector_coords', 'joint_coords', 'muscle_coords', 'spindle_firing'} str
+        target_key: {'endeffector_coords', 'joint_coords'} str, specifies targets to regress
+
         """
         self.path_to_data = path_to_data
         self.dataset_type = dataset_type
         self.key = key
-        self.train_data = self.train_labels = None
-        self.val_data = self.val_labels = None
-        self.test_data = self.test_data = None
+        self.target_key = target_key
+        self.train_data = self.train_targets = None
+        self.val_data = self.val_targets = None
+        self.test_data = self.test_targets = None
+        self.n_out_time = n_out_time
         self.make_data(data)
 
         # For when I want to use only a fraction of the dataset to train!
@@ -35,77 +43,93 @@ class Dataset():
             random_idx = np.random.permutation(self.train_data.shape[0])
             subset_num = int(fraction * random_idx.size)
             self.train_data = self.train_data[random_idx[:subset_num]]
-            self.train_labels = self.train_labels[random_idx[:subset_num]]
+            self.train_targets = self.train_targets[random_idx[:subset_num]]
 
     def make_data(self, mydata):
         """Load train/val or test splits into the `Dataset` instance.
+
         Returns
         -------
         if dataset_type == 'train' : loads train and val splits.
         if dataset_type == 'test' : loads the test split.
+
         """
         # Load and shuffle dataset randomly before splitting
         if self.path_to_data is not None:
             with h5py.File(self.path_to_data, 'r') as datafile:
                 data = datafile[self.key][()]
-                labels = datafile['label'][()] - 1
+                targets = datafile[self.target_key][()]
         else: 
             data = mydata['data']
-            labels = mydata['labels'] - 1
+            targets = mydata['targets']
 
         # For training data, create training and validation splits
         if self.dataset_type == 'train':
-            self.train_data, self.train_labels, self.val_data, self.val_labels = train_val_split(
-                data, labels)
+            self.train_data, self.train_targets, self.val_data, self.val_targets = train_val_split(
+                data, targets)
 
         # For test data, do not split
         elif self.dataset_type == 'test':
-            self.test_data, self.test_labels = data, labels
+            self.test_data, self.test_targets = data, targets
 
     def next_trainbatch(self, batch_size, step=0):
         """Returns a new batch of training data.
+
         Arguments
         ---------
         batch_size : int, size of training batch.
         step : int, step index in the epoch.
+
         Returns
         -------
-        2-tuple of batch of training data and correspondig labels.
+        2-tuple of batch of training data and correspondig targets.
+
         """
         if step == 0:
             shuffle_idx = np.random.permutation(self.train_data.shape[0])
             self.train_data = self.train_data[shuffle_idx]
-            self.train_labels = self.train_labels[shuffle_idx]
+            self.train_targets = self.train_targets[shuffle_idx]
         mybatch_data = self.train_data[batch_size*step:batch_size*(step+1)]
-        mybatch_labels = self.train_labels[batch_size*step:batch_size*(step+1)]
+        mybatch_targets = self.train_targets[batch_size*step:batch_size*(step+1)]
+        
+        mybatch_targets = set_kin_dimensions(mybatch_targets, self.n_out_time)
 
-        return (mybatch_data, mybatch_labels)
+        return (mybatch_data, mybatch_targets)
 
     def next_valbatch(self, batch_size, type='val', step=0):
         """Returns a new batch of validation or test data.
+
         Arguments
         ---------
         type : {'val', 'test'} str, type of data to return.
+
         """
         if type == 'val':
             mybatch_data = self.val_data[batch_size*step:batch_size*(step+1)]
-            mybatch_labels = self.val_labels[batch_size*step:batch_size*(step+1)]
+            mybatch_targets = self.val_targets[batch_size*step:batch_size*(step+1)]
         elif type == 'test':
             mybatch_data = self.test_data[batch_size*step:batch_size*(step+1)]
-            mybatch_labels = self.test_labels[batch_size*step:batch_size*(step+1)]
+            mybatch_targets = self.test_targets[batch_size*step:batch_size*(step+1)]
+            
+        mybatch_targets = set_kin_dimensions(mybatch_targets, self.n_out_time) 
 
-        return (mybatch_data, mybatch_labels)
+        return (mybatch_data, mybatch_targets)
+    
+    def set_outtime(self, outtime):
+        self.n_out_time = outtime
 
 
-class Trainer:
-    """Trains a `Model` object with the given `Dataset` object."""
+class RTrainer:
+    """Trains a `RModel` object with the given `Dataset` object."""
 
     def __init__(self, model=None, dataset=None, global_step=None):
         """Set up the `Trainer`.
+
         Arguments
         ---------
-        model : an instance of `ConvModel`, `AffineModel` or `RecurrentModel` to be trained.
+        model : an instance of `ConvRModel` or `RecurrentRModel` to be trained.
         dataset : an instance of `Dataset`, containing the train/val data splits.
+
         """
         self.model = model
         self.dataset = dataset
@@ -120,30 +144,44 @@ class Trainer:
         """Build training graph using the `Model`s predict function and setting up an optimizer."""
         
         _, ninputs, ntime, _ = self.dataset.train_data.shape
+        
+        if type(self.model).__name__ == 'ConvRModel':
+            layers = self.model.nlayers
+            stride = self.model.t_stride
+            nouttime = 320
+            for i in range(layers):
+                nouttime = int(np.ceil(nouttime/stride))
+            self.dataset.set_outtime(nouttime)
+        else:
+            nouttime = 320
+        
         with tf.Graph().as_default() as self.graph:
             tf.set_random_seed(self.model.seed)
             # Placeholders
             self.learning_rate = tf.placeholder(tf.float32)
             self.X = tf.placeholder(tf.float32, shape=[self.batch_size, ninputs, ntime, 2], name="X")
-            self.y = tf.placeholder(tf.int32, shape=[self.batch_size], name="y")
+            self.y = tf.placeholder(tf.float32, shape=[self.batch_size, nouttime, 3], name="y") # ALWAYS endeffectors for now.
 
             # Set up optimizer, compute and apply gradients
-            scores, probabilities, _ = self.model.predict(self.X, is_training=True)
-            classification_loss = tf.losses.sparse_softmax_cross_entropy(labels=self.y, logits=scores)
-            self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(classification_loss)
+            scores, _ = self.model.predict(self.X, is_training=True)
+            regression_loss = tf.losses.mean_squared_error(labels=self.y, predictions=scores)
+            self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(regression_loss)
 
             # Calculate metrics
-            scores_eval, prob_eval, _ = self.model.predict(self.X, is_training=False)
-            self.val_loss_op = tf.losses.sparse_softmax_cross_entropy(labels=self.y, logits=scores_eval)
-            correct = tf.nn.in_top_k(prob_eval, self.y, 1)
-            self.accuracy_op = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+            scores_eval, _ = self.model.predict(self.X, is_training=False)
+            self.val_loss_op = tf.losses.mean_squared_error(labels=self.y, predictions=scores_eval)
+            
+            pred = tf.reshape(scores_eval, [-1, 3])
+            targ = tf.reshape(self.y, [-1, 3])
+            self.accuracy_op = tf.reduce_mean(tf.norm(tf.subtract(pred, targ), axis=1), name="accuracy")
 
-            tf.summary.scalar('Train_Loss', classification_loss)
-            tf.summary.scalar('Train_Acc', self.accuracy_op)
+            tf.summary.scalar('Train_Loss', regression_loss)
+            tf.summary.scalar('Train_RMS', self.accuracy_op)
             self.train_summary_op = tf.summary.merge_all()
             
             self.init = tf.global_variables_initializer()
             self.saver = tf.train.Saver()
+            print('Built graph!')
 
     def load(self):
         self.saver.restore(self.session, os.path.join(self.log_dir, 'model.ckpt'))
@@ -162,6 +200,7 @@ class Trainer:
             verbose=True, 
             save_rand=False):
         """Train the `Model` object.
+
         Arguments
         ---------
         num_epochs : int, number of epochs to train for.
@@ -172,6 +211,7 @@ class Trainer:
         retrain : bool, train already existing model vs not.
         normalize : bool, whether to normalize training data or not.
         verbose : bool, print progress on screen.
+
         """
         steps_per_epoch = self.dataset.train_data.shape[0] // batch_size
         max_iter = num_epochs * steps_per_epoch
@@ -226,7 +266,7 @@ class Trainer:
                 # Summarize, print progress
                 loss_val, acc_val = self.save_summary(feed_dict)
                 if verbose:
-                    print('Step : %4d, Validation Accuracy : %.2f' % (self.global_step, acc_val))
+                    print('Step : %4d, Validation RMS : %.2f' % (self.global_step, acc_val))
 
                 if loss_val < self.best_loss:
                     self.best_loss = loss_val
@@ -290,17 +330,31 @@ class Trainer:
 
 def evaluate_model(model, dataset, batch_size=200):
     """Evaluation routine for trained models.
+
     Arguments
     ---------
     model : the `Conv`, `Affine` or `Recurrent` model to be evaluated. The test data is 
         assumed to be defined within the model.dataset object.
     dataset : the `Dataset` object on which the model is to be evaluated.
+
     Returns
     -------
     accuracy : float, Classification accuracy of the model on the given dataset.
+
     """
     # Data handling
     nsamples, ninputs, ntime, _ = dataset.test_data.shape
+    
+    if type(model).__name__ == 'ConvRModel':
+            layers = model.nlayers
+            stride = model.t_stride
+            nouttime = 320
+            for i in range(layers):
+                nouttime = int(np.ceil(nouttime/stride))
+            dataset.set_outtime(nouttime)
+    else:
+        nouttime = 320
+    
     num_steps = nsamples // batch_size
 
     # Retrieve training mean, if data was normalized
@@ -313,12 +367,13 @@ def evaluate_model(model, dataset, batch_size=200):
     with mygraph.as_default():
         # Declare placeholders for input data and labels
         X = tf.placeholder(tf.float32, shape=[batch_size, ninputs, ntime, 2], name="X")
-        y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
+        y = tf.placeholder(tf.float32, shape=[batch_size, nouttime, 3], name="y")
 
         # Compute scores and accuracy
-        scores, probabilities, _ = model.predict(X, is_training=False)
-        correct = tf.nn.in_top_k(probabilities, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+        scores, _ = model.predict(X, is_training=False)
+        pred = tf.reshape(scores, [-1, 3])
+        targ = tf.reshape(y, [-1, 3])
+        accuracy = tf.reduce_mean(tf.norm(tf.subtract(pred, targ), axis=1), name="accuracy")
 
         # Test the `model`!
         restorer = tf.train.Saver()
@@ -348,8 +403,10 @@ def train_val_split(data, labels):
 
 def make_config_file(model, train_params, val_params):
     """Make a configuration file for the given model, created after training.
+
     Given a `ConvModel`, `AffineModel` or `RecurrentModel` instance, generates a 
     yaml file to save the configuration of the model.
+
     """
     mydict = copy.copy(model.__dict__)
     # Convert to python native types for better readability

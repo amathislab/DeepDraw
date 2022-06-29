@@ -50,8 +50,8 @@ def compute_metrics(y, pred):
     r2 = r2_score(y.flatten(), pred.flatten())
     cor = np.corrcoef(y.flatten(), pred.flatten())[0,1]
     
-    print(r2)
-    assert r2 <=1 , 'illegal r2 score!!!! %s %s' %(y[:10], pred[:10])
+    #print(r2)
+    assert r2 <=1 or np.isnan(r2), 'illegal r2 score!!!! %s %s %s' %(r2, y[:10], pred[:10])
     
     return [rmse, r2, cor]
     
@@ -66,10 +66,34 @@ def get_binidx(theta, nbins=8):
     binidx = int(( theta + np.pi ) / (2*np.pi/nbins))
     return binidx
 
-def get_centers(fmapntime, ntime = 320, t_stride = 2):
+def get_centers(fmapntime, ilayer, model, ntime = 320):
+    """ Computes the temporal centers of the convolutional centers
+    
+    Parameters
+    ----------
+    fmapntime : int, length of temporal axis in given feature map
+    ilayer : int, current layer of network, spindles = -1
+    ntime : int, starting width
+    model : dict -> Config, information of model
+    
+    Returns
+    -------
+    centers : list of ints, indices of temporal centers
+    """
+    
+    #s_stride = model['s_stride']
+    t_stride = model['t_stride']
+    mtype = model['type']
+    
     centers = np.arange(ntime)
-    for i in range(int(np.log2(len(centers)/ fmapntime))):
-        centers = np.array([centers[i*t_stride] for i in range(len(centers)//2)])
+    
+    #if spindles skip
+    #if(ilayer == -1):
+    #    ilayer = 0
+    
+    for i in np.arange(0, ilayer + 1):
+        if(mtype == 'S' and i >= 4):
+            centers = np.array([centers[i*t_stride] for i in range(int(np.ceil(len(centers)/t_stride)))])
     assert len(centers) == fmapntime, "Time dimensions mismatch!!!!"
     return centers
 
@@ -168,9 +192,9 @@ def linreg(X_train, X_test, Y_train, Y_test):
     trainmets = np.concatenate((compute_metrics(Y_train, X_train @ c), c, np.zeros(3 - len(c))))
     testmets = np.concatenate((compute_metrics(Y_test, X_test @ c), c, np.zeros(3 - len(c))))
     
-    print("LinReg Fit Score: " + str(trainmets[:3]))
-    print("LinReg Test Score: " + str(testmets[:3]))
-    print("Coefficients: " + str(c[:3]))
+    #print("LinReg Fit Score: " + str(trainmets[:3]))
+    #print("LinReg Test Score: " + str(testmets[:3]))
+    #print("Coefficients: " + str(c[:3]))
     return trainmets, testmets
 
 def feature_set(Xcols_train, Xcols_test, Y_train, Y_test):
@@ -243,7 +267,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     ##BASELINE LINREG MODEL
-    print("Baseline Linear Regression Model:")
+    #print("Baseline Linear Regression Model:")
     #Xtform_train = np.c_[X_train[:,0], X_train[:,1], np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0], X_test[:,1], np.ones_like(X_test[:,0])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
@@ -252,17 +276,19 @@ def tune_row_vel(X, Y, row, isPolar = True):
             Y_train,
             Y_test
             )
+    
+    #print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
     
     #Change to polar coordinates
     if(not isPolar):
-        print("converting to polar...")
+        #print("converting to polar...")
         X_train = get_polar(X_train)
         X_test = get_polar(X_test)
     
     ##DIR DEP
-    print("Directional Dependence:")
+    #print("Directional Dependence:")
     #Xtform_train = np.c_[np.cos(X_train[:,1]), np.sin(X_train[:,1]), np.ones_like(X_train[:,1])]
     #Xtform_test = np.c_[np.cos(X_test[:,1]), np.sin(X_test[:,1]), np.ones_like(X_test[:,1])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
@@ -278,7 +304,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     
     #Xtform_train = np.c_[X_train[:,0], np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0], np.ones_like(X_test[:,0])]
-    print("Velocity Dependence:")
+    #print("Velocity Dependence:")
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0], np.ones_like(X_train[:,0])),
         (X_test[:,0], np.ones_like(X_test[:,0])),
@@ -290,7 +316,7 @@ def tune_row_vel(X, Y, row, isPolar = True):
     ##DIR PLUS VEL DEP
     #Xtform_train = np.c_[X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])]
     #Xtform_test = np.c_[X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])]
-    print("Direction + Velocity Dependence:")   
+    #print("Direction + Velocity Dependence:")   
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])),
         (X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])),
@@ -351,8 +377,8 @@ def tune_row_label(X, Y, node):
          print("fitting SVM failed. %s" %err) 
          nodetraineval = 0.5
         
-    print("Train eval: %s" %str(nodetraineval))
-    print("Test eval: %s" %str(nodetesteval))
+    #print("Train eval: %s" %str(nodetraineval))
+    #print("Test eval: %s" %str(nodetesteval))
     
     return node, np.array([(nodetraineval-0.5)*2]), np.array([(nodetesteval-0.5)*2])
 
@@ -392,7 +418,10 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
         #Axis k+1: (0) LinReg (1) Dir Tuning (2) Vel Tuning (3) Dir + Vel Tuning
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
         
-    pool = mp.Pool(mp.cpu_count())
+    #pool = mp.Pool(mp.cpu_count())
+    n_cpus = 10
+    print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
+    pool = mp.Pool(n_cpus)
     
     results = []
     
@@ -400,7 +429,7 @@ def tune(X, fset, Y, centers, nmods, nmets, mmod='std'):
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
     
     for irow in range(Y.shape[1]):
-        print("Row: ", irow)
+        #print("Row: ", irow)
         
         if(len(X.shape) > 1):
             x = X[..., centers]
@@ -459,7 +488,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     fset : string, kinematic tuning curve name
     xyplmvt : np.array of bools [nr_samples,], mask restricting to trials / movements that occur in the desired plane or orientation
     runinfo : RunInfo (dict extension)
-    ilayer : int, index of current layer
+    ilayer : int, index of current layer, -1 = spindles
     mmod : string, modifier to model or kinematic tuning curve type
     model : dict, information on model
     t_stride : int, temporal stride used when applying convolutional filters
@@ -487,7 +516,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2):
     lo = pickle.load(open(os.path.join(runinfo.datafolder(model), layer + '.pkl'), 'rb'))
     lo = lo[xyplmvt]
     
-    centers = get_centers(lo.shape[2])
+    centers = get_centers(lo.shape[2], ilayer, model)
     
     if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):
         nmods = 4
@@ -618,6 +647,7 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std'):
     
     print('evaluating %s model for %s %s, expid %d, plane %s ...' %(modelname, fset, mmod, runinfo['expid'], runinfo.planestring()))
     
+    #print('runinfo datafolder', runinfo.datafolder(model))
     X, xyplmvt = X_data(fset, runinfo, datafolder=runinfo.datafolder(model))
     
     np.random.seed(42)
