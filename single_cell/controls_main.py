@@ -240,15 +240,15 @@ class RunInfo(dict):
 
 # %% EXPERIMENTAL RUN CONFIG
 
-runinfo = RunInfo({'expid': 301, #internal experiment id
+runinfo = RunInfo({'expid': 401, #internal experiment id
                    #'datafraction': 0.05,
                    #'datafraction': 0.1,
-                   'datafraction': 'auto', #fraction (0,1] or 'auto'
+                   'datafraction': 0.5, #fraction (0,1] or 'auto'
                    'randomseed': 2000,
                    'randomseed_traintest': 42,
                    'dirr2threshold': 0.2,
                    'verbose': 2, #0 (least), 1, 2 (most)
-                   'model_experiment_id': 'auto', #as per Pranav's model generation
+                   'model_experiment_id': 22, #as per Pranav's model generation, int or 'auto'
                    'basefolder': basefolder,
                    'batchsize': 100, #for layer representation generation
                    'default_run': False, #only variable that is 'trial'-dependent,
@@ -497,8 +497,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
                                                                 #if(default_run):
-                                                                #if(True):
-                                                                if(False):
+                                                                if(True):
+                                                                #if(False):
                                                                 
                                                                     print('running %s analysis (fitting tuning curves) for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
                                                                     tuningcurves_main(fset,
@@ -520,7 +520,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                                     model_to_analyse,
                                                                                     mmod='decoding'
                                                                                     )
-                                                                elif(True and height == 'all'): 
+                                                                elif(False and height == 'all'): 
                                                                     for alpha in [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]:
                                                                     #for alpha in [0]:
                                                                         print('decoding %s analysis for model %s plane %s with regularization par %f...' %(fset, modelname, runinfo.planestring(), alpha))
@@ -601,9 +601,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 if(control):
                                                                     #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
-                                                                    #if(default_run):
+                                                                    if(default_run):
                                                                     #if(True):
-                                                                    if(runinfo.planestring() == 'horall'):
+                                                                    #if(runinfo.planestring() == 'horall'):
                                                                         print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                         comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                                     else:
@@ -626,6 +626,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     if(False):
                                                                 
                                                                         if(False):  
+                                                                        #if(True):  
+                                                                        #if(runinfo.planestring() == 'horall'):
                                                                             print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
@@ -663,6 +665,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                         if(runinfo.planestring() == 'horall'):
                                                                             #if(True):
                                                                             if(False):
+                                                                                print('starting comparisons_tr_reg_main')
                                                                                 comparisons_tr_reg_main(model, regressionmodel, runinfo)
 
                                                                             if(False):

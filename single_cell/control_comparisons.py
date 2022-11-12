@@ -214,10 +214,13 @@ def compile_comparisons_df(model, runinfo):
     model : dict
     runinfo : RunInfo (extension of dict)
     '''
+
+    print("COMPILING COMPARISONS DF")
     
     nlayers = model['nlayers'] + 1
     
-    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
+    colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10', 'excluded n', 'total n']#, 'ee', 'eepolar']
+    #colnames = ['mean', 'median', 'std', 'max', 'min', 'q90', 'q10']#, 'ee', 'eepolar']
     #modelnames = [model['name']] + [model['name'] + '_%d' %(i + 1) for i in range(5)]
     modelbase = model['base']
     
@@ -281,6 +284,7 @@ def compile_comparisons_df(model, runinfo):
             for j, tcname in enumerate(tcnames):
 
                 #exclude r2 == 1 scores
+                original_layerevals = layerevals[j]
                 layerevals[j] = layerevals[j][layerevals[j] != 1]
 
                 df.loc[(mname, ilayer, tcname), 'mean'] = layerevals[j].mean()
@@ -290,10 +294,13 @@ def compile_comparisons_df(model, runinfo):
                 df.loc[(mname, ilayer, tcname), 'min'] = layerevals[j].min()                
                 df.loc[(mname, ilayer, tcname), 'q90'] = np.quantile(layerevals[j], 0.9)
                 df.loc[(mname, ilayer, tcname), 'q10'] = np.quantile(layerevals[j], 0.10)
+                df.loc[(mname, ilayer, tcname), 'excluded n'] = sum((original_layerevals.flatten() == 1) | (original_layerevals.flatten() < -0.1))
+                df.loc[(mname, ilayer, tcname), 'total n'] = original_layerevals.size
+                #print("ADDING EXCLUDED N")
 
                 if ilayer == 0:
-                    firsthalf = layerevals[j][:layerevals.shape[0]//2]
-                    secondhalf = layerevals[j][layerevals.shape[0]//2:]
+                    firsthalf = layerevals[j][:layerevals[j].shape[0]//2]
+                    secondhalf = layerevals[j][layerevals[j].shape[0]//2:]
                     df.loc[(mname, 11, tcname), 'mean'] = firsthalf.mean()
                     df.loc[(mname, 11, tcname), 'median'] = np.median(firsthalf)
                     df.loc[(mname, 11, tcname), 'std'] = firsthalf.mean()               
@@ -1371,7 +1378,7 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
     '''
     
     #fig = plt.figure(figsize=(12,5.5), dpi=300)   
-    fig = plt.figure(figsize=(9,5), dpi=300)   
+    fig = plt.figure(figsize=(8,6), dpi=300)   
     ax = fig.add_subplot(111)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -1435,13 +1442,25 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
 
     #print(handles)
 
-    leg1 = plt.legend(handles[[20, 21, 22, 23]], ['%s ART' %tcnames_fancy[tcfs[0]], '%s TDT' %tcnames_fancy[tcfs[0]], \
-                '%s ART' %tcnames_fancy[tcfs[1]], '%s TDT' %tcnames_fancy[tcfs[1]]])
+    #leg1 = plt.legend(handles[[20, 21, 22, 23]], ['%s ART' %tcnames_fancy[tcfs[0]], '%s TDT' %tcnames_fancy[tcfs[0]], \
+    #            '%s ART' %tcnames_fancy[tcfs[1]], '%s TDT' %tcnames_fancy[tcfs[1]]])
 
     #plt.legend(handles[[0,1,10,11]], ['Ind Trained', 'Ind Dec', \
     #        'mean of trained', 'mean of controls'])
     
-    plt.legend(handles[[0,20]], ['Ind.', 'Mean'], loc='upper left')
+    #plt.legend(handles[[0,20]], ['Ind.', 'Mean'], loc='upper left')
+
+    print("NEW LEGEND YAY")
+
+    leg1 = plt.legend(handles[[0, 20, 2, 22]], ['%s Ind.' %tcnames_fancy[tcfs[0]], '%s Mean' %tcnames_fancy[tcfs[0]], \
+                '%s Ind.' %tcnames_fancy[tcfs[1]], '%s Mean' %tcnames_fancy[tcfs[1]]])
+
+    #plt.legend(handles[[0,1,10,11]], ['Ind Trained', 'Ind Dec', \
+    #        'mean of trained', 'mean of controls'])
+    
+    #plt.legend(handles[[0,20]], ['Ind.', 'Mean'], loc='upper left')
+    #print("MODEL REGRESSION TASK for model %s : %s" %(model['name'], model['regression_task']))
+    plt.legend(handles[[20,21]], ['ART', 'TDT'], loc='upper left')
 
     ax.add_artist(leg1)
 
@@ -2010,7 +2029,7 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     for i, mname in enumerate(trainednames):
         line_indtrainedvar1, = plt.plot(x, trainedvars1[i], color=model['color'], marker = 'o', alpha = 0.15, label='Ind. Recog.')
         line_indcontrolsvar1, = plt.plot(x, controlvars1[i], color=regressionmodel['regression_color'], marker = 'D', alpha = 0.15, label='Ind. Decod.')
-        plt.plot(x, trainedvars2[i], color=model['color'], marker = 'o', linestyle=(0,(5,5)), alpha = 0.15, label='Ind. Recog.')
+        line_indtrainedvar2, = plt.plot(x, trainedvars2[i], color=model['color'], marker = 'o', linestyle=(0,(5,5)), alpha = 0.15, label='Ind. Recog.')
         plt.plot(x, controlvars2[i], color=regressionmodel['regression_color'], marker = 'D',linestyle=(0,(5,5)), alpha = 0.15, label='Ind. Decod.')
     
     line_meantrainedvar1,_,_ = plt.errorbar(x, trainedvars1_mean, yerr=errs_trainedvars1, color=colorselector_dec(model['cmap'], tcfs[0]), marker='o', capsize=3.0, label='Mean Recog.')
@@ -2033,16 +2052,29 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     #handles, _ = ax.get_legend_handles_labels()
     #handles = np.array(handles)
 
-    first_legend = plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1, line_meantrainedvar2, line_meancontrolsvar2], \
-        labels=['%s Recog.' %dec_tcnames_fancy[tcfs[0]], '%s Decod.' %dec_tcnames_fancy[tcfs[0]], '%s Recog.' %dec_tcnames_fancy[tcfs[1]], '%s Decod.' %dec_tcnames_fancy[tcfs[1]] ], loc="upper right")
-    ax.add_artist(first_legend)
+    #first_legend = plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1, line_meantrainedvar2, line_meancontrolsvar2], \
+    #    labels=['%s Recog.' %dec_tcnames_fancy[tcfs[0]], '%s Decod.' %dec_tcnames_fancy[tcfs[0]], '%s Recog.' %dec_tcnames_fancy[tcfs[1]], '%s Decod.' %dec_tcnames_fancy[tcfs[1]] ], loc="upper right")
+    #ax.add_artist(first_legend)
 
-    plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
+    #plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
 
     #print("Handles: ", handles)
     
     #plt.legend(handles[[0,1,10,11]], ['Ind. Recog.', 'Ind. Decod.', \
     #            'Mean of Recog.', 'Mean of Decod.'])
+
+    first_legend = plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1, line_indtrainedvar2, line_meantrainedvar2], \
+        labels=['Ind. %s ' %dec_tcnames_fancy[tcfs[0]], 'Mean %s ' %dec_tcnames_fancy[tcfs[0]], 'Ind. %s' %dec_tcnames_fancy[tcfs[1]], 'Mean %s' %dec_tcnames_fancy[tcfs[1]] ], loc="upper right")
+    ax.add_artist(first_legend)
+
+    #plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
+    '''
+    if not model['regression_task']:
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Controls'], loc='upper left')
+    else:
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Controls'], loc='upper left')
+    '''
+    plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART", 'TDT'], loc='upper left')
     
     plt.tight_layout()
 
@@ -2240,6 +2272,8 @@ def tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     runinfo : RunInfo (extension of dict)
     
     '''
+
+    print('TCCTRLCOMPPLOTS TR_REG')
     
     folder = runinfo.sharedanalysisfolder(model,  'kindiffs_tr_reg_plots')
     os.makedirs(folder, exist_ok=True)
@@ -2251,6 +2285,8 @@ def tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.pdf'))
     fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.png'))
     fig.savefig(os.path.join(folder, 'tcctrlcomp_tr_reg_dir_accs_horlabels_shortlegend_new-function.svg'))
+
+    print('made new dir acc plots')
     
     eedf = df.loc[(slice(None), slice(None), ['ee', 'eepolar']), 'q90']
     
@@ -2478,8 +2514,8 @@ def main(model, runinfo):
     
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
     #if(True):
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    if(runinfo['height'] == 'all'):
         print('compiling dataframe for comparions...')
         df = compile_comparisons_df(model, runinfo)
         
@@ -2507,8 +2543,8 @@ def main(model, runinfo):
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
     #if(True):
-    #if(runinfo.default_run):
-    if(runinfo['height'] == 'all'):
+    if(runinfo.default_run):
+    #if(runinfo['height'] == 'all'):
         print('running tcctrlcompplots for model %s ' %model['name'])
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
@@ -2523,12 +2559,15 @@ def main(model, runinfo):
     if(runinfo.default_run):
     #if(runinfo['height'] == 'all'):
         for alpha in alphas:
+            '''
             if decoding_df is None:
                 analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')
                 #SWITCH FOR NORMALIZATION
                 #decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'),
                 decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df.csv'),
                                 header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
+            '''
+            decoding_df = compile_decoding_comparisons_df(model, runinfo, alpha)
             print('creating decoding kindiffs plots')
             decoding_tcctrlcompplots(decoding_df, model, runinfo, alpha)
     else:
@@ -2550,8 +2589,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     decoding_df = None
     
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
-    if(runinfo['height'] == 'all'):
-    #if(runinfo.default_run):
+    #if(runinfo['height'] == 'all'):
+    if(runinfo.default_run):
     #if(False):
         print('compiling dataframe for comparions trained & reg...')
         df = compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo)
@@ -2579,7 +2618,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     else:
         print('kinetic and label embeddings already analyzed')
 
-    if(runinfo['height'] == 'all'):
+    #if(runinfo['height'] == 'all'):
+    if(False):
         print('running paired t quantiles')
         pairedt_quantiles(df, taskmodel, runinfo, regressionmodel)
         print('done')
@@ -2595,6 +2635,7 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
                              header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
         print('creating kindiffs plots trained & reg')
         tcctrlcompplots_tr_reg(df, taskmodel, regressionmodel, runinfo)
+        print('should have reached them')
     else:
         print('kindiffs plots already made')
 
@@ -2603,13 +2644,14 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     if(False):
     #if(runinfo['height'] == 'all'):
         for alpha in alphas:
-            if decoding_df is None:
-                analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
-                #SWITCH FOR NORMALIZATION
-                #decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_tr_reg_df_normalized.csv'),
-                decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_df.csv'),
-                                header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
-                print(decoding_df)
+            #if decoding_df is None:
+            decoding_df = compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, alpha)
+            analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'decoding_kindiffs')
+            #SWITCH FOR NORMALIZATION
+            #decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_tr_reg_df_normalized.csv'),
+            #decoding_df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_decoding_comparisons_df.csv'),
+            #                header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
+            print(decoding_df)
             print('creating decoding kindiffs plots trained & reg')
             decoding_tcctrlcompplots_tr_reg(decoding_df, taskmodel, regressionmodel, runinfo, alpha)
     else:

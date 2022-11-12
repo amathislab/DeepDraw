@@ -583,20 +583,11 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     controlmodevals_combined = get_combined_modevals(controlmodel, runinfo)
 
     fig = plot_compvp_v3(trainedmodevals_combined, controlmodevals_combined, trainedmodel, \
-        regcomp = False, modnames=combined_modnames, ifsets_to_quantile=[0,2])
+        regcomp = True, modnames=combined_modnames, ifsets_to_quantile=[0,2])
 
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_violin/comp_violin_v3.pdf' %(ff))
     fig.savefig('%s/comp_violin/comp_violin_v3.svg' %(ff))
-
-    fig = plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, \
-        regcomp = False, modnames=modnames, ifsets_to_quantile=[0,2])
-
-    os.makedirs('%s/comp_violin' %ff, exist_ok = True)
-    fig.savefig('%s/comp_violin/comp_violin_v3_kinematics.pdf' %(ff))
-    fig.savefig('%s/comp_violin/comp_violin_v3_kinematics.svg' %(ff))
-    
-    print('figure saved')
     
     plt.close('all')
 
@@ -646,6 +637,15 @@ def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
     os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.pdf' %(ff))
     fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_v2_combined.svg' %(ff))
+
+    fig = plot_compvp_v3(trainedmodevals, controlmodevals, taskmodel, \
+        regcomp = True, modnames=modnames, ifsets_to_quantile=[0,2])
+
+    os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.pdf' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.svg' %(ff))
+    
+    print('figure saved')
     
     print('tr reg kinematics combined violin figure saved')
     

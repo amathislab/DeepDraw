@@ -532,7 +532,7 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std', pool=None):
        trainevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
        testevals : np.array [nr rows / units, nr of tuning curves, nr of metrics]
        
-        '''    
+    '''    
         
     Yshape = Y.shape
     if len(Yshape) == 3:
@@ -691,7 +691,7 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
 
     # reshape so that both X and Y are in format [samples x timepoints, features] (except for labels)
-    
+    '''
     if fset != 'labels':
         print(X.shape)
         assert len(X.shape) > 1, "X has shape 1 %s" %str(X.shape)
@@ -726,6 +726,7 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     #if fset != 'labels':
     #    print("Normalizing by maximal value %s" %np.max(X))
     #    X = X/np.max(X)
+    '''
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
