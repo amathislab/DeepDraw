@@ -29,7 +29,6 @@ t_stride = 2
 ntime=320
 metrics = ['RMSE', 'r2', 'PCC']
 nmetrics = len(metrics)
-need_to_sleep = False
 #datafolder = 'data/'
 
 # %% UTILITY FUNCTIONS
@@ -306,7 +305,7 @@ def feature_set(Xcols_train, Xcols_test, Y_train, Y_test):
     return X_train, X_test, Y_train, Y_test
 
 # %% DIRECTION AND VELOCITY TUNING 
-def tune_row_vel(X, Y, row, isPolar = True):
+def tune_row_vel(X_train, X_test, Y_train, Y_test, row, isPolar = True):
     ''' Fit tuning curves for a single neuron / unit ("row") for velocity inputs (and similar kinematic features) for four different kinds of models
         1. simple linear regression over input features of X
         2. Directional tuning curves
@@ -327,49 +326,14 @@ def tune_row_vel(X, Y, row, isPolar = True):
         rowtraineval : np.array [4, 6] for four different model types. Cols 0-2: Metrics from compute_metrics, Cols 3-5: Linear Regression coeffs
         rowtesteval : np.array [4, 6] for four different model types. Cols 0-2: Metrics from compute_metrics, Cols 3-5: Linear regression coeffs
     '''
-
-    if need_to_sleep:
-        time.sleep(0.2)
-
-        hard_limit = 1000*1024*1024
-        soft, hard = resource.getrlimit(resource.RUSAGE_SELF)
-        print("Soft and hard limits RUSAGE_SELF: %d, %d" %(soft, hard))
-        resource.setrlimit(resource.RUSAGE_SELF, (hard_limit, hard_limit))
-        soft, hard = resource.getrlimit(resource.RUSAGE_SELF)
-        print("Soft and hard limits RUSAGE_SELF after mod: %d, %d" %(soft, hard))
-
-        '''
-        soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
-        print("Soft and hard limits  RLIMIT_CPU: %d, %d" %(soft, hard))
-        resource.setrlimit(resource.RLIMIT_CPU, (soft // 2, hard  // 2))
-        '''
-
-        '''
-        soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
-        print("Soft and hard limits  RLIMIT_DATA: %d, %d" %(soft, hard))
-        resource.setrlimit(resource.RLIMIT_DATA, (hard_limit, hard_limit))
-        '''
-        '''
-
-        soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
-        print("Soft and hard limits  RLIMIT_RSS: %d, %d" %(soft, hard))
-        resource.setrlimit(resource.RLIMIT_RSS, (hard_limit, hard_limit))
-        '''
-        
-        '''
-        soft, hard = resource.getrlimit(resource.RLIMIT_NICE)
-        print("Soft and hard limits  RLIMIT_NICE: %d, %d" %(soft, hard))
-        resource.setrlimit(resource.RLIMIT_NICE, (15, 15))
-        '''
-
-        os.nice(19)
     
     rowtraineval = np.zeros((4,6))
     rowtesteval = np.zeros((4,6))
     #Axis 0: (0) training set (1) test set
     #test set els 4-6: linear regression coeffs
-    
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+
+    ### RESETTING X_train and X_test
+    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     ##BASELINE LINREG MODEL
     #print("Baseline Linear Regression Model:")
@@ -391,9 +355,6 @@ def tune_row_vel(X, Y, row, isPolar = True):
         X_train = get_polar(X_train)
         X_test = get_polar(X_test)
 
-    if need_to_sleep:
-        time.sleep(0.2)
-    
     ##DIR DEP
     #print("Directional Dependence:")
     #Xtform_train = np.c_[np.cos(X_train[:,1]), np.sin(X_train[:,1]), np.ones_like(X_train[:,1])]
@@ -406,9 +367,6 @@ def tune_row_vel(X, Y, row, isPolar = True):
         )
 
     rowtraineval[1], rowtesteval[1] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
-
-    if need_to_sleep:
-        time.sleep(0.2)
     
     ##VEL DEP
     
@@ -422,9 +380,6 @@ def tune_row_vel(X, Y, row, isPolar = True):
         Y_test
         )
     rowtraineval[2], rowtesteval[2] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
-
-    if need_to_sleep:
-        time.sleep(0.2)
     
     ##DIR PLUS VEL DEP
     #Xtform_train = np.c_[X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])]
@@ -438,41 +393,12 @@ def tune_row_vel(X, Y, row, isPolar = True):
         )
     
     rowtraineval[3], rowtesteval[3] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
-
-    if need_to_sleep:
-        time.sleep(0.2)
         
     return (row, rowtraineval, rowtesteval)
 
-'''
-# %% DECODING
-def tune_row_decoding(X, Y, row):
-    
-    rowtraineval = np.zeros((1,3))
-    rowtesteval = np.zeros((1,3))
-
-    X_temp = X
-    X = Y
-    Y = X_temp
-
-    #trying Pranav's regression trick where I divide layer activations by their maximal value
-    #NORMALIZATION
-    #print("Normalizing by maximal value %s" %np.max(X))
-    #X = X/np.max(X)
-
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
-
-    c = np.linalg.lstsq(X_train, Y_train, rcond=None)[0]
-
-    rowtraineval[0] = compute_metrics(Y_train, X_train @ c)
-    rowtesteval[0] = compute_metrics(Y_test, X_test @ c)
-
-    return (row, rowtraineval, rowtesteval)
-'''
-
 # %% LABEL SPECIFICITY
     
-def tune_row_label(X, Y, node):
+def tune_row_label(X_train, X_test, Y_train, Y_test, node):
     """Perform ANOVA-like analysis to determine how much of the variance can be
     explained by tuning to labels for a single unit ("row").
     
@@ -487,10 +413,18 @@ def tune_row_label(X, Y, node):
     node: node index
     nodeeval: np.array
     """
+
+    ##RESHAPE OPERATIONS
     
-    X = label_binarize(X, np.unique(X))
-    Y = Y.reshape(-1,1)
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+    #print('X_train unique classes', np.unique(X_train))
+    X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
+    #X_train = label_binarize(X_train, np.unique(X_train))
+    # X_test = label_binarize(X_test, np.unique(X_test)) ## switch necessary because labels won't necessarily be well-mixed anymore after switching splitting method :s
+    #X_test = label_binarize(X_test, np.unique(X_train))
+    X_test = label_binarize(X_test, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
+    Y_train = Y_train.reshape(-1,1)
+    Y_test = Y_test.reshape(-1,1)
+    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
     
     try:
         svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
@@ -506,6 +440,7 @@ def tune_row_label(X, Y, node):
     except ValueError as err:
          print("fitting SVM failed. %s" %err) 
          nodetraineval = 0.5
+         nodetesteval = 0.5
         
     #print("Train eval: %s" %str(nodetraineval))
     #print("Test eval: %s" %str(nodetesteval))
@@ -547,119 +482,76 @@ def tune(X, fset, Y, centers, nmods, nmets, ilayer, mmod='std', pool=None):
         #Axis 0-k: lo dims except time
         #Axis k+1: (0) LinReg (1) Dir Tuning (2) Vel Tuning (3) Dir + Vel Tuning
         #Axis k+2: (0) RMSE (1) r2 (2) PCC
-        
-    #pool = mp.Pool(mp.cpu_count())
-    #if(True):
-    '''
-    if (fset == 'ee' or fset == 'eepolar') and ilayer > 0:
-        print("Proceeding without multiprocessing...")
-        time.sleep(5)
-        Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
-        
-        for irow in range(Y.shape[1]):
-            print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
-            if(len(X.shape) > 1):
-                x = X[..., centers]
-            else:
-                x = X
-            
-            y = Y[:,irow]
-            
-            ##RESHAPE FOR LINEAR REGRESSION
-            
-            if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
-                
-                tcoff = sum(np.where(centers <= 32, True, False))
-                x = x[...,tcoff:ntime-tcoff]
-                y = y[:,tcoff:ntime-tcoff]
-                x = x.swapaxes(1,2).reshape((-1,2))
-            
-            y = y.reshape((-1,))
-            
-            if fset == 'ee':
-                isPolar = False
-            else:
-                isPolar = Tsrue
-            
-            _, trainevals[irow], testevals[irow] = tune_row_vel(x, y, irow, isPolar)    
-    '''        
-    #else:
-    if(True):
-        
-        '''
-        if fset == "labels" or fset == 'ee' or fset == 'eepolar':
-            if ilayer == -1:
-                n_cpus = 10
-            elif ilayer == 0:
-                n_cpus = 5
-            else:
-                n_cpus = 1
-        else:
-        '''
-
-        
-        if(fset != 'labels'):
-            n_cpus = 10
-        else:
-            n_cpus = 5
-        print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
-        pool = mp.Pool(n_cpus)
-        print("Pool started")
-        
-        
-        results = []
-        
-        # Resize Y so that feature maps are appended as new rows in first feature map
-        Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
-        print("Y reshaped")
     
-        for irow in range(Y.shape[1]):
-            print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
-
-            if need_to_sleep:
-                time.sleep(0.2)
-            
-            if(len(X.shape) > 1):
-                x = X[..., centers]
-            else:
-                x = X
-            
-            y = Y[:,irow]
-            
-            ##RESHAPE FOR LINEAR REGRESSION
-            
-            if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
-                
-                tcoff = sum(np.where(centers <= 32, True, False))
-                x = x[...,tcoff:ntime-tcoff]
-                y = y[:,tcoff:ntime-tcoff]
-                x = x.swapaxes(1,2).reshape((-1,2))
-            elif fset == 'labels':
-                temp = np.ones_like(y)
-                x = (temp.swapaxes(0,1) * x).swapaxes(0,1)
-                x = x.reshape((-1,))
-            y = y.reshape((-1,))
-
-            if fset == 'acc':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-            elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, True)))
-            elif fset == 'ee':
-                results.append(pool.apply_async(tune_row_vel, args=(x,y,irow, False)))
-                #sys.stdout.flush()
-            elif fset == 'labels':
-                results.append(pool.apply_async(tune_row_label, args=(x,y,irow)))
+    if(fset != 'labels'):
+        n_cpus = 10
+    else:
+        n_cpus = 5
+    print('Max CPU Count: %d , using %d ' %(mp.cpu_count(), n_cpus))
+    pool = mp.Pool(n_cpus)
+    print("Pool started")
     
-        results = [r.get() for r in results]
+    results = []
+    
+    # Resize Y so that feature maps are appended as new rows in first feature map
+    Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
+    print("Y reshaped")
+
+    for irow in range(Y.shape[1]):
+        print("Layer %d, Node %d / %d" %(ilayer, irow, Y.shape[1]))
+
+        if(len(X.shape) > 1):
+            x = X[..., centers]
+        else:
+            x = X
         
-        pool.close()
-        print("pool closed")
-        pool.join()
-        print("pool joined")
+        y = Y[:,irow]
+
+        ### DO TRAIN-TEST SPLIT
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, random_state=42)
         
-        for result in results:
-            trainevals[result[0]] = result[1]
-            testevals[result[0]] = result[2]
+        ##RESHAPE FOR LINEAR REGRESSION
+        
+        if len(x.shape) > 1: ##FOR TIME-BASED DATA ( 2 COMPS PER TIMESPACE IS USE CASE)
+            
+            tcoff = sum(np.where(centers <= 32, True, False))
+            x_train = x_train[...,tcoff:ntime-tcoff]
+            x_test = x_test[...,tcoff:ntime-tcoff]
+            y_train = y_train[:,tcoff:ntime-tcoff]
+            y_test = y_test[:,tcoff:ntime-tcoff]
+            x_train = x_train.swapaxes(1,2).reshape((-1,2))
+            x_test = x_test.swapaxes(1,2).reshape((-1,2))
+        elif fset == 'labels':
+            temp_train = np.ones_like(y_train)
+            temp_test = np.ones_like(y_test)
+            x_train = (temp_train.swapaxes(0,1) * x_train).swapaxes(0,1)
+            x_train = x_train.reshape((-1,))
+            x_test = (temp_test.swapaxes(0,1) * x_test).swapaxes(0,1)
+            x_test = x_test.reshape((-1,))
+
+        y_train = y_train.reshape((-1,))
+        y_test = y_test.reshape((-1,))
+
+        if fset == 'acc':
+            results.append(pool.apply_async(tune_row_vel, args=(x_train, x_test, y_train, y_test,irow, True)))
+        elif fset == 'vel' or fset == 'eepolar' or fset == 'ang' or fset=='angvel':
+            results.append(pool.apply_async(tune_row_vel, args=(x_train, x_test, y_train, y_test ,irow, True)))
+        elif fset == 'ee':
+            results.append(pool.apply_async(tune_row_vel, args=(x_train, x_test,y_train, y_test,irow, False)))
+            #sys.stdout.flush()
+        elif fset == 'labels':
+            results.append(pool.apply_async(tune_row_label, args=(x_train, x_test, y_train, y_test, irow)))
+
+    results = [r.get() for r in results]
+    
+    pool.close()
+    print("pool closed")
+    pool.join()
+    print("pool joined")
+    
+    for result in results:
+        trainevals[result[0]] = result[1]
+        testevals[result[0]] = result[2]
 
     #shape evals back to original shape
     trainevals = trainevals.reshape(unravelshape)
@@ -690,45 +582,50 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     # Resize Y so that feature maps are appended as new rows in first feature map
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
 
+    print("X has size %s and Y %s" %(str(X.shape), str(Y.shape)))
+
     # reshape so that both X and Y are in format [samples x timepoints, features] (except for labels)
-    '''
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+
     if fset != 'labels':
         print(X.shape)
         assert len(X.shape) > 1, "X has shape 1 %s" %str(X.shape)
         
-        X = X.swapaxes(1,2).reshape((-1, X.shape[1]))
-
-        if len(Y.shape) > 2:
-            Y = Y.swapaxes(1,2).reshape((-1, Y.shape[1]))
+        X_train = X_train.swapaxes(1,2).reshape((-1, X.shape[1]))
+        if len(Y_train.shape) > 2:
+            Y_train = Y_train.swapaxes(1,2).reshape((-1, Y.shape[1]))
         else:
-            Y = Y.reshape((-1, Y.shape[1]))
-
+            Y_train = Y_train.reshape((-1, Y.shape[1]))
+        
+        X_test = X_test.swapaxes(1,2).reshape((-1, X.shape[1]))
+        if len(Y_train.shape) > 2:
+            Y_test = Y_test.swapaxes(1,2).reshape((-1, Y.shape[1]))
+        else:
+            Y_test = Y_test.reshape((-1, Y.shape[1]))
     # for labels: reshape so that both are in format [samples, timepoints x features]
-
     else:
         print("About to binarize shape %s" %str(X.shape))
-        X = label_binarize(X, np.unique(X))
+        X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
         print("New shape of X %s"%str(X.shape))
+        Y_test = Y_test.reshape((Y.shape[0], -1))
 
-        Y = Y.reshape((Y.shape[0], -1))
+        print("About to binarize shape %s" %str(X.shape))
+        X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
+        print("New shape of X %s"%str(X.shape))
+        Y_test = Y_test.reshape((Y.shape[0], -1))
         
     #print("final shape of X %s" %str(X.shape))
     #print("final shape of Y %s" %str(Y.shape))
     
-
     #switch kin vars / labels to Y and neuron firing ratest to X
-    X_temp = X
-    X = Y
-    Y = X_temp
+    X_temp_train = X_train
+    X_train = Y_train
+    Y_train = X_temp_train
 
-    #trying Pranav's regression trick where I divide layer activations by their maximal value
-    #NORMALIZATION
-    #if fset != 'labels':
-    #    print("Normalizing by maximal value %s" %np.max(X))
-    #    X = X/np.max(X)
-    '''
-
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
+    X_temp_test = X_test
+    X_test = Y_test
+    Y_test = X_temp_test
 
     if len(Y_train.shape) > 1:
         nna = ~np.any(np.isnan(Y_train), axis=1)
@@ -749,6 +646,8 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     coefs = []
     
     assert Y_train.shape[1] > 1, 'Y is supposed to have multiple targets/columns'
+
+    assert Y_train.size < X_train.size, "somehow size of target is bigger than size of training, are you sure that you are decoding the kinematic variable and not the inverse?"
 
     if(fset == 'ee'):
         ee_lms = []
@@ -1034,7 +933,7 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None,
         
     assert mmod == 'std' or mmod=='decoding', 'Invalid mmod!!!'
 
-    assert mmod == 'decoding' or alpha == 0, "alpha values only accepted for decoding"
+    assert mmod == 'decoding' or alpha is None, "alpha values only accepted for decoding"
     
     modelname = model['name']
     nlayers = model['nlayers']

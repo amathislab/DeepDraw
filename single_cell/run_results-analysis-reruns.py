@@ -26,15 +26,15 @@ if method == 'parallel':
 
     #INCLUDING RESULTS
     parsets = [
-        (False, False, True, False, ['S'], ['task'], 301),
-        (False, False, True, False, ['ST'], ['task'], 307),
-        (False, False, True, False, ['LSTM'], ['task'], 315),
+        (False, True, False, False, ['S'], ['task'], 401),
+        #(False, False, True, False, ['ST'], ['task'], 307),
+        #(False, False, True, False, ['LSTM'], ['task'], 315),
         #(False, True, True, False, ['S'], ['regression'], 312),
         #(False, True, True, False, ['ST'], ['regression'], 313),
         #(False, True, True, False, ['LSTM'], ['regression'], 315),
-        (False, False, True, False, ['S'], ['regression'], 301),
-        (False, False, True, False, ['ST'], ['regression'], 307),
-        (False, False, True, False, ['LSTM'], ['regression'], 315),
+        #(False, False, True, False, ['S'], ['regression'], 301),
+        #(False, False, True, False, ['ST'], ['regression'], 307),
+        #(False, False, True, False, ['LSTM'], ['regression'], 315),
         #(False, False, True, False, ['S'], ['task'], 316),
         #(False, False, True, False, ['ST'], ['task'], 318),
         #(False, False, True, False, ['LSTM'], ['task'], 319),

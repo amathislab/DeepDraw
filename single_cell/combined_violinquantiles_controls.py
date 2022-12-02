@@ -318,34 +318,40 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
 
             ##exclude r2 == 1 scores and r2 < -0.1
             mod = [x[(x != 1) & (x > -0.1)] for x in mod]
+
+            try:
             
-            vp = ax1.violinplot(mod,
-                positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
-                showextrema = False,
-                showmedians = False,
-                showmeans = False,
-                widths=width)
-            
-            for part in vp['bodies']:
-                if lr == 'l':
-                    part.set_facecolor(cmap(cidx[i]))
-                    part.set_edgecolor(cmap(cidx[i]))
-                else:
-                    if not regcomp:
-                        part.set_facecolor(cmap(cidx[ccolorindex]))
-                        part.set_edgecolor(cmap(cidx[ccolorindex]))
-                    else:
+                vp = ax1.violinplot(mod,
+                    positions=[ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
+                    showextrema = False,
+                    showmedians = False,
+                    showmeans = False,
+                    widths=width)
+                
+                for part in vp['bodies']:
+                    if lr == 'l':
                         part.set_facecolor(cmap(cidx[i]))
                         part.set_edgecolor(cmap(cidx[i]))
-                part.set_alpha(alpha[1])
-                part.set_zorder(zorder)
-    
-            try:
-                clip(vp, lr)
-            except IndexError as e:
-                print(e)
-                print("not enough samples for ", lr)
-                print(vp)            
+                    else:
+                        if not regcomp:
+                            part.set_facecolor(cmap(cidx[ccolorindex]))
+                            part.set_edgecolor(cmap(cidx[ccolorindex]))
+                        else:
+                            part.set_facecolor(cmap(cidx[i]))
+                            part.set_edgecolor(cmap(cidx[i]))
+                    part.set_alpha(alpha[1])
+                    part.set_zorder(zorder)
+        
+                try:
+                    clip(vp, lr)
+                except IndexError as e:
+                    print(e)
+                    print("not enough samples for ", lr)
+                    print(vp)       
+
+            except ValueError as e:
+                print("empty array, can't do violin plot", e)
+                vp = None     
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             
             vps.append(vp)
