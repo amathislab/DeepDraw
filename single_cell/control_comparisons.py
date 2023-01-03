@@ -65,8 +65,8 @@ corrtypes = ['pd corr', 'r2 corr']
 compors = ['hors vs. hors', 'verts vs. verts', 'hor vs. verts', 'vert vs. hors']
 
 #alphas = [0, 0.001, 0.01, 0.1, 1.0, 5.0]
-alphas = [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]
-#alphas = [0]
+#alphas = [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]
+alphas = [1]
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -2599,8 +2599,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         print('kinetic and label embeddings already analyzed')
     
     #if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
-    if(False):
+    if(runinfo['height'] == 'all'):
+    #if(False):
         for alpha in alphas:
             print('compiling dataframe for decoding comparions trained & reg...')
             decoding_df = compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, alpha)
