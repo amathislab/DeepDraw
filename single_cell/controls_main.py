@@ -274,12 +274,16 @@ exp_par_lookup = {
     320: {'datafraction': 0.05, 'model_experiment_id' : 32}, #LSTM CKA only (no tuning curves)
     402: {'datafraction': 0.1, 'model_experiment_id': 22 }, # S
     403: {'datafraction': 0.1, 'model_experiment_id': 22 }, # ST
-    404: {'datafraction': 0.1, 'model_experiment_id': 32 }, # ST
+    404: {'datafraction': 0.1, 'model_experiment_id': 32 }, # LSTM
+    405: {'datafraction': 0.05, 'model_experiment_id': 32 }, # LSTM
+    406: {'datafraction': 0.1, 'model_experiment_id': 23 }, # S
+    407: {'datafraction': 0.1, 'model_experiment_id': 23 }, # ST
+    408: {'datafraction': 0.05, 'model_experiment_id': 33 }, # LSTM
 }
 
 # %% SAVE OUTPUTS AND RUN ANALYSIS
 
-def main(do_data=False, do_results=False, do_analysis=False, do_regression_task = False, include = ['S', 'T','ST'], tasks = ['task'], expid = None):
+def main(do_data=False, do_results=False, do_analysis=False, do_regression_task = False, include = ['S', 'T','ST'], tasks = ['task'], expid = None, reg_exp_id = None):
     ''' Calls the analyses that need to be run for all model types and instantiations
 
     Parameters
@@ -488,8 +492,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                             for fset in fsets:
 
                                                                 #if(not os.path.exists(runinfo.resultsfolder(model_to_analyse, fset))):
-                                                                #if(default_run):
-                                                                if(True):
+                                                                if(default_run and height == 'all'):
+                                                                #if(True):
                                                                 #if(False):
                                                                 
                                                                     print('running %s analysis (fitting tuning curves) for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
@@ -503,17 +507,20 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     print('%s analysis for model %s plane %s already completed' %(fset, modelname, runinfo.planestring()))                                                  
 
                                                             for dfset in decoding_fsets:
-                                                                #if(default_run):
-                                                                #if(True):
-                                                                if(False):
-                                                                    print('decoding %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
-                                                                    tuningcurves_main(dfset,
-                                                                                    runinfo_to_analyse,
-                                                                                    model_to_analyse,
-                                                                                    mmod='decoding'
-                                                                                    )
-                                                                elif(True and height == 'all'): 
+                                                                ## QUARANTINED
+                                                                # if(default_run):
+                                                                # #if(True):
+                                                                # #if(False):
+                                                                #     print('decoding %s analysis for model %s plane %s...' %(fset, modelname, runinfo.planestring()))
+                                                                #     tuningcurves_main(dfset,
+                                                                #                     runinfo_to_analyse,
+                                                                #                     model_to_analyse,
+                                                                #                     mmod='decoding'
+                                                                #                     )
+                                                                #if(default_run and height == 'all'): 
+                                                                if(True and height == 'all'): 
                                                                     #for alpha in [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]:
+                                                                    #for alpha in [0.01, 1, 100, 10000]:
                                                                     for alpha in [1]:
                                                                         print('decoding %s analysis for model %s plane %s with regularization par %f...' %(fset, modelname, runinfo.planestring(), alpha))
                                                                         tuningcurves_main(dfset,
@@ -548,7 +555,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                 #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'polar_tcs'))):
                                                                 #if(True):
                                                                 #if(default_run):
-                                                                if(runinfo.planestring() == 'horall'):
+                                                                if(False):
+                                                                #if(runinfo.planestring() == 'horall'):
                                                                     polar_tcs_main(model_to_analyse, runinfo_to_analyse)
                                                                 else:
                                                                     print('polar tc plots already exist')
@@ -565,8 +573,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                 #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
-                                                                #if(True):
-                                                                if(runinfo.planestring() == 'horall'):
+                                                                #if(False):
+                                                                if(default_run and runinfo.planestring() == 'horall'):
 
                                                                     prefdir_main(model_to_analyse, runinfo_to_analyse)
                                                                 else:
@@ -579,7 +587,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
-                                                                if(True):
+                                                                if(default_run):
                                                                 #if(False):
                                                                     print('running unit classification...')
                                                                     unit_classification_main(model_to_analyse, runinfo)
@@ -597,7 +605,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'comp_violin'))):
                                                                     #if(default_run):
                                                                     #if(True):
-                                                                    if(runinfo.planestring() == 'horall'):
+                                                                    #if(False):
+                                                                    if(default_run and runinfo.planestring() == 'horall'):
+                                                                    #if(True and runinfo.planestring() == 'horall'):
                                                                         print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                         comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                                     else:
@@ -616,12 +626,12 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                 else:
 
                                                                     #check to make sure that this model and plane combination has any samples
-                                                                    #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
-                                                                    if(False): ### NEW PLOT TYPE BELOW???
+                                                                    # #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
+                                                                    if(True): ### NEW PLOT TYPE BELOW
                                                                 
                                                                         #if(False):  
-                                                                        if(True):  
-                                                                        #if(runinfo.planestring() == 'horall'):
+                                                                        #if(True):  
+                                                                        if(runinfo.planestring() == 'horall'):
                                                                             print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
@@ -629,19 +639,21 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
                                                                     #if(False):        
                                                                         #if(True):
-                                                                        if(runinfo.planestring() == 'horall'):
+                                                                        if(default_run and runinfo.planestring() == 'horall'):
                                                                         #if(False):
                                                                             print("doing trreg cka for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             rsa_main(model_to_analyse, regressionmodel, runinfo, trreg=True)
 
-                                                                        if(runinfo.planestring() == 'horall'):
+                                                                        if(default_run and runinfo.planestring() == 'horall'):
+                                                                        #if(True and runinfo.planestring() == 'horall'):
                                                                             print("making new violin plots")
                                                                             comp_tr_reg_violin_main_newplots(trainedmodel, regressionmodel, runinfo)
 
                                                                 if (i==5):
                                                                     if(control):
                                                                         #if(False):
-                                                                        if(runinfo.planestring() == 'horall'):
+                                                                        if(default_run and runinfo.planestring() == 'horall'):
+                                                                        #if(True and runinfo.planestring() == 'horall'):
                                                                             comparisons_main(model, runinfo)
                                                                         else:
                                                                             print('skipping comparisons')
@@ -650,10 +662,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                         #if(True):
                                                                             print('combining rsa results for all models')
                                                                             #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
-                                                                            if(True):
-                                                                            #if(default_run):
+                                                                            #if(False):
+                                                                            if(default_run):
                                                                             #if(runinfo.planestring() == 'horall'):
-
                                                                                 rsa_models_comp(model, runinfo)
                                                                             else:
                                                                                 print('rsa models comp already completed')
@@ -661,6 +672,7 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                         if(runinfo.planestring() == 'horall'):
                                                                             if(True):
                                                                             #if(False):
+                                                                            #if(default_run):
                                                                                 print('starting comparisons_tr_reg_main')
                                                                                 #comparisons_tr_reg_main(model, regressionmodel, runinfo)
                                                                                 comparisons_tr_reg_main(trainedmodel, regressionmodel, runinfo)
@@ -682,15 +694,17 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                     runheight = True
 
                                                 if runheight:
-                                                    if(False):
+                                                    #if(False):
                                                     #if(True):
+                                                    if(default_run):
                                                         print('launching analysis of nodes\' generalizational capacity...')
                                                         generalization_main(model_to_analyse, runinfo)
 
                                                     if(i==5):
                                                         if(control):
                                                             #if(True):
-                                                            if(False):
+                                                            #if(False):
+                                                            if(default_run):
                                                                 generalizations_comparisons_main(model, runinfo)
                                                         else:
                                                             pass

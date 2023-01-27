@@ -67,6 +67,7 @@ compors = ['hors vs. hors', 'verts vs. verts', 'hor vs. verts', 'vert vs. hors']
 #alphas = [0, 0.001, 0.01, 0.1, 1.0, 5.0]
 #alphas = [0, 0.001, 0.01, 0.1, 1.0, 5.0, 10, 100, 1000, 10000, 100000, 1000000]
 alphas = [1]
+#alphas = [0.01, 1, 100, 10000]
 
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
@@ -972,7 +973,8 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
         
     for i in range(len(tmdevs)):
         plt.plot(range(len(layers)), tmdevs[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
-        plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind untrained') ## eLife
     
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     #t_corr = t.ppf(0.975, 4)
@@ -1011,8 +1013,10 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
     
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
-                'mean of trained', 'mean of controls'])
+    #plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
+    #            'mean of trained', 'mean of controls'])
+    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind untrained', \
+                'mean of trained', 'mean of untrained']) ## eLife
     
     plt.tight_layout()
     
@@ -1280,8 +1284,8 @@ def plotcomp_dir_accs(tcfdf, tcf, model):
     
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
-    plt.legend(['Dir Trained', 'Dir Controls', \
-                'Acc Trained', 'Acc Controls'])
+    plt.legend(['Dir Trained', 'Dir Untrained', \
+                'Acc Trained', 'Acc Untrained'])
     
     ax = format_axis(ax)
     
@@ -1419,9 +1423,11 @@ def plotcomp_tr_reg_twovars(tcfdf, tcfs, model, regressionmodel):
 
     for i, mname in enumerate(trainednames):
         plt.plot(x, traineddirs[i], color=combined_colorselector(model['cmap'], tcfs[0]), marker = 'o', alpha = 0.15, label='ind trained')
-        plt.plot(x, controldirs[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[0]), marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(x, controldirs[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[0]), marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, controldirs[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[0]), marker = 'D', alpha = 0.15, label='ind untrained') ##eLife
         plt.plot(x, trainedlabels[i], color=combined_colorselector(model['cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'o', alpha = 0.15, label='ind trained')
-        plt.plot(x, controllabels[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(x, controllabels[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, controllabels[i], color=combined_colorselector(regressionmodel['regression_cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind untrained') ##eLife
 
     #print(traineddirs)
     #print(errs_traineddirs)
@@ -1527,17 +1533,19 @@ def plotcomp_twovars(tcfdf, tcfs, model):
 
     for i, mname in enumerate(trainednames):
         plt.plot(x, traineddirs[i], color=combined_colorselector(model['cmap'], tcfs[0]), marker = 'o', alpha = 0.15, label='ind trained')
-        plt.plot(x, controldirs[i], color=combined_colorselector('Greys_r', tcfs[0]), marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(x, controldirs[i], color=combined_colorselector('Greys_r', tcfs[0]), marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, controldirs[i], color=combined_colorselector('Greys_r', tcfs[0]), marker = 'D', alpha = 0.15, label='ind untrained') ## eLife
         plt.plot(x, trainedlabels[i], color=combined_colorselector(model['cmap'], tcfs[1]), linestyle=(0,(5,5)), marker = 'o', alpha = 0.15, label='ind trained')
-        plt.plot(x, controllabels[i], color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind control')
+        ##plt.plot(x, controllabels[i], color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, controllabels[i], color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker = 'D', alpha = 0.15, label='ind untrained')
 
     #print(traineddirs)
     #print(errs_traineddirs)
     
     plt.errorbar(x, mean_traineddirs, yerr=errs_traineddirs, color=combined_colorselector(model['cmap'], tcfs[0]), marker='o', capsize=3.0, label='mean trained dir')
-    plt.errorbar(x, mean_controldirs, yerr=errs_controldirs, color=combined_colorselector('Greys_r', tcfs[0]), marker='D', capsize=3.0, label='mean controls dir')
+    plt.errorbar(x, mean_controldirs, yerr=errs_controldirs, color=combined_colorselector('Greys_r', tcfs[0]), marker='D', capsize=3.0, label='mean untrained dir')
     plt.errorbar(x, mean_trainedlabels, yerr=errs_trainedlabels, color=combined_colorselector(model['cmap'], tcfs[1]), linestyle=(0,(5,5)), marker='o', capsize=3.0, label='mean trained pos')
-    plt.errorbar(x, mean_controllabels, yerr=errs_controllabels, color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker='D', capsize=3.0, label='mean controls dir')
+    plt.errorbar(x, mean_controllabels, yerr=errs_controllabels, color=combined_colorselector('Greys_r', tcfs[1]), linestyle=(0,(5,5)), marker='D', capsize=3.0, label='mean untrained dir')
     plt.ylabel('r2 score')
 
     #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
@@ -1562,9 +1570,9 @@ def plotcomp_twovars(tcfdf, tcfs, model):
     #plt.legend(handles[[0,20]], ['Ind.', 'Mean'], loc='upper left')
     print("MODEL REGRESSION TASK for model %s : %s" %(model['name'], model['regression_task']))
     if not model['regression_task']:
-        plt.legend(handles[[20,21]], ['ART-trained', 'Controls'], loc='upper left')
+        plt.legend(handles[[20,21]], ['ART-trained', 'Untrained'], loc='upper left')
     else:
-        plt.legend(handles[[20,21]], ['TDT-trained', 'Controls'], loc='upper left')
+        plt.legend(handles[[20,21]], ['TDT-trained', 'Untrained'], loc='upper left')
 
     ax.add_artist(leg1)
 
@@ -1640,8 +1648,8 @@ def plotcomp_ees(tcfdf, model):
     
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
-    plt.legend(['Cart Trained', 'Cart Controls', \
-                'Polar Trained', 'Polar Controls'])
+    plt.legend(['Cart Trained', 'Cart Untrained', \
+                'Polar Trained', 'Polar Untrained'])
     
     ax = format_axis(ax)
     
@@ -1774,10 +1782,12 @@ def plotcomp_decoding(tcfdf, tcf, model):
 
     for i, mname in enumerate(trainednames):
         plt.plot(x, traineddirs[i], color=model['color'], marker = 'D', alpha = 0.15, label='ind trained')
-        plt.plot(x, controldirs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(x, controldirs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(x, controldirs[i], color='grey', marker = 'D', alpha = 0.15, label='ind untrained') ##eLife
     
     plt.errorbar(x, traineddirs_mean, yerr=errs_traineddirs, color=colorselector_dec(model['cmap'], tcf), marker='D', capsize=3.0, label='mean trained')
-    plt.errorbar(x, controldirs_mean, yerr=errs_controldirs, color=colorselector_dec('Greys_r', tcf), marker='D', capsize=3.0, label='mean controls')
+    #plt.errorbar(x, controldirs_mean, yerr=errs_controldirs, color=colorselector_dec('Greys_r', tcf), marker='D', capsize=3.0, label='mean controls')
+    plt.errorbar(x, controldirs_mean, yerr=errs_controldirs, color=colorselector_dec('Greys_r', tcf), marker='D', capsize=3.0, label='mean untrained') ##eLife
     plt.ylabel('r2 score')
     #plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
     #           horizontalalignment = 'right')
@@ -1793,8 +1803,11 @@ def plotcomp_decoding(tcfdf, tcf, model):
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
     
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
-                'mean of trained', 'mean of controls'])
+    #plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
+    #            'mean of trained', 'mean of controls'])
+
+    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind untrained', \
+                'mean of trained', 'mean of untrained']) ## eLife
     
     plt.tight_layout()
 
@@ -1878,9 +1891,11 @@ def plotcomp_decoding_twovars(tcfdf, tcfs, model):
 
     #plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
     if not model['regression_task']:
-        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Controls'], loc='upper left')
+        #plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Untrained'], loc='upper left')
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Untrained'], loc='upper left') ##eLife
     else:
-        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Controls'], loc='upper left')
+        #plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Untrained'], loc='upper left')
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Untrained'], loc='upper left')
 
     #print("Handles: ", handles)
     
@@ -2070,9 +2085,9 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     #plt.legend(handles=[line_indtrainedvar1, line_meantrainedvar1], labels=["Ind.", 'Mean'], loc='upper left')
     '''
     if not model['regression_task']:
-        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Controls'], loc='upper left')
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART-trained", 'Untrained'], loc='upper left')
     else:
-        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Controls'], loc='upper left')
+        plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["TDT-trained", 'Untrained'], loc='upper left')
     '''
     plt.legend(handles=[line_meantrainedvar1, line_meancontrolsvar1], labels=["ART", 'TDT'], loc='upper left')
     
@@ -2412,7 +2427,8 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
         
     for i in range(len(alltmdevmeans)):
         plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
-        plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        #plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
+        plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind untrained') ##eLife
         
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
     plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
@@ -2427,8 +2443,11 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
     
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
-                'mean of trained', 'mean of controls'])
+    #plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
+    #            'mean of trained', 'mean of controls'])
+
+    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind untrained', \
+               'mean of trained', 'mean of untrained']) ##eLife
     
     return figboth, df
 
@@ -2515,7 +2534,8 @@ def main(model, runinfo):
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
     #if(True):
     #if(runinfo.default_run):
-    if(runinfo['height'] == 'all'):
+    if(runinfo.default_run and runinfo['height'] == 'all'):
+    #if(True and runinfo['height'] == 'all'):
         print('compiling dataframe for comparions...')
         df = compile_comparisons_df(model, runinfo)
         
@@ -2543,8 +2563,8 @@ def main(model, runinfo):
         
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
     #if(True):
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    if(runinfo.default_run and runinfo['height'] == 'all'):
         print('running tcctrlcompplots for model %s ' %model['name'])
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(model, 'kindiffs')
@@ -2556,11 +2576,12 @@ def main(model, runinfo):
         print('kindiffs plots already made')
 
     #decoding kindiffs plots
-    if(runinfo.default_run):
-    #if(runinfo['height'] == 'all'):
+    #if(runinfo.default_run):
+    #if(runinfo.default_run and runinfo['height'] == 'all'):
+    if(runinfo['height'] == 'all'):
         for alpha in alphas:
             '''
-            if decoding_df is None:
+            if decoding_df is None:W
                 analysisfolder = runinfo.sharedanalysisfolder(model, 'decoding_kindiffs')
                 #SWITCH FOR NORMALIZATION
                 #decoding_df = pd.read_csv(os.path.join(analysisfolder, model['base'] + '_decoding_comparisons_df_normalized.csv'),
@@ -2573,9 +2594,10 @@ def main(model, runinfo):
     else:
         print('decoding kindiffs plots already made')
 
-    #if(runinfo.default_run):    
+    if(runinfo.default_run):    
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pd_deviation'))):
-    if(False):
+    #if(False):
+    #if(True):
         print('computing deviation measure for PDs')
         pd_deviation(model, runinfo)
         print('df saved')
@@ -2627,8 +2649,9 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         print('skipping pairedt quantiles')
 
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs_plots'))):
-    #if(runinfo['height'] == 'all'):
-    if(runinfo.default_run):
+    if(runinfo['height'] == 'all' and runinfo.default_run):
+    #if(runinfo['height'] == 'all' and True):
+    #if(runinfo.default_run):
         if df is None:
             analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'kindiffs_tr_reg')
             df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_comparisons_reg_tr_df.csv'),
@@ -2641,8 +2664,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
 
     #decoding kindiffs plots
     #if(runinfo.default_run):
-    if(False):
-    #if(runinfo['height'] == 'all'):
+    #if(False):
+    if(runinfo['height'] == 'all'):
         for alpha in alphas:
             #if decoding_df is None:
             decoding_df = compile_decoding_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo, alpha)

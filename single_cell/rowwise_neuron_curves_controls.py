@@ -584,36 +584,35 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
 
     print("X has size %s and Y %s" %(str(X.shape), str(Y.shape)))
 
-    # reshape so that both X and Y are in format [samples x timepoints, features] (except for labels)
-
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     if fset != 'labels':
+        # reshape so that both X and Y are in format [samples x timepoints, features] (except for labels)
         print(X.shape)
         assert len(X.shape) > 1, "X has shape 1 %s" %str(X.shape)
         
-        X_train = X_train.swapaxes(1,2).reshape((-1, X.shape[1]))
+        X_train = X_train.swapaxes(1,2).reshape((-1, X_train.shape[1]))
         if len(Y_train.shape) > 2:
-            Y_train = Y_train.swapaxes(1,2).reshape((-1, Y.shape[1]))
+            Y_train = Y_train.swapaxes(1,2).reshape((-1, Y_train.shape[1]))
         else:
-            Y_train = Y_train.reshape((-1, Y.shape[1]))
+            Y_train = Y_train.reshape((-1, Y_train.shape[1]))
         
-        X_test = X_test.swapaxes(1,2).reshape((-1, X.shape[1]))
-        if len(Y_train.shape) > 2:
-            Y_test = Y_test.swapaxes(1,2).reshape((-1, Y.shape[1]))
+        X_test = X_test.swapaxes(1,2).reshape((-1, X_test.shape[1]))
+        if len(Y_test.shape) > 2:
+            Y_test = Y_test.swapaxes(1,2).reshape((-1, Y_test.shape[1]))
         else:
-            Y_test = Y_test.reshape((-1, Y.shape[1]))
+            Y_test = Y_test.reshape((-1, Y_test.shape[1]))
     # for labels: reshape so that both are in format [samples, timepoints x features]
     else:
-        print("About to binarize shape %s" %str(X.shape))
+        print("About to binarize shape %s" %str(X_train.shape))
         X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
         print("New shape of X %s"%str(X.shape))
-        Y_test = Y_test.reshape((Y.shape[0], -1))
+        Y_test = Y_test.reshape((Y_test.shape[0], -1))
 
-        print("About to binarize shape %s" %str(X.shape))
+        print("About to binarize shape %s" %str(X_test.shape))
         X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
-        print("New shape of X %s"%str(X.shape))
-        Y_test = Y_test.reshape((Y.shape[0], -1))
+        print("New shape of X %s"%str(X_train.shape))
+        Y_test = Y_test.reshape((Y_test.shape[0], -1))
         
     #print("final shape of X %s" %str(X.shape))
     #print("final shape of Y %s" %str(Y.shape))

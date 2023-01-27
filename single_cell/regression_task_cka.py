@@ -19,15 +19,7 @@ import matplotlib.pyplot as plt
 from savelouts_best_controls import main as modeloutputs_main
 import shutil
 
-import gc
-
 from utils import sorted_alphanumeric
-
-def garbage_collect():
-    print("Collecting...")
-    n = gc.collect()
-    print("Number of unreachable objects collected by GC:", n)
-    print("Uncollectable garbage:", gc.garbage)
 
 def main(task_models, regression_models, runinfo, modelinfo):
 
@@ -70,7 +62,7 @@ def main(task_models, regression_models, runinfo, modelinfo):
                 if not os.path.exists(runinfo.datafolder(model_to_analyse)):
                     modeloutputs_main(model_to_analyse, runinfo)
 
-            garbage_collect()
+            #garbage_collect()
 
             print('computing cka scores for %s , %s ...' %(task_model, regression_model))
 
@@ -110,7 +102,7 @@ def main(task_models, regression_models, runinfo, modelinfo):
             shutil.rmtree(runinfo.datafolder(task_model_info))
             shutil.rmtree(runinfo.datafolder(regression_model_info))
 
-            garbage_collect()
+            #garbage_collect()
 
         os.makedirs(regressiontaskfolder, exist_ok=True)
         df.to_csv(df_path)

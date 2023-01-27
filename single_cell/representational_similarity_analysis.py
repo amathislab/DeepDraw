@@ -9,7 +9,6 @@ Created on Thu Mar 26 22:50:22 2020
 import numpy as np
 from kornblith_et_al_rsa_colab import *
 from rowwise_neuron_curves_controls import lstring, read_layer_reps
-import seaborn as sns
 import os, pickle
 import copy
 import matplotlib.pyplot as plt
@@ -95,6 +94,9 @@ def main(trainedmodel, controlmodel, runinfo, trreg= False):
     runinfo : RunInfo (extension of dict)
     
     '''
+
+    ## local import of seaborn (do it here so that it can be reset afterwards)
+    import seaborn as sns
     
     nlayers = trainedmodel['nlayers']
     
@@ -149,6 +151,9 @@ def main(trainedmodel, controlmodel, runinfo, trreg= False):
     fig.clf()
     
     plt.close('all')
+
+    ## reset seaborn global parameters
+    sns.reset_orig()
     
 def rsa_models_comp(model, runinfo, trreg=False):
     ''' Combine the saved RSA scores of all implementations into a single plot
@@ -158,6 +163,9 @@ def rsa_models_comp(model, runinfo, trreg=False):
     model : dict, information on model
     runinfo : RunInfo (extension of dict)
     '''
+
+    ## local import of seaborn (do it here so that it can be reset afterwards)
+    import seaborn as sns
     
     nlayers = model['nlayers'] + 1
     
@@ -208,3 +216,6 @@ def rsa_models_comp(model, runinfo, trreg=False):
     fig.clf()
     
     plt.close('all')
+
+    ## reset seaborn parameters
+    sns.reset_orig()

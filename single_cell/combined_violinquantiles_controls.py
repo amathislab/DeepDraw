@@ -263,7 +263,7 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     leg = plt.legend(patches[5:], modnames, loc='upper right')
     ax1.add_artist(leg)
     if not regcomp:
-        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.84, 1))
+        plt.legend([patches[5], patches[ccolorindex]], ['Trained', 'Untrained'], loc='upper right', bbox_to_anchor=(0.84, 1))
     else:
         plt.legend([patches[5], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.84, 1))
 
@@ -362,27 +362,29 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
                 print("empty array, can't do violin plot", e)
                 vp = None     
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            #patches.append(mpatches.Patch(color=matplotlib.cm.get_cmap('Greys_r') (cidx[i]), alpha=0.7)) ##eLife
+            
             
             vps.append(vp)
             
-        #Quantiles
-        q = 0.9
-        marker = 's'
+        # #Quantiles
+        # q = 0.9
+        # marker = 's'
         
-        for i in ifsets_to_quantile:
-            mod = modevals[i]
+        # for i in ifsets_to_quantile:
+        #     mod = modevals[i]
 
-            mod = [x[x != 1] for x in mod]
+        #     mod = [x[x != 1] for x in mod]
             
-            q90s = np.zeros((nlayers,))
+        #     q90s = np.zeros((nlayers,))
             
-            for ilayer, layer in enumerate(mod):
-                try:
-                    q90s[ilayer] = np.quantile(layer, q)
-                except e:
-                    print(e)                
-            ax1.plot([ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
-                      q90s, color=cmap(cidx[i]), marker=marker, alpha=alpha[0])
+        #     for ilayer, layer in enumerate(mod):
+        #         try:
+        #             q90s[ilayer] = np.quantile(layer, q)
+        #         except e:
+        #             print(e)                
+        #     ax1.plot([ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
+        #               q90s, color=cmap(cidx[i]), marker=marker, alpha=alpha[0])
 
     
     format_axis(plt.gca())
@@ -399,9 +401,9 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     ax1.add_artist(leg)
     if not regcomp:
         if not trainedmodel['regression_task']:
-            plt.legend([patches[5], patches[ccolorindex]], ['ART-trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
+            plt.legend([patches[5], patches[ccolorindex]], ['ART-trained', 'Untrained'], loc='upper right', bbox_to_anchor=(0.82, 1))
         else:
-            plt.legend([patches[5], patches[ccolorindex]], ['TDT-trained', 'Control'], loc='upper right', bbox_to_anchor=(0.82, 1))
+            plt.legend([patches[5], patches[ccolorindex]], ['TDT-trained', 'Untrained'], loc='upper right', bbox_to_anchor=(0.82, 1))
     else:
         plt.legend([patches[5], patches[ccolorindex]], ['ART', 'TDT'], loc='upper right', bbox_to_anchor=(0.82, 1))
 
@@ -563,7 +565,7 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     ax1.add_artist(leg)
 
     if not regcomp:
-        plt.legend([patches[2], patches[ccolorindex]], ['Trained', 'Control'], loc='upper right', bbox_to_anchor=(0.87, 1))
+        plt.legend([patches[2], patches[ccolorindex]], ['Trained', 'Untrained'], loc='upper right', bbox_to_anchor=(0.87, 1))
     else:
         plt.legend([patches[2], patches[ccolorindex]], ['Recog.', 'Decod.'], loc='upper right', bbox_to_anchor=(0.87, 1))
 
@@ -609,7 +611,7 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
     controlmodevals_combined = get_combined_modevals(controlmodel, runinfo)
 
     fig = plot_compvp_v3(trainedmodevals_combined, controlmodevals_combined, trainedmodel, \
-        regcomp = True, modnames=combined_modnames, ifsets_to_quantile=[0,2])
+        regcomp = False, modnames=combined_modnames, ifsets_to_quantile=[0,2])
 
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
     fig.savefig('%s/comp_violin/comp_violin_v3.pdf' %(ff))

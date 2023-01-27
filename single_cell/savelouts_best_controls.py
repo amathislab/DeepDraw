@@ -137,13 +137,13 @@ def main(modelinfo, runinfo):
             model = ConvRModel(model_config['experiment_id'], model_config['arch_type'], \
                             int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
                             int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
-                            int(model_config['t_stride']))
+                            int(model_config['t_stride']), noutspace=6)
         
         else:        
             print('building rec model')
             model = RecurrentRModel(model_config['experiment_id'], model_config['rec_blocktype'], 
                                 int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
-                                int(model_config['s_kernelsize']), int(model_config['s_stride']))
+                                int(model_config['s_kernelsize']), int(model_config['s_stride']), noutspace=6)
 
 
     print("Old model path: ", model.model_path)

@@ -1,5 +1,6 @@
 '''
 Class and forward pass definitions for various neural network models.
+
 '''
 
 
@@ -11,15 +12,17 @@ slim = tf.contrib.slim
 cudnn_rnn = tf.contrib.cudnn_rnn
 
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), '../../revisions/analysis-data/models/')
+MODELS_DIR = os.path.join(os.path.dirname(CUR_DIR), '../nn-training/')
+
 
 class ConvRModel():
     """Defines a convolutional neural network model of the proprioceptive system."""
 
     def __init__(self,
             experiment_id, arch_type, nlayers, n_skernels, n_tkernels, s_kernelsize,
-            t_kernelsize, s_stride, t_stride, seed=None, train=True):
+            t_kernelsize, s_stride, t_stride, noutspace=3, seed=None, train=True):
         """Set up hyperparameters of the convolutional network.
+
         Arguments
         ---------
         experiment_id : int, identifier for model path
@@ -32,8 +35,10 @@ class ConvRModel():
         t_kernelsize : int, size of the temporal kernel.
         s_stride : int, stride along the spatial dimension.
         t_stride : int, stride along the temporal dimension.
+        noutspace: int, number of spatial dimensions of the kinematic variable that we are decoding
         seed : int, for saving random initializations of networks.
         train : bool, is the network meant to be trained or not
+
         """
 
         assert (len(n_skernels) == len(n_tkernels) == nlayers), \
@@ -53,6 +58,7 @@ class ConvRModel():
         self.t_stride = t_stride
         self.s_stride = s_stride
         self.seed = seed
+        self.noutspace = noutspace
 
         # Make model name
         if arch_type == 'spatial_temporal':
@@ -83,15 +89,18 @@ class ConvRModel():
 
     def predict(self, X, is_training=True):
         """Computes the scores (forward pass) for the given network.
+
         Arguments
         ---------
         X : tf.tensor [batch_size, num_inputs, num_timesteps, 2], input tensor for which scores must
             be calculated.
+
         Returns
         -------
         score : tf.tensor [batch_size, nclasses], computed scores by passing X through the network.
         probabilities : tf.tensor [batch_size, nclasses], softmax probabilities.
         net : orderedDict, contains all layer representations.
+
         """
         net = OrderedDict([])
 
@@ -135,7 +144,7 @@ class ConvRModel():
             outtime = score.get_shape()[2]
             score = tf.transpose(score, [0, 2, 1, 3])
             score = tf.reshape(score, [batch_size, outtime, -1])
-            score = slim.fully_connected(score, 3, activation_fn=None, scope='Classifier')
+            score = slim.fully_connected(score, self.noutspace, activation_fn=None, scope='Classifier')
             
             net['score'] = score
 
@@ -147,8 +156,9 @@ class RecurrentRModel():
 
     def __init__(
             self, experiment_id, rec_blocktype, n_recunits, npplayers, nppfilters, 
-            s_kernelsize, s_stride, seed=None, train=True):
+            s_kernelsize, s_stride, noutspace=3, seed=None, train=True):
         """Set up the hyperparameters of the recurrent model.
+
         Arguments
         ---------
         experiment_id : int, identifier for model path
@@ -158,8 +168,10 @@ class RecurrentRModel():
         nppfilters : list of ints, number of filters (spatial convolutions) for spatial processing.
         s_kernelsize : int, size of conv kernel
         s_stride : int, stride for conv kernel
+        noutspace: int, number of spatial dimensions of the kinematic variable we want to decode
         seed : int, for saving random initializations
         train : bool, whether to train the model or not (just save random initialization)
+
         """
 
         assert len(nppfilters) == npplayers
@@ -173,10 +185,11 @@ class RecurrentRModel():
         self.s_kernelsize = s_kernelsize
         self.s_stride = s_stride
         self.seed = seed
+        self.noutspace = noutspace
 
         # Make model name
         units = ('-'.join(str(i) for i in nppfilters))
-        parts_name = [rec_blocktype, str(npplayers), units, str(n_recunits)]
+        parts_name = [rec_blocktype, 'r', str(npplayers), units, str(n_recunits)]
 
         # Create model directory
         self.name = '_'.join(parts_name)
@@ -224,7 +237,7 @@ class RecurrentRModel():
             score = tf.transpose(score, [1, 0, 2])
             net['recurrent_out'] = score
             
-            score = slim.fully_connected(score, 3, activation_fn=None, scope='Classifier')
+            score = slim.fully_connected(score, self.noutspace, activation_fn=None, scope='Classifier')
             net['score'] = score
 
         return score, net
