@@ -8,8 +8,7 @@ Created on Thu Mar 26 22:50:22 2020
 
 import numpy as np
 from kornblith_et_al_rsa_colab import *
-from rowwise_neuron_curves_controls import lstring
-import seaborn as sns
+from rowwise_neuron_curves_controls import lstring, read_layer_reps
 import os, pickle
 import copy
 import matplotlib.pyplot as plt
@@ -28,7 +27,64 @@ def cca(features_x, features_y):
     qy, _ = np.linalg.qr(features_y)
     return np.linalg.norm(qx.T.dot(qy)) ** 2 / min(features_x.shape[1], features_y.shape[1])
 
-def main(trainedmodel, controlmodel, runinfo):
+def layer_cka(ilayer, modelA, modelB, runinfo):
+    #layer = lstring(ilayer)  
+    #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+    X = read_layer_reps(ilayer, runinfo, modelA)
+    X = X.reshape((X.shape[0], -1))                    
+    #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+    Y = read_layer_reps(ilayer, runinfo, modelB)
+    Y = Y.reshape((Y.shape[0], -1))
+    
+    print("Layer %d " %(ilayer + 1))
+    print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
+        
+    cka_from_examples = cka(gram_linear(X), gram_linear(Y))
+
+    return cka_from_examples
+
+def models_cka_matrix(modelA, modelB, runinfo):
+    '''Calculates a matrix of CKA scores comparing two models
+
+    Arguments
+    ---------
+    modelA : dict containing model information for model A, including base and name
+    modelB : dict containing model information for model B
+    runinfo : RunInfo
+
+    Returns
+    -------
+    cka_matrix : np.array of floats [1, nlayers + 1], cka scores for each layer
+    '''
+
+    nlayers = modelA['nlayers']
+    cka_matrix = np.zeros((nlayers + 1,))
+
+    for ilayer in np.arange(-1, nlayers):
+        '''
+        layer = lstring(ilayer)  
+        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        X = read_layer_reps(ilayer, runinfo, modelA)
+        X = X.reshape((X.shape[0], -1))                    
+        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        Y = read_layer_reps(ilayer, runinfo, modelB)
+        Y = Y.reshape((Y.shape[0], -1))
+        
+        print("Layer %d " %(ilayer + 1))
+        print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
+        
+            
+        cka_from_examples = cka(gram_linear(X), gram_linear(Y))
+        '''
+
+        cka_from_examples = layer_cka(ilayer, modelA, modelB, runinfo)
+            
+        cka_matrix[ilayer + 1] = cka_from_examples
+    
+    return cka_matrix
+
+
+def main(trainedmodel, controlmodel, runinfo, trreg= False):
     '''Calculate the CKA and CCA scores of a given trained and control model for every layer and save output
     
     Arguments
@@ -38,6 +94,9 @@ def main(trainedmodel, controlmodel, runinfo):
     runinfo : RunInfo (extension of dict)
     
     '''
+
+    ## local import of seaborn (do it here so that it can be reset afterwards)
+    import seaborn as sns
     
     nlayers = trainedmodel['nlayers']
     
@@ -46,21 +105,33 @@ def main(trainedmodel, controlmodel, runinfo):
     
     for ilayer in np.arange(-1, nlayers):
         layer = lstring(ilayer)  
-        X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
+        X = read_layer_reps(ilayer, runinfo, trainedmodel)
         X = X.reshape((X.shape[0], -1))                    
-        Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
+        Y = read_layer_reps(ilayer, runinfo, controlmodel)
         Y = Y.reshape((Y.shape[0], -1))
         
         print("Layer %d " %(ilayer + 1))
         print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
+
+        if(trreg and X.shape[0] > Y.shape[0]):
+            print("Warning: Uneven shapes for trreg CKA - will truncate X shape")
+            X = X[:Y.shape[0]]
+
             
         cka_from_examples = cka(gram_linear(X), gram_linear(Y))
         cca_from_features = cca(X, Y)
             
         cka_matrix[0, ilayer + 1] = cka_from_examples
         cca_matrix[0, ilayer + 1] = cca_from_features
+
+    if not trreg:
+        foldername = 'rsa'
+    else:
+        foldername = 'rsa_trreg'
     
-    folder = runinfo.analysisfolder(trainedmodel, 'rsa')
+    folder = runinfo.analysisfolder(trainedmodel, foldername)
     os.makedirs(folder, exist_ok=True)
     
     np.save(os.path.join(folder, 'cka_matrix.npy'), cka_matrix)
@@ -70,16 +141,21 @@ def main(trainedmodel, controlmodel, runinfo):
     cka_ax = sns.heatmap(cka_matrix)
     fig = cka_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cka.pdf'))
+    fig.savefig(os.path.join(folder, 'svg.pdf'))
     
     fig.clf()
     cca_ax = sns.heatmap(cca_matrix)
     fig = cca_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cca.pdf'))
+    fig.savefig(os.path.join(folder, 'svg.pdf'))
     fig.clf()
     
     plt.close('all')
+
+    ## reset seaborn global parameters
+    sns.reset_orig()
     
-def rsa_models_comp(model, runinfo):
+def rsa_models_comp(model, runinfo, trreg=False):
     ''' Combine the saved RSA scores of all implementations into a single plot
     
     Arguments
@@ -87,6 +163,9 @@ def rsa_models_comp(model, runinfo):
     model : dict, information on model
     runinfo : RunInfo (extension of dict)
     '''
+
+    ## local import of seaborn (do it here so that it can be reset afterwards)
+    import seaborn as sns
     
     nlayers = model['nlayers'] + 1
     
@@ -98,17 +177,23 @@ def rsa_models_comp(model, runinfo):
     
     cka = np.zeros((5, nlayers))
     cca = np.zeros((5, nlayers))
+
+    if not trreg:
+        foldername = 'rsa'
+    else:
+        foldername = 'rsa_trreg'
     
     for imodel, mname in enumerate(modelnames):
         model['name'] = mname
-        model_cka = np.load(os.path.join(runinfo.analysisfolder(model, 'rsa'), 'cka_matrix.npy'))
-        model_cca = np.load(os.path.join(runinfo.analysisfolder(model, 'rsa'), 'cca_matrix.npy'))
+        model_cka = np.load(os.path.join(runinfo.analysisfolder(model, foldername), 'cka_matrix.npy'))
+        model_cca = np.load(os.path.join(runinfo.analysisfolder(model, foldername), 'cca_matrix.npy'))
+
+        print(mname, model_cka.shape)
         
         cka[imodel] = model_cka
         cca[imodel] = model_cca
         
-    folder = runinfo.sharedanalysisfolder(model, 'rsa')
-    
+    folder = runinfo.sharedanalysisfolder(model, foldername)    
     os.makedirs(folder, exist_ok=True)
     
     np.save(os.path.join(folder, 'cka_matrix.npy'), cka)
@@ -119,6 +204,7 @@ def rsa_models_comp(model, runinfo):
     cka_ax.set_ylabel('model')
     fig = cka_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cka.pdf'))
+    fig.savefig(os.path.join(folder, 'cka.svg'))
     
     fig.clf()
     cca_ax = sns.heatmap(cca)
@@ -126,6 +212,10 @@ def rsa_models_comp(model, runinfo):
     cca_ax.set_ylabel('model')
     fig = cca_ax.get_figure()
     fig.savefig(os.path.join(folder, 'cca.pdf'))
+    fig.savefig(os.path.join(folder, 'cca.svg'))
     fig.clf()
     
     plt.close('all')
+
+    ## reset seaborn parameters
+    sns.reset_orig()

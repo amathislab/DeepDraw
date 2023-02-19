@@ -10,15 +10,18 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from rowwise_neuron_curves_controls import *
+from rowwise_neuron_curves_controls import get_centers, X_data, lstring, read_layer_reps
 import pickle
 import os
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
+import time
 
 muscle_order = ['CORB', 'DELT1', 'DELT2', 'DELT3', 'INFSP', 'LAT1', 'LAT2', 'LAT3', 'PECM1', 
                 'PECM2', 'PECM3', 'SUBSC', 'SUPSP', 'TMAJ', 'TMIN', 'ANC', 'BIClong', 'BICshort', 
                 'BRA', 'BRD', 'ECRL', 'PT', 'TRIlat', 'TRIlong', 'TRImed']
+
+need_to_sleep = False
 
 # %% POLAR TUNING CURVE PLOT
         
@@ -44,6 +47,7 @@ def polartc(thetas, rs, ilayer, k, irow, r2, expf, fset='vel'):
     plt.title(str(r2))
     
     plt.savefig('%s/%s_l%d_%s_polar_r2_bl.pdf' %(expf, fset, ilayer + 1, k))
+    plt.savefig('%s/%s_l%d_%s_polar_r2_bl.svg' %(expf, fset, ilayer + 1, k))
      
 def get_thetas_rs_from_row(polar, acts, rowidx, ilayer, model, tcoff=32):
     """Get matching thetas and activations (stored as Rs)
@@ -63,7 +67,7 @@ def get_thetas_rs_from_row(polar, acts, rowidx, ilayer, model, tcoff=32):
     rs : np.array [nr_values,]
     """
     
-    print(rowidx, acts.shape)
+    #print(rowidx, acts.shape)
     
     thetas = polar[:,1]
 
@@ -148,6 +152,7 @@ def dirvelplotpolar(thetas, vms, acts, ilayer, k, rowidx, r2, expf, fset='vel'):
     plt.colorbar(pad=0.07)
     
     plt.savefig('%s/dirvel_l%d_%d_3dpolar_smoothen_0%d_rc_nn.pdf' %(expf, ilayer + 1, k, int(kernelfactor*100)))
+    plt.savefig('%s/dirvel_l%d_%d_3dpolar_smoothen_0%d_rc_nn.svg' %(expf, ilayer + 1, k, int(kernelfactor*100)))
     plt.close('all')
     
 def get_thetas_vms_rs_from_row(polar, acts, rowidx,  ilayer, model, tcoff=32):
@@ -169,11 +174,14 @@ def get_thetas_vms_rs_from_row(polar, acts, rowidx,  ilayer, model, tcoff=32):
     rs : np.array [nr_samples,], neuron activations 
     """
     
-    print(rowidx, acts.shape)
+    #print(rowidx, acts.shape)
     
     #select proper row
     vms = polar[:,0]
     thetas = polar[:,1]
+
+    print('layer activations shape: ', acts.shape)
+    print('polar coords polars.shape: ', polar.shape)
 
     centers = get_centers(acts.shape[2], ilayer, model)
     
@@ -207,14 +215,18 @@ def get_thetas_vms_rs_from_row(polar, acts, rowidx,  ilayer, model, tcoff=32):
         
 def main(model, runinfo):
     """ Finds most directionally tuned neurons in each layer and then plots polar scatter and contour plots for these 
-    
-    
+        
     Arguments
     ---------
     model : dict
     runinfo : RunInfo (extension of dict)
     """
     
+    print('finding top-performing neurons')
+
+    if need_to_sleep:
+        time.sleep(0.2)
+
     nlayers = model['nlayers'] + 1
     dirmi = []
     dvmi = [] #store max indices in nested list
@@ -253,13 +265,21 @@ def main(model, runinfo):
     
     expf = runinfo.analysisfolder(model, 'polar_tcs')
     os.makedirs(expf, exist_ok = True)
-    
+
     ###output 2D polar plots
+    print('creating 2D plots...')
+
+    if need_to_sleep:
+        time.sleep(0.2)
+
     for ilayer in np.arange(-1, len(dirmi) - 1):
     
         print(ilayer+1)
-            
-        lo = pickle.load(open(os.path.join(datafolder, lstring(ilayer) + '.pkl'), 'rb'))
+        
+        try:
+            lo = pickle.load(open(os.path.join(datafolder, lstring(ilayer) + '.pkl'), 'rb'))
+        except:
+            lo = read_layer_reps(ilayer, runinfo, model)
         lo = lo[xyplmvt]
         
         for k in range(kbest):         
@@ -267,10 +287,19 @@ def main(model, runinfo):
             thetas, rs = get_thetas_rs_from_row(polar, lo, rowidx[0], ilayer, model)
             polartc(thetas, rs, ilayer, k, rowidx[0], rowidx[1], expf, fset=fset)
             plt.close('all')      
-       
+    
+    ###output 3D polar plots
+    print('creating 3D plots...')
+
+    if need_to_sleep:
+        time.sleep(0.2)
+        
     for il in np.arange(-1, nlayers - 1):
         layer = lstring(il)
-        lo = pickle.load(open(os.path.join(datafolder, lstring(il) + '.pkl'), 'rb'))
+        try:
+            lo = pickle.load(open(os.path.join(datafolder, lstring(il) + '.pkl'), 'rb'))
+        except:
+            lo = read_layer_reps(il, runinfo, model)        
         lo = lo[xyplmvt]
         
         print(layer)
@@ -279,4 +308,3 @@ def main(model, runinfo):
             rowidx = dvmi[il + 1][k]
             thetas, vms, rs = get_thetas_vms_rs_from_row(polar, lo, rowidx[0], il, model)
             dirvelplotpolar(thetas, vms, rs, il, k, rowidx[0], rowidx[1], expf, fset=fset)
-               

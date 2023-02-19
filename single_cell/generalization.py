@@ -158,6 +158,7 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
                 Ax 2: Neurons
             """
             pds[ilayer][ior] = np.zeros((len(uniqueheights[ior]), len(prefdirs)))
+            pds[ilayer][ior][:] = np.NaN
             
             for iht, ht in enumerate(uniqueheights[ior]):
                 runinfo['height'] = ht
@@ -170,8 +171,9 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
                     if score < r2threshold:
                         dirtuning[neuron] = np.nan
                 
-                prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
-                pds[ilayer][ior][iht] = prefdirs
+                if(len(dirtuning) > 0):
+                    prefdirs = np.apply_along_axis(angle_xaxis, 1, dirtuning)
+                    pds[ilayer][ior][iht] = prefdirs
     
     ffolder = runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified')
     os.makedirs(ffolder, exist_ok=True)
@@ -185,6 +187,8 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
             
             fig, deviations = plot_ind_neuron_invar_collapsed_beautified(pds[ilayer][ior], uniqueheights[ior], ilayer, orientation)
             fig.savefig(os.path.join(ffolder, 'ind_neuron_invar_l%d_%s_collapsed_0%d_v2.pdf' %(ilayer, orientation, int(r2threshold*10))))
+            fig.savefig(os.path.join(ffolder, 'ind_neuron_invar_l%d_%s_collapsed_0%d_v2.png' %(ilayer, orientation, int(r2threshold*10))))
+            fig.savefig(os.path.join(ffolder, 'ind_neuron_invar_l%d_%s_collapsed_0%d_v2.svg' %(ilayer, orientation, int(r2threshold*10))))
             plt.close('all')
             print('indinvars_collapsed plots plotted')
             
@@ -197,8 +201,9 @@ def ind_neuron_invar_collapsed(model, runinfo, r2threshold = 0.2):
 def main(model, runinfo, r2threshold = 0.2):        
     print('creating individual neuron generalization plot for model %s ...' %model['name'])
                 
-    if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified'))):
-    #if(True):
+    #if(runinfo.default_run):
+    #if(not os.path.exists(runinfo.generalizationfolder(model, 'ind_neuron_invar_collapsed_beautified'))):
+    if(True):
         ind_neuron_invar_collapsed(model, runinfo, r2threshold)
         print('plots saved')
     else:

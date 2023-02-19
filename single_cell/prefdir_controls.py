@@ -147,7 +147,9 @@ def main(model, runinfo, r2threshold = 0.2):
         print("Layer %d" % (ilayer + 1))
         r2 = testevals[...,1,1]
         print(r2[r2 > r2threshold].size)
-        sigfit = testevals[r2 > r2threshold]
+
+        #also exclude r2=1 scores
+        sigfit = testevals[(r2 > r2threshold) & (r2 != 1)]
         dirtuning = sigfit[...,1,3:5].reshape((-1,2))
         
         if len(dirtuning) > 0:
@@ -157,10 +159,14 @@ def main(model, runinfo, r2threshold = 0.2):
         prefdirfig, cbfig = polarhist(prefdir, ilayer, 18, model['max_act'])
         plt.tight_layout()
         prefdirfig.savefig(os.path.join(prefdirfolder, 'l%d_prefdir_0%d_18.pdf' %(ilayer, int(r2threshold*10))))
+        prefdirfig.savefig(os.path.join(prefdirfolder, 'l%d_prefdir_0%d_18.svg' %(ilayer, int(r2threshold*10))))
         cbfig.savefig(os.path.join(prefdirfolder, 'shared_colorbar.pdf'))
+        cbfig.savefig(os.path.join(prefdirfolder, 'shared_colorbar.svg'))
         plt.close('all')
         
         prefdirmeanfig, cbmeanfig = polarhistmean(prefdir, ilayer, 18, model['max_act'])
         plt.tight_layout()
         prefdirmeanfig.savefig(os.path.join(prefdirfolder, 'l%d_prefdir_meanheight_0%d_18.pdf' %(ilayer, int(r2threshold*10))))
+        prefdirmeanfig.savefig(os.path.join(prefdirfolder, 'l%d_prefdir_meanheight_0%d_18.svg' %(ilayer, int(r2threshold*10))))
         cbmeanfig.savefig(os.path.join(prefdirfolder, 'shared_colorbar_meanheight.pdf'))
+        cbmeanfig.savefig(os.path.join(prefdirfolder, 'shared_colorbar_meanheight.svg'))

@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy import exp
 from nn_models import ConvModel, AffineModel, RecurrentModel
+from nn_rmodels import ConvRModel, RecurrentRModel
 from nn_train_utils import Dataset
 import pickle#, time
 from tensorflow.contrib.rnn import *
@@ -47,15 +48,21 @@ def main(modelinfo, runinfo):
 
     #PATHS
     basefolder = runinfo['basefolder']
-    
-    model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
-    #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
-    #PATH_TO_DATA = '../deep_proprioception/dataset/'
+
     path_to_data = f'{basefolder}../pcr_data/pcr_dataset_test.hdf5'
     PATH_TO_DATA = f'{basefolder}../pcr_data/'
-    MODELS_DIR = '.'
-    path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
     
+    if modelinfo['model_path'] is None:
+        model_path = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/"
+        #path_to_data = '../deep_proprioception/dataset/pcr_dataset_test.hdf5'
+        #PATH_TO_DATA = '../deep_proprioception/dataset/'
+        MODELS_DIR = '.'
+        path_to_config_file = f"{basefolder}models/experiment_{runinfo.model_experiment_id}/{modelname}/config.yaml"
+    else:
+        model_path = modelinfo['model_path']
+        path_to_config_file = modelinfo['path_to_config_file']
+    print(model_path, path_to_config_file)
+
     if path_to_data is not None:
         with h5py.File(path_to_data, 'r') as datafile:
             idxtups = []
@@ -94,7 +101,9 @@ def main(modelinfo, runinfo):
     
     nsamples, ninputs, ntime, _ = data.shape
     #batch_size = nsamples
-    batch_size = 100 #can be updated based on GPU capacities for forward pass
+    batch_size = runinfo.batchsize
+    #batch_size = 100 #can be updated based on GPU capacities for forward pass
+    #batch_size = 25 #can be updated based on GPU capacities for forward pass
     num_steps = nsamples // batch_size
     
     # CREATE PANDAS PANEL
@@ -110,21 +119,59 @@ def main(modelinfo, runinfo):
         train_mean = model_config['train_mean']
 
 
-    if (modelinfo['type'] in ['S', 'ST']):
-        model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
-                          int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
-                          int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
-                          int(model_config['t_stride']))
+    if not modelinfo['regression_task']:
+        if (modelinfo['type'] in ['S', 'ST']):
+            model = ConvModel(model_config['experiment_id'], model_config['nclasses'], model_config['arch_type'], \
+                            int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
+                            int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
+                            int(model_config['t_stride']))
+        
+        else:        
+            print('building rec model')
+            model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
+                                int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
+                                int(model_config['s_kernelsize']), int(model_config['s_stride']))
+
+    else:
+        if (modelinfo['type'] in ['S', 'ST']):
+            model = ConvRModel(model_config['experiment_id'], model_config['arch_type'], \
+                            int(model_config['nlayers']), model_config['n_skernels'], model_config['n_tkernels'], \
+                            int(model_config['s_kernelsize']), int(model_config['t_kernelsize']), int(model_config['s_stride']), 
+                            int(model_config['t_stride']), noutspace=6)
+        
+        else:        
+            print('building rec model')
+            model = RecurrentRModel(model_config['experiment_id'], model_config['rec_blocktype'], 
+                                int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
+                                int(model_config['s_kernelsize']), int(model_config['s_stride']), noutspace=6)
+
+
+    print("Old model path: ", model.model_path)
+    if not modelinfo['regression_task']:
+        model.model_path = basefolder + model.model_path
+        if(not modelinfo['control']):
+            model.model_path = model.model_path + modelname[-2:] #Add control set number
+        else:
+            model.model_path = model.model_path + modelname[-3:]
+    else:
+        model.model_path = model_path
+    print("New model path: ", model.model_path)
     
-    else:        
-        print('building rec model')
-        model = RecurrentModel(model_config['experiment_id'], model_config['nclasses'], model_config['rec_blocktype'], 
-                               int(model_config['n_recunits']), int(model_config['npplayers']), list(map(int, model_config['nppfilters'])), 
-                               int(model_config['s_kernelsize']), int(model_config['s_stride']))
+    print('Final model.model_path', model.model_path)
+
+    #SAVE FOLLOW THROUGH    
+    datafolder = runinfo.datafolder(modelinfo)
+    os.makedirs(datafolder, exist_ok=True)
+    kinvars.to_hdf(datafolder + "/kinvars.hdf5", key="data")
+    print("Kinvars saved")
     
-    model.model_path = basefolder + model.model_path
+    pickle.dump(data, open(datafolder + "/data.pkl", "wb"), protocol=4)
+    print("MF saved")
     
-    layers = []
+    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"), protocol=4)
+    print("Labels saved")
+    
+    #layers = []
     
     mygraph = tf.Graph()
     with mygraph.as_default():
@@ -133,53 +180,34 @@ def main(modelinfo, runinfo):
         y = tf.placeholder(tf.int32, shape=[batch_size], name="y")
 
         # Compute scores and accuracy
-        scores, probabilities, net = model.predict(X, is_training=False)
-        correct = tf.nn.in_top_k(probabilities, y, 1)
-        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
+        if not modelinfo['regression_task']:
+            scores, probabilities, net = model.predict(X, is_training=False)
+        else:
+            scores, net = model.predict(X, is_training=False)
+        #correct = tf.nn.in_top_k(probabilities, y, 1)
+        #accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
         # Test the `model`!
         restorer = tf.train.Saver()
         myconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
         
-        if(not modelinfo['control']):
-            model.model_path = model.model_path + modelname[-2:] #Add control set number
-        else:
-            model.model_path = model.model_path + modelname[-3:]
-
-        #update model path
-        print('model.model_path', model.model_path)
-        
-        with tf.Session(config=myconfig) as sess:
-            ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
-            print('checkpoint filepath', ckpt_filepath)
-            restorer.restore(sess, ckpt_filepath)
-            
-            for i in range(num_steps):
-                if(runinfo.verbose >= 1):
-                    print('batch %d / %d' %(i, num_steps))
-                layers_batch = sess.run(list((net.values())), \
-                        feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
+        for j in range(len(list((net.values()))) - 1):
+            with tf.Session(config=myconfig) as sess:
+                ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
+                print('checkpoint filepath', ckpt_filepath)
+                restorer.restore(sess, ckpt_filepath)
                 
-                for j in range(len(layers_batch) - 1):
-                    if(i == 0):
-                        layers.append(layers_batch[j])
-                    else:
-                        #print(layers_batch[j].shape, layers[j].shape)
-                        layers[j] = np.concatenate((layers[j], layers_batch[j]))
-                        #print(layers[j].shape)
-            
-    #SAVE FOLLOW THROUGH    
-    datafolder = runinfo.datafolder(modelinfo)
-    os.makedirs(datafolder, exist_ok=True)
-    kinvars.to_hdf(datafolder + "/kinvars.hdf5", key="data")
-    print("Kinvars saved")
-    
-    pickle.dump(data, open(datafolder + "/data.pkl", "wb"))
-    print("MF saved")
-    
-    pickle.dump(labels, open(datafolder + "/labels.pkl", "wb"))
-    print("Labels saved")
-    
-    for i in range(len(layers)):
-        pickle.dump(layers[i], open(datafolder + f"/l{i}.pkl", "wb"))
-        print(f"L{i} saved")    
+                for i in range(num_steps):
+                    if(runinfo.verbose >= 1):
+                        print('batch %d / %d' %(i, num_steps))
+                    layer_batch = sess.run(list((net.values()))[j], \
+                            feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
+                    
+                    if i == 0:
+                        #layer = np.zeros(tuple([nsamples]) + layer_batch.shape[1:])
+                        layer = h5py.File(datafolder + f"/l{j}.hdf5", 'w')
+                        
+                    #layer[i*batch_size : (i+1)*batch_size] = layer_batch
+                    layer.create_dataset(str(i), data=layer_batch)
+                    
+            #pickle.dump(layer, open(datafolder + f"/l{i}.pkl", "wb"), protocol=4)
