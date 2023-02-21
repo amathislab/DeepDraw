@@ -80,6 +80,12 @@ class RunInfo(dict):
         super(RunInfo, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
+    def get_exp_id(self, model):
+        if model['exp_id'] is not None:
+            return model['exp_id']
+        else:
+            return self.__dict__['expid']
+
     def planestring(self):
         return self.__dict__['orientation'] + str(self.__dict__['height'])
 
@@ -120,10 +126,12 @@ class RunInfo(dict):
         instantiations within a given type
         '''
 
+        expid = self.get_exp_id(model)
+
         if sp:
-            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], self.planestring())
+            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/%s/' %(self.__dict__['basefolder'], expid, model['base'], self.planestring())
         else:
-            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'])
+            sharedanalysisfolder = '%sexp%d/analysis/%s/comparison/' %(self.__dict__['basefolder'], expid, model['base'])
         if analysis is not None:
             sharedanalysisfolder = os.path.join(sharedanalysisfolder, analysis)
         return sharedanalysisfolder
@@ -141,7 +149,9 @@ class RunInfo(dict):
         baseanalysisfolder : string, main analysis folder for an individual model instantiation
         '''
 
-        baseanalysisfolder = '%sexp%d/analysis/%s/%s/' %(self.__dict__['basefolder'], self.__dict__['expid'], model['base'], model['name'])
+        expid = self.get_exp_id(model)
+
+        baseanalysisfolder = '%sexp%d/analysis/%s/%s/' %(self.__dict__['basefolder'], expid, model['base'], model['name'])
         if analysis is not None:
             baseanalysisfolder = os.path.join(baseanalysisfolder, analysis)
         return baseanalysisfolder
@@ -197,7 +207,9 @@ class RunInfo(dict):
         
         #print(self.__dict__['basefolder'])
 
-        datafolder = '%sexp%d/data/' %(self.__dict__['basefolder'], self.__dict__['expid'])
+        expid = self.get_exp_id(model)
+
+        datafolder = '%sexp%d/data/' %(self.__dict__['basefolder'], expid)
         if model is not None:
             datafolder = os.path.join(datafolder , model['base'], model['name'])
         return datafolder
@@ -235,7 +247,9 @@ class RunInfo(dict):
         datafolder : string
         '''
 
-        regressiontaskfolder = '%sexp%d/analysis/regression_task/' %(self.__dict__['basefolder'], self.__dict__['expid'])
+        expid = self.get_exp_id(model)
+
+        regressiontaskfolder = '%sexp%d/analysis/regression_task/' %(self.__dict__['basefolder'], expid)
         if analysis is not None:
             regressiontaskfolder = os.path.join(regressiontaskfolder, analysis)
         return regressiontaskfolder
@@ -325,15 +339,21 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
             'max_nlayers': 8,
             'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
             'control': False,
-            'cmap': 'Blues_r',
-            'color': 'C0',
-            'regression_color': 'purple',
-            'control_cmap': 'Purples_r',
-            'regression_cmap': 'Oranges_r',
+            #'cmap': 'Blues_r',
+            #'color': 'C0',
+            #'regression_color': 'purple',
+            #'control_cmap': 'Purples_r',
+            # 'regression_cmap': 'Oranges_r',
+            'cmap': matplotlib.colors.ListedColormap(['midnightblue']),
+            'color': 'midnightblue',
+            'regression_color': 'darkturquoise',
+            'control_cmap': 'Greys_r',
+            'regression_cmap': matplotlib.colors.ListedColormap(['darkturquoise']),
             's_stride': 2,
             't_stride': 3,
             'regression_task': False,
-            'model_path': None,}),
+            'model_path': None,
+            'exp_id': None,}),
         dict({'type': 'ST',
               'typename': 'spatiotemporal',
               'base': 'spatiotemporal_4_8-8-32-64_7272',
@@ -342,15 +362,21 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
               'max_nlayers': 4,
               'max_act': 14, #this can be manually adjusted as the maximum in the preferred direction histogram
               'control': False,
-              'cmap': 'Greens_r',
-              'color': 'green',
-              'regression_color': 'red',
+            #   'cmap': 'Greens_r',
+            #   'color': 'green',
+            #   'regression_color': 'red',
+            #   'control_cmap': 'Greys_r',
+            #   'regression_cmap': 'Reds_r',
+              'cmap': matplotlib.colors.ListedColormap(['darkgreen']),
+              'color': 'darkgreen',
+              'regression_color': 'yellowgreen',
               'control_cmap': 'Greys_r',
-              'regression_cmap': 'Reds_r',
+              'regression_cmap': matplotlib.colors.ListedColormap(['yellowgreen']),    
               't_stride': 2,
               's_stride': 2,
               'regression_task': False,
-              'model_path': None,}),
+              'model_path': None,
+              'exp_id': None,}),
         dict({'type': 'LSTM',
             'typename': 'recurrent',
             'base': 'lstm_3_8-16-16_256',
@@ -361,13 +387,19 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
             't_stride': 1,
             's_stride': 1,
             'control': False,
-            'cmap': 'Purples_r',
-            'regression_cmap': 'Wistia_r',
-            'color': 'C4',
-            'regression_color': 'yellow',
-            'control_cmap': 'Purples_r', 
+            # 'cmap': 'Purples_r',
+            # 'regression_cmap': 'Wistia_r',
+            # 'color': 'C4',
+            # 'regression_color': 'yellow',
+            # 'control_cmap': 'Purples_r',
+            'cmap': matplotlib.colors.ListedColormap(['indigo']),
+            'color': 'indigo',
+            'regression_color': 'orchid',
+            'control_cmap': 'Greys_r',
+            'regression_cmap': matplotlib.colors.ListedColormap(['orchid']),
             'regression_task': False,
             'model_path': None,
+            'exp_id': None,
             })
         ]
 
@@ -414,6 +446,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                     model['regression_task'] = True
                     model['color'] = model['regression_color']
                     model['cmap'] = model['regression_cmap']
+
+                    if reg_exp_id is not None:
+                        model['exp_id'] = reg_exp_id
                 
                 if startmodel == imodel:
                     print("Running model ", imodel)
@@ -573,8 +608,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                 print('generating preferred direction histograms for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                 #if(not os.path.exists(runinfo.analysisfolder(model_to_analyse, 'prefdir'))):
-                                                                #if(False):
-                                                                if(default_run and runinfo.planestring() == 'horall'):
+                                                                if(False):
+                                                                #if(default_run and runinfo.planestring() == 'horall'):
 
                                                                     prefdir_main(model_to_analyse, runinfo_to_analyse)
                                                                 else:
@@ -587,8 +622,9 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     print('plotting tSNE for model %s plane %s .... ' %(modelname, runinfo.planestring()))
                                                                     tsne_main(model_to_analyse, runinfo_to_analyse)
 
-                                                                if(default_run):
-                                                                #if(False):
+                                                                #if(default_run):
+                                                                if(False):
+                                                                #if(True and runinfo.planestring() == 'horall'):
                                                                     print('running unit classification...')
                                                                     unit_classification_main(model_to_analyse, runinfo)
                                                                 else:
@@ -606,8 +642,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     #if(default_run):
                                                                     #if(True):
                                                                     #if(False):
-                                                                    if(default_run and runinfo.planestring() == 'horall'):
-                                                                    #if(True and runinfo.planestring() == 'horall'):
+                                                                    #if(default_run and runinfo.planestring() == 'horall'):
+                                                                    if(False and runinfo.planestring() == 'horall'):
                                                                         print('saving comparison violin plot for model %s plane %s...' %(modelname, runinfo.planestring()))
                                                                         comp_violin_main(trainedmodel, model_to_analyse, runinfo)
                                                                     else:
@@ -616,7 +652,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                     if(runinfo.planestring() == 'horall'):
                                                                         #if(not os.path.exists(runinfo.analysisfolder(trainedmodel, 'rsa'))):
                                                                         #if(True):
-                                                                        if(default_run):
+                                                                        #if(default_run):
+                                                                        if(False):
                                                                             print('computing representational similarity analysis for model %s plane %s ... ' %(modelname, runinfo.planestring()))
                                                                             rsa_main(trainedmodel, model_to_analyse, runinfo)
 
@@ -627,7 +664,8 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
 
                                                                     #check to make sure that this model and plane combination has any samples
                                                                     # #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
-                                                                    if(True): ### NEW PLOT TYPE BELOW
+                                                                    #if(True): ### NEW PLOT TYPE BELOW
+                                                                    if(False):
                                                                 
                                                                         #if(False):  
                                                                         #if(True):  
@@ -635,12 +673,12 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                             print("saving violin plot comparison reg & task-trained for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             comp_tr_reg_violin_main(model_to_analyse, regressionmodel, runinfo)
 
-                                                                    if(True):
+                                                                    #if(True):
                                                                     #if(len(np.load(os.path.join(runinfo_to_analyse.resultsfolder(regressionmodel, 'vel'), 'l%d_%s_mets_%s_%s_test.npy' %(0, 'vel', 'std', runinfo_to_analyse.planestring())))) > 0):
-                                                                    #if(False):        
+                                                                    if(False):        
                                                                         #if(True):
-                                                                        if(default_run and runinfo.planestring() == 'horall'):
-                                                                        #if(False):
+                                                                        #if(default_run and runinfo.planestring() == 'horall'):
+                                                                        if(False):
                                                                             print("doing trreg cka for model %s plane %s ... " %(modelname, runinfo.planestring()))
                                                                             rsa_main(model_to_analyse, regressionmodel, runinfo, trreg=True)
 
@@ -654,25 +692,28 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                                         #if(False):
                                                                         if(default_run and runinfo.planestring() == 'horall'):
                                                                         #if(True and runinfo.planestring() == 'horall'):
+
                                                                             comparisons_main(model, runinfo)
                                                                         else:
                                                                             print('skipping comparisons')
+
+                                                                        
 
                                                                         if(runinfo.planestring() == 'horall'):
                                                                         #if(True):
                                                                             print('combining rsa results for all models')
                                                                             #if(not os.path.exists(runinfo.sharedanalysisfolder(trainedmodel, 'rsa'))):
-                                                                            #if(False):
-                                                                            if(default_run):
+                                                                            if(False):
+                                                                            #if(default_run):
                                                                             #if(runinfo.planestring() == 'horall'):
                                                                                 rsa_models_comp(model, runinfo)
                                                                             else:
                                                                                 print('rsa models comp already completed')
                                                                     else:
-                                                                        if(runinfo.planestring() == 'horall'):
-                                                                            if(True):
+                                                                        if(task == 'task' and runinfo.planestring() == 'horall'):
+                                                                            #if(True):
                                                                             #if(False):
-                                                                            #if(default_run):
+                                                                            if(default_run):
                                                                                 print('starting comparisons_tr_reg_main')
                                                                                 #comparisons_tr_reg_main(model, regressionmodel, runinfo)
                                                                                 comparisons_tr_reg_main(trainedmodel, regressionmodel, runinfo)
@@ -694,17 +735,17 @@ def main(do_data=False, do_results=False, do_analysis=False, do_regression_task 
                                                     runheight = True
 
                                                 if runheight:
-                                                    #if(False):
+                                                    if(False):
                                                     #if(True):
-                                                    if(default_run):
+                                                    #if(default_run):
                                                         print('launching analysis of nodes\' generalizational capacity...')
                                                         generalization_main(model_to_analyse, runinfo)
 
                                                     if(i==5):
                                                         if(control):
                                                             #if(True):
-                                                            #if(False):
-                                                            if(default_run):
+                                                            if(False):
+                                                            #if(default_run):
                                                                 generalizations_comparisons_main(model, runinfo)
                                                         else:
                                                             pass

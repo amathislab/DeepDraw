@@ -8,7 +8,6 @@
 docker start kai_dlcdocker_data_tf15
 docker exec --user kai -i kai_dlcdocker_data_tf15 bash <<'EOF'
 cd /media/data/DeepDraw/DeepDraw/single_cell
-python3 controls_main.py --LSTM True --data True --task_models True --expid 408
 python3 controls_main.py --LSTM True --data True --regression_models True --expid 408
 exit
 EOF

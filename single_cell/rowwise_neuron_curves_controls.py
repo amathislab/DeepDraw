@@ -805,7 +805,7 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=
     print("files saved")
 
 # %% DATA READIN
-   
+
 def X_data(fset = 'vel', runinfo = dict({'orientation': 'hor', 'plane': 'all', 'datafraction': 0.5}), 
            datafolder = '../data/spatial_temporal_4_8-16-16-32_64-64-64-64_5272/',
            threed= False,
