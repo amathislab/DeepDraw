@@ -76,33 +76,43 @@ def format_axis(ax):
     ax.get_yaxis().tick_left()
     ax.xaxis.set_tick_params(size=6)
     ax.yaxis.set_tick_params(size=6)
-    
+
     ## SET AXIS WIDTHS
     for axis in ['top','bottom','left','right']:
-        ax.spines[axis].set_linewidth(1.5)
+        #ax.spines[axis].set_linewidth(1.5)
+        ax.spines[axis].set_linewidth(2.5) ## eLife
 
     # increase tick width
-    ax.tick_params(width=1.5)
+    #ax.tick_params(width=1.5)
+    ax.tick_params(width=2.5) ## eLife
     
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f')) ## eLife
 
 # %% rcParams and Settings
 
+details_size_factor = 6/5
+
 params = {
-   'axes.labelsize': 16,
+   'axes.labelsize': 18,
    'legend.fontsize': 12,
    'xtick.labelsize': 16,
-   'ytick.labelsize': 12,
-   'text.usetex': False,
-   'figure.figsize': [8,8 ],
-   'font.size': 20,
-   'axes.titlepad': 20,
-   'xtick.major.size': 4.5,
-   'xtick.minor.size': 3.5,
-   'xtick.major.width': 1,
-   'ytick.major.size': 4.5,
-   'ytick.major.width': 1,
-   'ytick.minor.size': 3.5
+   'ytick.labelsize': 16,
+    #'axes.labelsize': 22,
+    #'axes.fontsize': 18,
+    #'legend.fontsize': 16,
+    #'xtick.labelsize': 20,
+    #'ytick.labelsize': 20,
+    'text.usetex': False,
+    'figure.figsize': [8,8 ],
+    'font.size': 18,
+    'axes.titlepad': 18,
+    'xtick.major.size': 4.5*details_size_factor,
+    'xtick.minor.size': 3.5*details_size_factor,
+    'xtick.major.width': 1*details_size_factor,
+    'ytick.major.size': 4.5*details_size_factor,
+    'ytick.major.width': 1*details_size_factor,
+    'ytick.minor.size': 3.5*details_size_factor
    }
 
 plt.rcParams.update(params)
@@ -967,14 +977,17 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     fig : plt.figure, TAD plot
     
     '''
+
+    linewidth=5.1
         
     fig = plt.figure(figsize=(8,6),dpi=300)
     ax = fig.add_subplot(111)
         
     for i in range(len(tmdevs)):
-        plt.plot(range(len(layers)), tmdevs[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
+        #plt.plot(range(len(layers)), tmdevs[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
+        plt.plot(range(len(layers)), tmdevs[i], color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained', linewidth=linewidth)
         #plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind control')
-        plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind untrained') ## eLife
+        plt.plot(range(len(layers)), cmdevs[i], color='grey', marker = 'D', alpha = 0.15, label='ind untrained', linewidth=linewidth) ## eLife
     
     #solution to calculate conf. interval of means from https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.t.html
     #t_corr = t.ppf(0.975, 4)
@@ -997,8 +1010,8 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     print(trained_t_corr)
     print(control_t_corr)
     
-    plt.plot(range(len(layers)), tmsmean, color=trainedmodel['color'], marker = 'D')
-    plt.plot(range(len(layers)), cmsmean, color='grey', marker = 'D')
+    plt.plot(range(len(layers)), tmsmean, color=trainedmodel['color'], marker = 'D', linewidth=linewidth)
+    plt.plot(range(len(layers)), cmsmean, color='grey', marker = 'D', linewidth=linewidth)
         
     plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
     plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
@@ -1012,11 +1025,19 @@ def plot_pd_deviation(layers, tmdevs, cmdevs, trainedmodel):
     format_axis(ax)
     handles, _ = ax.get_legend_handles_labels()
     handles = np.array(handles)
+
+    ## eLife Style
+    ## SET AXIS WIDTHS
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(linewidth)
+    # increase tick width
+    ax.tick_params(width=linewidth)
+
     
     #plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
     #            'mean of trained', 'mean of controls'])
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind untrained', \
-                'mean of trained', 'mean of untrained']) ## eLife
+    plt.legend(handles[[0,1,10,11]], ['Ind. Trained', 'Ind. Untrained', \
+                'Mean Trained', 'Mean Untrained']) ## eLife
     
     plt.tight_layout()
     
@@ -1096,8 +1117,8 @@ def pd_deviation(model, runinfo):
     
     fig = plot_pd_deviation(layers, trainedmodeldevs, controlmodeldevs, model)
     #fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot_normalized.pdf'))
-    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.pdf'))
-    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.svg'))
+    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.pdf'), dpi=300, transparent=True)
+    fig.savefig(os.path.join(analysisfolder, 'pd_dev_plot.svg'), dpi=300, transparent=True)
     plt.close('all')
     
     ##statistical tests
@@ -2093,6 +2114,8 @@ def plotcomp_tr_reg_decoding_twovars(tcfdf, tcfs, model, regressionmodel):
     
     plt.tight_layout()
 
+    format_axis(plt.gca())
+
     return fig
 
 def decoding_tcctrlcompplots(df, model, runinfo, alpha = None):
@@ -2273,9 +2296,15 @@ def decoding_tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo, alpha =
         fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined.svg'))
         fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined.png'))
     else:
-        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.pdf'%int(alpha*1000)))
-        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.svg'%int(alpha*1000)))
-        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.png'%int(alpha*1000)))
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.pdf'%int(alpha*1000)), transparent=True, dpi=300)
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.svg'%int(alpha*1000)), transparen=True, dpi=300)
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d.png'%int(alpha*1000)), transparent=True, dpi=300)
+
+        ## eLife, save in new size
+        fig.set_size_inches(8,6)
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d_narrow.pdf'%int(alpha*1000)), transparent=True, dpi=300)
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d_narrow.svg'%int(alpha*1000)), transparen=True, dpi=300)
+        fig.savefig(os.path.join(folder, 'decoding_comp_tr_reg_combined_a%d_narrow.png'%int(alpha*1000)), transparent=True, dpi=300)
 
 def tcctrlcompplots_tr_reg(df, model, regressionmodel, runinfo):
     ''' Saves plots comparing 90% quantiles for the model for various tuning feature types
@@ -2368,6 +2397,8 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     figboth : plt.figure
     df : pd.DataFrame, statistics accompanying plot
     '''
+
+    linewidth=5.1
     
     columns = ['tmsmean', 'cmsmean', 'tmsstd', 'cmsstd', 'stddiff', 't stat', 'p value', 'Bonferroni', 'N for t']
     index = layers
@@ -2426,12 +2457,13 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     figboth = plt.figure(figsize=(8,6), dpi=300)
         
     for i in range(len(alltmdevmeans)):
-        plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
+        #plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained')
+        plt.plot(layers, np.nanmean(np.abs(alltmdevmeans[i]), axis=1), color=trainedmodel['color'], marker = 'D', alpha = 0.15, label='ind trained', linewidth=linewidth)
         #plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind control')
-        plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind untrained') ##eLife
+        plt.plot(layers, np.nanmean(np.abs(allcmdevmeans[i]), axis=1), color='grey', marker = 'D', alpha = 0.15, label='ind untrained', linewidth=linewidth) ##eLife
         
-    plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained')
-    plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls')
+    plt.errorbar(layers, tmsmean, yerr=errs_tmsmean, marker='D', color=trainedmodel['color'], capsize=3.0, label='mean of trained', linewidth=linewidth)
+    plt.errorbar(layers, cmsmean, yerr=errs_cmsmean, marker = 'D', color='grey', capsize=3.0, label='mean of controls', linewidth=linewidth)
 
     plt.xticks(list(range(len(layers))), ['Sp.'] + ['L%d' %(i+1) for i in range(len(layers) - 1)])
     plt.xlim((-0.3, len(layers)-0.7))
@@ -2446,11 +2478,19 @@ def plot_inic_am(layers, alltmdevmeans, allcmdevmeans, trainedmodel):
     #plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind control', \
     #            'mean of trained', 'mean of controls'])
 
-    plt.legend(handles[[0,1,10,11]], ['ind trained', 'ind untrained', \
-               'mean of trained', 'mean of untrained']) ##eLife
+    plt.legend(handles[[0,1,10,11]], ['Ind. Trained', 'Ind Untrained', \
+               'Mean Trained', 'Mean Untrained']) ##eLife
+
+
+    ## eLife Style
+    ## SET AXIS WIDTHS
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(5.1)
+
+    # increase tick width
+    ax.tick_params(width=5.1)
     
     return figboth, df
-
 
 def ind_neuron_invars_comp(model, runinfo):    
     ''' Compare individual neuron invariance for a given model type
@@ -2465,7 +2505,6 @@ def ind_neuron_invars_comp(model, runinfo):
     nlayers = model['nlayers'] + 1
     modelbase = model['base']
     modelnames = [modelbase + '_%d' %i for i in np.arange(1,6)]
-    
     
     analysisfolder = runinfo.sharedanalysisfolder(model, 'ind_neuron_invars_comp', False)
      
@@ -2510,12 +2549,12 @@ def ind_neuron_invars_comp(model, runinfo):
     figboth_hor, df_hor = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_hor), np.stack(allcontroldevsim_hor), trainedmodel)
     figboth_vert, df_vert = plot_inic_am(list(range(nlayers)), np.stack(alltraineddevsim_vert), np.stack(allcontroldevsim_vert), trainedmodel)
     
-    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.pdf'))
-    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.svg'))
-    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.png'))
-    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.pdf'))
-    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.svg'))
-    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.png'))
+    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.pdf'), dpi=300, transparent=True)
+    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.svg'), dpi=300, transparent=True)
+    figboth_hor.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_hor_both_02.png'), dpi=300, transparent=True)
+    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.pdf'), dpi=300, transparent=True)
+    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.svg'), dpi=300, transparent=True)
+    figboth_vert.savefig(os.path.join(analysisfolder, modelbase + '_mean_all_ind_neuron_dev_mad_plot_vert_both_02.png'), dpi=300, transparent=True)
     
     df_hor.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_hor.csv'))
     df_vert.to_csv(os.path.join(analysisfolder, modelbase + '_deviations_mad_sig_vert.csv'))
@@ -2612,8 +2651,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     
     #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'kindiffs'))):
     #if(runinfo['height'] == 'all'):
-    if(runinfo.default_run):
-    #if(False):
+    #if(runinfo.default_run):
+    if(False):
         print('compiling dataframe for comparions trained & reg...')
         df = compile_comparisons_tr_reg_df(taskmodel, regressionmodel, runinfo)
         
@@ -2631,7 +2670,8 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
         print('decoding comparisons already created already analyzed')
         #if(not os.path.exists(runinfo.sharedanalysisfolder(model, 'pairedt'))):
 
-    if(False):
+    #if(True):
+    if(runinfo['height'] == 'all'):
     #if(runinfo.default_run):    
         print('running pairedt...')
         pairedt_comp(taskmodel, runinfo, regressionmodel)
@@ -2640,8 +2680,13 @@ def comparisons_tr_reg_main(taskmodel, regressionmodel, runinfo, alpha=None):
     else:
         print('kinetic and label embeddings already analyzed')
 
-    #if(runinfo['height'] == 'all'):
-    if(False):
+    if(runinfo['height'] == 'all'):
+    #if(False):
+        if df is None:
+            analysisfolder = runinfo.sharedanalysisfolder(taskmodel, 'kindiffs_tr_reg')
+            df = pd.read_csv(os.path.join(analysisfolder, taskmodel['base'] + '_comparisons_reg_tr_df.csv'),
+                             header=0, index_col=[0,1,2], dtype={'layer': int, 'mean': float, 'median': float})
+
         print('running paired t quantiles')
         pairedt_quantiles(df, taskmodel, runinfo, regressionmodel)
         print('done')

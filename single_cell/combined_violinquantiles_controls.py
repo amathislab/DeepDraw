@@ -15,6 +15,17 @@ import matplotlib.patches as mpatches
 from rowwise_neuron_curves_controls import *
 import os
 
+from matplotlib.ticker import FormatStrFormatter
+
+# def format_axis(ax):
+#     ax.spines['top'].set_visible(False)
+#     ax.spines['right'].set_visible(False)
+#     ax.get_xaxis().tick_bottom()
+#     ax.get_yaxis().tick_left()
+#     ax.xaxis.set_tick_params(size=6)
+#     ax.yaxis.set_tick_params(size=6)
+
+## eLife
 def format_axis(ax):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -22,6 +33,24 @@ def format_axis(ax):
     ax.get_yaxis().tick_left()
     ax.xaxis.set_tick_params(size=6)
     ax.yaxis.set_tick_params(size=6)
+
+    ax.yaxis.label.set_size(18)
+    ax.xaxis.label.set_size(18)
+
+    ax.yaxis.label.set_fontsize(18)
+    ax.xaxis.label.set_fontsize(18)
+
+    #ax.axes.set_labelsize(16)
+    
+    ## SET AXIS WIDTHS
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(1.5)
+
+    # increase tick width
+    ax.tick_params(width=1.5)
+    
+    #ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f')) ## eLife
 
 # %% PARS AND FIRST OVERVIEW
 
@@ -79,7 +108,6 @@ def get_modevals(model, runinfo):
         modevals[2].append(dvevals[...,3,1]) #dir + vel
         modevals[3].append(accevals[...,2,1]) #acc
         modevals[4].append(labevals[:,0]) #labels
-        
         
     return modevals
 
@@ -190,7 +218,8 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     patches = []
     
     ccolorindex = 3
-    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
             #print(mod)
@@ -235,7 +264,8 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
                 print("empty array, can't do violin plot", e)
                 vp = None                  
                  
-            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
             
             vps.append(vp)
             
@@ -305,7 +335,7 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     ct = 0.6
     cidx = [i*(1-ct)/(nmods-1) for i in range(nmods)] #Blues_r option
     #plot figure
-    fig = plt.figure(figsize=(18,6), dpi=200)
+    fig = plt.figure(figsize=(18,6), dpi=300)
     ax1 = fig.add_subplot(111)
     
     plt.xticks(np.arange(lspace/2,nlayers*lspace + 1,lspace), 
@@ -317,7 +347,8 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     patches = []
     
     ccolorindex = 3
-    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
             #print(mod)
@@ -361,7 +392,8 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
             except ValueError as e:
                 print("empty array, can't do violin plot", e)
                 vp = None     
-            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
+            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             #patches.append(mpatches.Patch(color=matplotlib.cm.get_cmap('Greys_r') (cidx[i]), alpha=0.7)) ##eLife
             
             
@@ -388,13 +420,18 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
 
     
     format_axis(plt.gca())
+    format_axis(ax1)
 
     ## SET AXIS WIDTHS
-    for axis in ['top','bottom','left','right']:
-        ax1.spines[axis].set_linewidth(1.5)
+    #for axis in ['top','bottom','left','right']:
+    #    ax1.spines[axis].set_linewidth(1.5)
 
     # increase tick width
-    ax1.tick_params(width=1.5)
+    #ax1.tick_params(width=1.5, labels=18)
+
+
+    #ax1.yaxis.label.set_size(18)
+    #ax1.xaxis.label.set_size(18)
 
 
     leg = plt.legend(patches[5:], modnames, loc='upper right')
@@ -494,7 +531,8 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     patches = []
     
     ccolorindex = 1
-    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
+    for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
             mod = [x.reshape((-1,)) for x in mod]
@@ -536,7 +574,8 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
                 vp = None    
             
 
-            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
+            patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
             
             vps.append(vp)
             
@@ -614,8 +653,8 @@ def comp_violin_main(trainedmodel, controlmodel, runinfo):
         regcomp = False, modnames=combined_modnames, ifsets_to_quantile=[0,2])
 
     os.makedirs('%s/comp_violin' %ff, exist_ok = True)
-    fig.savefig('%s/comp_violin/comp_violin_v3.pdf' %(ff))
-    fig.savefig('%s/comp_violin/comp_violin_v3.svg' %(ff))
+    fig.savefig('%s/comp_violin/comp_violin_v3.pdf' %(ff), dpi=300, transparent=True)
+    fig.savefig('%s/comp_violin/comp_violin_v3.svg' %(ff), dpi=300, transparent=True)
     
     plt.close('all')
 
@@ -670,8 +709,8 @@ def comp_tr_reg_violin_main(taskmodel, regressionmodel, runinfo):
         regcomp = True, modnames=modnames, ifsets_to_quantile=[0,2])
 
     os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
-    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.pdf' %(ff))
-    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.svg' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.pdf' %(ff), dpi=300, transparent=True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_violin_v3_kinematics.svg' %(ff), dpi=300, transparent=True)
     
     print('figure saved')
     
@@ -703,9 +742,9 @@ def comp_tr_reg_violin_main_newplots(taskmodel, regressionmodel, runinfo):
         regcomp = True, modnames=combined_modnames, ifsets_to_quantile=[0,2])
     
     os.makedirs('%s/comp_reg_tr_violin' %ff, exist_ok = True)
-    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.pdf' %(ff))
-    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.png' %(ff))
-    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.svg' %(ff))
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.pdf' %(ff), dpi=300, transparent=True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.png' %(ff), dpi=300, transparent=True)
+    fig.savefig('%s/comp_reg_tr_violin/comp_reg_tr_violin_combined_v3.svg' %(ff), dpi=300, trasnparent=True)
     
     print('tr reg kinematics combined violin figure saved')
     
