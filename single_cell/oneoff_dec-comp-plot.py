@@ -16,10 +16,13 @@ def plotcomp_tr_reg_decoding(tcfdf, tcf, rmname, rc, nlayers):
     ---------
     tcfdf : pd.DataFrame, index and columns matching output of compile_comparisons
     tcfs : list of strs, names of tuning features
+    rmname: str, base name for regression models
+    rc: str, color specification for line
+    nlayers : number of layers of model
     
     Returns
     -------
-    
+    line_meantrainedsvar1,line_indtrainedvar1,line_meancontrolsvar1, line_indcontrolsvar1 : matplotlib handles for specified objects
     '''
 
     x = np.arange(nlayers + 1)
@@ -59,7 +62,6 @@ def plotcomp_tr_reg_decoding(tcfdf, tcf, rmname, rc, nlayers):
     print("Suppressed: Trained", suppressed_counts)
 
     for i, mname in enumerate(controlnames):
-        #if np.sum(np.isnan(controlvars1[i]))==0:
         line_indtrainedvar1, = plt.plot(x_to_plot, masked_trained[i], color=rc, marker = 'D', alpha = 0.15)
         line_indcontrolsvar1, = plt.plot(x_to_plot, masked_controls[i], color=rc,  linestyle='dotted', marker = 'D', alpha = 0.15)
     
@@ -111,16 +113,6 @@ handles_mean_r = handles_ind_r = []
 for mname, rmname, color, rcolor, df, nl in zip(modelnames_long, rmodelnames_long, colors, rcolors, dfs, [8, 4, 4]):
     tcdf = df.loc[(slice(None), slice(None), 'ee_x'), 'PCC/dist']
 
-    #print(df)
-    #print(tcdf)
-
-    '''
-    print(mname)
-    handle_mean, handle_ind = plotcomp_tr_reg_decoding(tcdf, 'ee_x', mname, color, nl)
-    handles_mean.append(handle_mean)
-    handles_ind.append(handle_ind)
-    '''
-
     print(rmname)
     handle_mean, handle_ind, handle_mean_r, handle_ind_r = plotcomp_tr_reg_decoding(tcdf, 'ee_x', rmname, color, nl)
     handles_mean.append(handle_mean)
@@ -129,30 +121,12 @@ for mname, rmname, color, rcolor, df, nl in zip(modelnames_long, rmodelnames_lon
     handles_ind_r.append(handle_ind_r)
 
 plt.ylabel('dist')
-#plt.xticks(np.array(x), ['Spindles'] + ['Layer %d' %i for i in np.arange(1,model['nlayers']+1)], rotation=45,
-#           horizontalalignment = 'right')
 plt.xticks(np.array(x), ['Sp.'] + ['L%d' %i for i in np.arange(1,nlayers+1)])
-#plt.ylim((-2,15))
-
-#handles, _ = ax.get_legend_handles_labels()
-#handles = np.array(handles)
-#plt.legend(['%s trained' %tcf, '%s controls' %tcf])
-
-#ax = plt.gca()
-#format_axis(ax)
-#handles, _ = ax.get_legend_handles_labels()
-#handles = np.array(handles)
-
 first_legend = plt.legend(handles=handles_mean, \
     labels=modelnames_short, loc="upper right")
 ax.add_artist(first_legend)
 
-#plt.legend(handles= [handles_ind[0], handles_mean[0]], labels=["Ind.", 'Mean'], loc='upper left')
 plt.legend(handles= [handles_mean[0], handles_mean_r[0]], labels=["TDT Trained", 'Control'], loc='upper left')
-#print("Handles: ", handles)
-#plt.legend(handles[[0,1,10,11]], ['Ind. Recog.', 'Ind. Decod.', \
-#            'Mean of Recog.', 'Mean of Decod.'])
-
 plt.tight_layout()
 
 fig.savefig(os.path.join(savepath, savefile + 'png'))

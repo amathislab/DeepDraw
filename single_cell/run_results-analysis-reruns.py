@@ -2,7 +2,7 @@
 # 2021-10-31 
 # Wrapper script to allow for batch reruns, in particular suitable analysis reruns
 
-from controls_main import main
+from main import main
 
 #method = 'parallel' # one of ['sequential', 'parallel']
 method = 'parallel'

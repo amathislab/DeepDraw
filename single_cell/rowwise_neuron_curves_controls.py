@@ -77,6 +77,16 @@ def compute_dist_metric(y, pred):
     return mean_dist
     
 def lstring(ilayer):
+    ''' Get the formatted string depending on layer
+    
+    Arguments
+    ---------
+    ilayer : int, layer idx (-1 is spindles)
+    
+    Returns
+    -------
+    layer : str
+    '''
     if ilayer==-1:
         layer='data'
     else:
@@ -94,8 +104,8 @@ def get_centers(fmapntime, ilayer, model, ntime = 320):
     ----------
     fmapntime : int, length of temporal axis in given feature map
     ilayer : int, current layer of network, spindles = -1
-    ntime : int, starting width
     model : dict -> Config, information of model
+    ntime : int, starting width
     
     Returns
     -------
@@ -329,23 +339,14 @@ def tune_row_vel(X_train, X_test, Y_train, Y_test, row, isPolar = True):
     
     rowtraineval = np.zeros((4,6))
     rowtesteval = np.zeros((4,6))
-    #Axis 0: (0) training set (1) test set
-    #test set els 4-6: linear regression coeffs
-
-    ### RESETTING X_train and X_test
-    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
     ##BASELINE LINREG MODEL
-    #print("Baseline Linear Regression Model:")
-    #Xtform_train = np.c_[X_train[:,0], X_train[:,1], np.ones_like(X_train[:,0])]
-    #Xtform_test = np.c_[X_test[:,0], X_test[:,1], np.ones_like(X_test[:,0])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
             (X_train, np.ones_like(X_train[:,0])),
             (X_test, np.ones_like(X_test[:,0])),
             Y_train,
             Y_test
             )
-    #print('Feature sets built')
 
     rowtraineval[0], rowtesteval[0] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
 
@@ -356,9 +357,6 @@ def tune_row_vel(X_train, X_test, Y_train, Y_test, row, isPolar = True):
         X_test = get_polar(X_test)
 
     ##DIR DEP
-    #print("Directional Dependence:")
-    #Xtform_train = np.c_[np.cos(X_train[:,1]), np.sin(X_train[:,1]), np.ones_like(X_train[:,1])]
-    #Xtform_test = np.c_[np.cos(X_test[:,1]), np.sin(X_test[:,1]), np.ones_like(X_test[:,1])]
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (np.cos(X_train[:,1]), np.sin(X_train[:,1]), np.ones_like(X_train[:,0])),
         (np.cos(X_test[:,1]), np.sin(X_test[:,1]), np.ones_like(X_test[:,0])),
@@ -369,10 +367,6 @@ def tune_row_vel(X_train, X_test, Y_train, Y_test, row, isPolar = True):
     rowtraineval[1], rowtesteval[1] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
     
     ##VEL DEP
-    
-    #Xtform_train = np.c_[X_train[:,0], np.ones_like(X_train[:,0])]
-    #Xtform_test = np.c_[X_test[:,0], np.ones_like(X_test[:,0])]
-    #print("Velocity Dependence:")
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0], np.ones_like(X_train[:,0])),
         (X_test[:,0], np.ones_like(X_test[:,0])),
@@ -382,9 +376,6 @@ def tune_row_vel(X_train, X_test, Y_train, Y_test, row, isPolar = True):
     rowtraineval[2], rowtesteval[2] = linreg(Xtform_train, Xtform_test, Ytform_train, Ytform_test)
     
     ##DIR PLUS VEL DEP
-    #Xtform_train = np.c_[X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])]
-    #Xtform_test = np.c_[X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])]
-    #print("Direction + Velocity Dependence:")   
     Xtform_train, Xtform_test, Ytform_train, Ytform_test = feature_set(
         (X_train[:,0] * np.cos(X_train[:,1]), X_train[:,0] * np.sin(X_train[:,1]), np.ones_like(X_train[:,0])),
         (X_test[:,0] * np.cos(X_test[:,1]), X_test[:,0] * np.sin(X_test[:,1]), np.ones_like(X_test[:,0])),
@@ -415,16 +406,10 @@ def tune_row_label(X_train, X_test, Y_train, Y_test, node):
     """
 
     ##RESHAPE OPERATIONS
-    
-    #print('X_train unique classes', np.unique(X_train))
     X_train = label_binarize(X_train, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
-    #X_train = label_binarize(X_train, np.unique(X_train))
-    # X_test = label_binarize(X_test, np.unique(X_test)) ## switch necessary because labels won't necessarily be well-mixed anymore after switching splitting method :s
-    #X_test = label_binarize(X_test, np.unique(X_train))
     X_test = label_binarize(X_test, [ 0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19.,])
     Y_train = Y_train.reshape(-1,1)
     Y_test = Y_test.reshape(-1,1)
-    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
     
     try:
         svm = OneVsRestClassifier(LinearSVC(max_iter=10, verbose=0))
@@ -577,8 +562,6 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
     if(len(X.shape) > 1):
         X = X[..., centers]
     
-    #print("initial shape of Y %s" %str(Y.shape))
-
     # Resize Y so that feature maps are appended as new rows in first feature map
     Y = Y.swapaxes(1,2).reshape((Y.shape[0], Y.shape[2], -1)).swapaxes(1,2)
 
@@ -614,9 +597,6 @@ def tune_decoding(X, fset, Y, centers, ilayer, mmod, alpha = None):
         print("New shape of X %s"%str(X_train.shape))
         Y_test = Y_test.reshape((Y_test.shape[0], -1))
         
-    #print("final shape of X %s" %str(X.shape))
-    #print("final shape of Y %s" %str(Y.shape))
-    
     #switch kin vars / labels to Y and neuron firing ratest to X
     X_temp_train = X_train
     X_train = Y_train
@@ -774,8 +754,6 @@ def tune_layer(X, fset, xyplmvt, runinfo, ilayer, mmod, model, t_stride=2, pool=
             savefile = '%s/%s_a%d_coefs.npy' %(savepath, savename, int(alpha*1000))
 
         np.save(savefile, coefs)       
-
-        #savename = '%s_normalized' %savename
 
     else:
         if (fset == 'vel' or fset == 'acc' or fset == 'eepolar' or fset == 'ang' or fset=='angvel' or fset=='ee'):
@@ -940,7 +918,6 @@ def main(fset, runinfo, model, startlayer=-1, endlayer=8, mmod='std', pool=None,
     
     print('evaluating %s model for %s %s, expid %d, plane %s ...' %(modelname, fset, mmod, runinfo['expid'], runinfo.planestring()))
     
-    #print('runinfo datafolder', runinfo.datafolder(model))
     X, xyplmvt = X_data(fset, runinfo, datafolder=runinfo.datafolder(model))
     
     np.random.seed(42)

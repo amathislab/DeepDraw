@@ -87,20 +87,10 @@ def main(model, runinfo):
     
     for i in range(nlayers):
         lname = "l%d" %i
-    
-        
-        #print(lname)
-        #if i == 0:
-        #    l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'data.pkl'), 'rb'))
-        #else:
-        #    l = pickle.load(open(os.path.join(runinfo.datafolder(model), 'l%d.pkl' %(i - 1)), 'rb'))
-        #l = l[xyplmvt]
-        
+          
         l = read_layer_reps(i - 1, runinfo, model) #-1 because of alternate spindles convention, here =0, there =-1
         l = l[xyplmvt]
-        
-        #print(l.shape)
-        
+                
         lx = l.reshape(l.shape[0], -1)
         
         try:

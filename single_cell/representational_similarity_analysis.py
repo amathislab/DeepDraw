@@ -92,7 +92,7 @@ def main(trainedmodel, controlmodel, runinfo, trreg= False):
     trainedmodel : dict, information on model
     controlmodel : dict, information on model
     runinfo : RunInfo (extension of dict)
-    
+    trreg : bool, Ture if TDT task False if ART
     '''
 
     ## local import of seaborn (do it here so that it can be reset afterwards)
@@ -162,6 +162,7 @@ def rsa_models_comp(model, runinfo, trreg=False):
     ---------
     model : dict, information on model
     runinfo : RunInfo (extension of dict)
+    trreg : bool, Ture if TDT task False if ART
     '''
 
     ## local import of seaborn (do it here so that it can be reset afterwards)

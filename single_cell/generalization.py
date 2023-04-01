@@ -30,6 +30,12 @@ x0 = uniquexs[xpos0]
 z0 = 0
 
 def format_axis(ax):
+    ''' format axis to unified format
+    
+    Arguments
+    ---------
+    ax : matplotlib axis object
+    '''
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.get_xaxis().tick_bottom()
@@ -60,14 +66,13 @@ def normalized_angle_calculator(angle, angle_pos0):
         norm = norm + 2*np.pi
     return(norm)
 
-def plot_ind_neuron_invar_collapsed_beautified(pds, hts, layer, orientation):
+def plot_ind_neuron_invar_collapsed_beautified(pds, hts, orientation):
     """ Plot deviation plots showing the deviation in preferred angle of a neuron from that at the central plane
     
     Arguments
     ---------
     pds : list of lists, outer list : plane, inner list: neuron, content : preferred direction
     hts : list of ints, possible height of planes
-    layer : int
     orientation : str, 'hor' or 'vert'
     
     Returns

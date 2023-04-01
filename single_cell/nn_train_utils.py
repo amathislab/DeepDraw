@@ -1,4 +1,7 @@
 """
+
+These functions/modules are mostly taken from the training code elsewhere in the repository.
+
 """
 
 import os

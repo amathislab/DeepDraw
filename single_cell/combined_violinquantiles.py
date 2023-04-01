@@ -17,16 +17,14 @@ import os
 
 from matplotlib.ticker import FormatStrFormatter
 
-# def format_axis(ax):
-#     ax.spines['top'].set_visible(False)
-#     ax.spines['right'].set_visible(False)
-#     ax.get_xaxis().tick_bottom()
-#     ax.get_yaxis().tick_left()
-#     ax.xaxis.set_tick_params(size=6)
-#     ax.yaxis.set_tick_params(size=6)
-
 ## eLife
 def format_axis(ax):
+    ''' format axis to unified format
+    
+    Arguments
+    ---------
+    ax : matplotlib axis object
+    '''
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.get_xaxis().tick_bottom()
@@ -161,6 +159,13 @@ def get_combined_modevals(model, runinfo):
 # %% COMPARISON VIOLIN PLOT 
     
 def clip(vp, lr):
+    ''' clips off half of a violin plot for split violin plots
+    
+    Arguments
+    ---------
+    vp : matplotlib violin plot object
+    lr : str, one of ['l', 'r'] specifying whether we want to keep the left or right side of the violin plot
+    '''
     
     for b in vp['bodies']:
         m = np.mean(b.get_paths()[0].vertices[:, 0])
@@ -172,14 +177,17 @@ def clip(vp, lr):
        
            
 def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False, modnames = modnames, ifsets_to_quantile = [0,3]):
-    ''' Plot the comparison violin plot showing the distribution of tuning strengths
+    ''' Plot the comparison violin plot showing the distribution of tuning strengths -- plotting format associated with original submission
     
     Arguments
     ---------
     trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
     controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
     trainedmodel : dict
-    
+    regcomp : bool, True if we are comparing ART and TDT, False if we are comparing trained and random models
+    modnames : list of str, list of variables/feature sets that we are plotting e.g. "vel", "acc" etc.
+    ifsets_to_quantile : list of ints, indices of variables in mod_names for which to add the 90% quantile
+
     Returns
     -------
     fig : plt.figure, comparison violin plot
@@ -198,7 +206,6 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
         controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
     else:
         controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
-    #cmaps = [trainedcmap, controlcmap]
 
     ## SET OTHER PLOTTING VARIABLES
 
@@ -218,7 +225,6 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
     patches = []
     
     ccolorindex = 3
-    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
     for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
@@ -264,7 +270,6 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
                 print("empty array, can't do violin plot", e)
                 vp = None                  
                  
-            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
             
             vps.append(vp)
@@ -299,14 +304,16 @@ def plot_compvp(trainedmodevals, controlmodevals, trainedmodel, regcomp = False,
 
     return fig
 
-def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = False, modnames = modnames, ifsets_to_quantile = [0,3]):
-    ''' Plot the comparison violin plot showing the distribution of tuning strengths
+def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = False, modnames = modnames):
+    ''' Plot the comparison violin plot showing the distribution of tuning strengths, plot format associated with eLife resubmission
     
     Arguments
     ---------
     trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
     controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
     trainedmodel : dict
+    regcomp : bool, True if we are comparing ART and TDT, False if we are comparing trained and random models
+    modnames : list of str, list of variables/feature sets that we are plotting e.g. "vel", "acc" etc.
     
     Returns
     -------
@@ -319,7 +326,6 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     
     space = 0.8
     width = 0.6
-    #lspace = space*nmods + 1
     lspace = space*nmods + 1.6
     
     trainedcmap = matplotlib.cm.get_cmap(trainedmodel['cmap']) #spatial_temporal    
@@ -328,7 +334,6 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
         controlcmap = matplotlib.cm.get_cmap('Greys_r') #spatial_temporal    
     else:
         controlcmap = matplotlib.cm.get_cmap(trainedmodel['regression_cmap'])
-    #cmaps = [trainedcmap, controlcmap]
 
     ## SET OTHER PLOTTING VARIABLES
     
@@ -347,14 +352,10 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     patches = []
     
     ccolorindex = 3
-    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
     for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
-            #print(mod)
             mod = [x.reshape((-1,)) for x in mod]
-            #for x in mod:
-            #    print(x.shape)
 
             ##exclude r2 == 1 scores and r2 < -0.1
             mod = [x[(x != 1) & (x > -0.1)] for x in mod]
@@ -393,46 +394,13 @@ def plot_compvp_v3(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
                 print("empty array, can't do violin plot", e)
                 vp = None     
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
-            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             #patches.append(mpatches.Patch(color=matplotlib.cm.get_cmap('Greys_r') (cidx[i]), alpha=0.7)) ##eLife
             
             
             vps.append(vp)
-            
-        # #Quantiles
-        # q = 0.9
-        # marker = 's'
-        
-        # for i in ifsets_to_quantile:
-        #     mod = modevals[i]
-
-        #     mod = [x[x != 1] for x in mod]
-            
-        #     q90s = np.zeros((nlayers,))
-            
-        #     for ilayer, layer in enumerate(mod):
-        #         try:
-        #             q90s[ilayer] = np.quantile(layer, q)
-        #         except e:
-        #             print(e)                
-        #     ax1.plot([ilayer*lspace+space*i+1 for ilayer in range(nlayers)], 
-        #               q90s, color=cmap(cidx[i]), marker=marker, alpha=alpha[0])
-
     
     format_axis(plt.gca())
     format_axis(ax1)
-
-    ## SET AXIS WIDTHS
-    #for axis in ['top','bottom','left','right']:
-    #    ax1.spines[axis].set_linewidth(1.5)
-
-    # increase tick width
-    #ax1.tick_params(width=1.5, labels=18)
-
-
-    #ax1.yaxis.label.set_size(18)
-    #ax1.xaxis.label.set_size(18)
-
 
     leg = plt.legend(patches[5:], modnames, loc='upper right')
     ax1.add_artist(leg)
@@ -491,6 +459,7 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     trainedmodevals : list [nr layers] of np.arrays, store performance of each neuron in trained model
     controlmodevals : list [nr layers] of np.arrays, store performance of each neuron in control model
     trainedmodel : dict
+    regcomp : bool, True if we are comparing ART and TDT, False if we are comparing trained and random models
     
     Returns
     -------
@@ -531,7 +500,6 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
     patches = []
     
     ccolorindex = 1
-    #for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[0.8, 0.5], [0.8, 0.7]], [2,1], ['r', 'l']):
     for (modevals, cmap, alpha, zorder, lr) in zip([controlmodevals, trainedmodevals], [controlcmap, trainedcmap], [[1, 1], [1, 1]], [2,1], ['r', 'l']):
         for i, mod in enumerate(modevals):
             
@@ -574,7 +542,6 @@ def plot_compvp_ee(trainedmodevals, controlmodevals, trainedmodel, regcomp = Fal
                 vp = None    
             
 
-            #patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=0.7))
             patches.append(mpatches.Patch(color=cmap(cidx[i]), alpha=1))
             
             vps.append(vp)

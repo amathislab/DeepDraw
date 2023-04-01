@@ -150,28 +150,6 @@ def main(modelinfo, runinfo):
         #update model path
         print('model.model_path', model.model_path)
         
-        """
-        with tf.Session(config=myconfig) as sess:
-            ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
-            print('checkpoint filepath', ckpt_filepath)
-            restorer.restore(sess, ckpt_filepath)
-            
-            for i in range(num_steps):
-                if(runinfo.verbose >= 1):
-                    print('batch %d / %d' %(i, num_steps))
-                layers_batch = sess.run(list((net.values())), \
-                        feed_dict={X: data[batch_size*i:batch_size*(i+1)], y: labels[batch_size*i:batch_size*(i+1)]})
-                
-                for j in range(len(layers_batch) - 1):
-                    if(i == 0):
-                        #layers.append(layers_batch[j])
-                        layers.append(np.zeros(tuple([nsamples]) + layers_batch[j].shape[1:]))
-                    #else:
-                        #print(layers_batch[j].shape, layers[j].shape)
-                    #    layers[j] = np.concatenate((layers[j], layers_batch[j]))
-                        #print(layers[j].shape)
-                    layers[j][i*batch_size : (i+1)*batch_size] = layers_batch[j]
-        """
         with tf.Session(config=myconfig) as sess:
             ckpt_filepath = os.path.join(model.model_path, 'model.ckpt')
             print('checkpoint filepath', ckpt_filepath)

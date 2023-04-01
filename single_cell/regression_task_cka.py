@@ -22,6 +22,15 @@ import shutil
 from utils import sorted_alphanumeric
 
 def main(task_models, regression_models, runinfo, modelinfo):
+    ''' Performs CKA between trained and regression models
+
+    Arguments
+    ---------
+    task_models : list of dict, contains info for ART models
+    regression_models : list of dict, contains info for TDT models
+    runinfo : RunInfo class (extension of dict), contains experimental parameters
+    modelinfo : dict, contains general parameters for this model type
+    '''
 
     regressiontaskfolder = runinfo.regressiontaskfolder(modelinfo)
     df_path = os.path.join(regressiontaskfolder, 'cka_df.csv')
