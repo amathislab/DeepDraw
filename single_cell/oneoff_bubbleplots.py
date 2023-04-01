@@ -61,11 +61,6 @@ for dataset_file, name, color in zip(dataset_files, names, colors):
     art['Layer'] = np.arange(len(art))
     art = pd.melt(art, "Layer", ["Dir.", "Vel.", "Dir. x Vel.", "Pos. Cart.", "Pos. Polar", "Acc.", "Labels"])
 
-    #tdt = pd.read_csv("./unit_classification_dataset_S_TDT.csv")
-    #tdt = tdt.divide(tdt['Total'], axis=0)
-    #tdt['Layer'] = layers
-    #tdt = pd.melt(tdt, "Layer", ["Dir.", "Vel.", "Dir. x Vel.", "Pos. Cart.", "Pos. Polar", "Acc.", "Labels"])
-
     plt.figure(figsize=[4, 3])
     sns.scatterplot(x='Layer', y='variable', size=[300]*len(art['Layer']), marker='+', data=art, sizes=(300, 300), color='grey', clip_on=False, legend=False, linewidth=0.3)
     sns.scatterplot(x='Layer', y='variable', size='value', data=art, sizes=(1, 300*art_max), color=color, clip_on=False, legend=False)

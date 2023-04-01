@@ -3,7 +3,13 @@
 """
 Created on Thu Mar 26 22:50:22 2020
 
-@author: kai
+### COPIED FROM https://colab.research.google.com/github/google-research/google-research/blob/master/representation_similarity/Demo.ipynb
+
+Similarity of Neural Network Representations Revisited
+Simon Kornblith, Mohammad Norouzi, Honglak Lee, Geoffrey Hinton
+ICML 2019
+https://arxiv.org/abs/1905.00414
+
 """
 
 import numpy as np

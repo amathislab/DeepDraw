@@ -1,6 +1,8 @@
 '''
 Class and forward pass definitions for various neural network models.
 
+These functions/modules are mostly taken from the training code elsewhere in the repository.
+
 '''
 
 

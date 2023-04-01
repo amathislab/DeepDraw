@@ -61,6 +61,7 @@ def unit_classification_plot(modelinfo, runinfo):
             #print(b.shape)
             if(sum(b[:3]) == sum(b)):
                 if sum(b[:3]) == 1: #We evaluate the labels tuning separately
+
                     ###ATTENTION! THIS WILL NOT WORK ACCURATELY IF CERTAIN LAYERS ARE TUNED FOR BOTH LABELS AND KIN FEATURES
                     if(b[0] == 1):
                         cats[ilayer, 0] +=1
@@ -95,22 +96,6 @@ def unit_classification_plot(modelinfo, runinfo):
     #nmods = 1
     nmods = ncats
 
-    '''
-    def get_mtypecolorbar(mtype):
-        """returns the needed colorbar for the given model type
-        
-        Arguments
-        ---------
-        mtype : str, one of ['Spatial-Temporal', 'Spatiotemporal']
-        
-        """
-        if mtype=='Spatial-Temporal':
-            cmap = matplotlib.cm.get_cmap('Blues_r') #spatial_temporal
-        if mtype=='Spatiotemporal':
-            cmap = matplotlib.cm.get_cmap('Greens_r') #spatiotemporal
-        return cmap
-    '''
-
     params = {
     'axes.labelsize': 14,
     'legend.fontsize': 10,
@@ -133,7 +118,6 @@ def unit_classification_plot(modelinfo, runinfo):
     im = 0
 
     # %% PLOT
-
 
     space = 0.75
     width = 0.6

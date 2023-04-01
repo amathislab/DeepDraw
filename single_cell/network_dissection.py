@@ -9,17 +9,10 @@ Majorly revamped on Sun Jan 31 2021
 
 import numpy as np
 import pandas as pd
-#from sklearn import linear_model
-#from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib
-#matplotlib.use('default')
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-#from scipy.optimize import curve_fit
-#from scipy import exp
-import pickle
 import os
-#from scipy.misc import imresize
 from skimage.transform import resize
 
 from rowwise_neuron_curves_controls import read_layer_reps, X_data
@@ -37,9 +30,11 @@ topk = 5
 
 # %% FUNCTIONS
 def get_max_act(actmap):
+    ''' return the maximum activation across an activation map '''
     return np.max(actmap.flatten())
 
 def topk_actmaps(actmaps, labels):
+    ''' return the indices corresponding to top k activations across an activation map '''
     topkam = np.zeros(tuple([nchars, topk]) + actmaps[0].shape)
     idxs = np.zeros((nchars, topk))
     for idx, am in enumerate(actmaps):
@@ -68,7 +63,6 @@ def above_threshold(am, threshold = 0.3):
 def get_t(fmapt, fmapnt, nt = 320, t_stride = 2):
     """Converts time dimension index from feature map to original time point"""
     centers = np.arange(nt)
-    #if fmapntime != len(centers):
     for i in range(int(np.log2(len(centers)/ fmapnt))):
         centers = [centers[i*t_stride] for i in range(len(centers)//2)]
     
@@ -77,13 +71,10 @@ def get_t(fmapt, fmapnt, nt = 320, t_stride = 2):
     return centers[fmapt]
 
 def get_s(fmaps, fmapns, ns = 25, s_stride = 2):
-    """Converts time dimension index from feature map to original time point"""
+    """Converts spatial dimension index from feature map to original time point"""
     centers = np.arange(ns)
-    #print("fmapns: %d" %fmapns)
-    #if fmapntime != len(centers):
     while len(centers) > fmapns:
-        centers = [centers[i*t_stride] for i in range((len(centers)+1)//2)]
-    #print(centers)
+        centers = [centers[i*s_stride] for i in range((len(centers)+1)//2)]
     
     assert len(centers) == fmapns, "length of centers and fmapnt not equal!"
     
@@ -99,32 +90,8 @@ def get_ext(ext, fmapn, n = 320, stride = 2):
     for i in np.arange(len(centers)-2, -1, -1):
         cs = centers[i]
         idx = cs.index(cext)
-        #print(i, idx)
         cext = cs[np.min([idx + ext, len(cs) - 1])]
     return cext
-
-def translate(bat, osh = [25, 320]):
-    """Returns boolean map in original space time"""
-    bost = np.zeros(osh).astype(bool)
-    for idx, b in np.ndenumerate(bat):
-        if b:
-            s, t = idx[0], idx[1]
-            sext, text = skernelsize // 2, tkernelsize // 2
-            #print(s, t)
-            if bat.shape[0] < osh[0]:
-                s = get_s(idx[0], bat.shape[0], osh[0], s_stride)
-                sext = get_ext(sext, bat.shape[0], nmuscles, s_stride)
-            if bat.shape[1] < osh[1]:
-                t = get_t(idx[1], bat.shape[1], osh[1], t_stride)
-                text = get_ext(text, bat.shape[1], ntime, t_stride)                    
-            smin = np.max([0, s - sext])
-            smax = np.min([osh[0], s + sext + 1])
-            tmin = np.max([0, t - text])
-            tmax = np.min([osh[1], t + text + 1])
-            for sidx in np.arange(smin, smax):
-                for tidx in np.arange(tmin, tmax):
-                    bost[sidx, tidx] = True
-    return bost
 
 def plot_hm_ctrs(mf, bost, ilayer, itf, char, k, th, ff, channel):
     plt.figure(dpi=275)
@@ -136,21 +103,6 @@ def plot_hm_ctrs(mf, bost, ilayer, itf, char, k, th, ff, channel):
     plt.savefig('%s/l%d/tf%d/%s/nwdiss_%d_th%s_ch%d.png' %(ff, ilayer, itf, char, k, th, channel))
     plt.savefig('%s/l%d/tf%d/%s/nwdiss_%d_th%s_ch%d.svg' %(ff, ilayer, itf, char, k, th, channel))
     plt.close()
-'''
-am = actmaps[0][0][0,0]
-idx = idxs[0][0][0,0].astype(int)
-
-mf = data[idx]
-
-resized = resize(am, mf.shape)
-bat = above_threshold(resized, threshold=0.5)
-
-#bost = translate(bat)
-
-
-plot_hm_ctrs(mf, bat, 0, 0 , 'a', 0)
-
-'''
 
 # %% MAIN
 
@@ -162,10 +114,6 @@ def main(model, runinfo):
     datafolder = runinfo.datafolder(model)
 
     #IMPORT DATA
-    #kinvars = pd.read_hdf(datafolder + 'kinvars_10pc.hdf5')    
-    #mc = np.swapaxes(kinvars['muscle_coords'].values, 0, 1)
-    #labels = pickle.load(open(datafolder + 'labels_10pc.pkl', 'rb'))
-    #data = pickle.load(open(datafolder + 'data_10pc.pkl', 'rb'))
     data, xyplmvt = X_data('mf', runinfo, datafolder, polar=False)
     labels, _ = X_data('labels', runinfo, datafolder, polar=False)
 
@@ -202,7 +150,6 @@ def main(model, runinfo):
         for itf in range(len(actmaps[ilayer])):
             print("TF %d" %itf)
             for ichar, char in enumerate(char_labels):
-                #print(char)
                 try:
                     os.makedirs('%s/l%d/tf%d/%s/'%(ff, ilayer, itf, char))
                 except:
@@ -217,7 +164,6 @@ def main(model, runinfo):
                         am = actmaps[ilayer][itf][ichar][k]
                         resized = resize(am, mf.shape)
                         bat = above_threshold(resized, threshold=0.5)
-                        #bost = translate(bat)
                         
                         plot_hm_ctrs(mf, bat, ilayer, itf, char, k, '05', ff, channel)
                         bat = above_threshold(resized, threshold=0.3)
