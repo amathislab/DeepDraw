@@ -1,6 +1,6 @@
 # Kai Sandbrink
 # 2021-12-14
-# This plot creates the CKA plots for specified models outside of the designated pipeline
+# This plot creates the CKA line plots for specified models outside of the designated pipeline
 
 import numpy as np
 import pandas as pd

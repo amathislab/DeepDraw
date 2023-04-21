@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from rowwise_neuron_curves_controls import *
+from rowwise_neuron_curves import *
 import os
 from scipy.stats import t, ttest_rel
 from matplotlib.ticker import FormatStrFormatter

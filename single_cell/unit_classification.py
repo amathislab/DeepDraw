@@ -129,15 +129,9 @@ def unit_classification_plot(modelinfo, runinfo):
     ax.spines['right'].set_visible(False)
     #ax.spines['left'].set_visible(False)  #allows turning off spines... i.e. top and right is good :)
     ax.get_xaxis().tick_bottom()
-    #ax.tick_params(axis='x', direction='in')
-    #ax.tick_params(axis='x', direction='in')
     ax.tick_params(axis='y', length = 4.5, width=1)
     ax.get_yaxis().tick_left()
 
-    #ax.tick_params(axis='y', length=0)
-    # offset the spines
-    #for spine in ax.spines.values():
-    #  spine.set_position(('outward', 5))
     # put the grid behind
     ax.set_axisbelow(True)
 
@@ -147,31 +141,19 @@ def unit_classification_plot(modelinfo, runinfo):
     #patterns = ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
     patterns = ( '\\', 'O', '-', '+','','x','o', '.')
 
-    #for im, mtype in enumerate(modfractions):
-    #    positions=[ilayer*int((nlayers[0]-1)/(nlayers[im]-1))*lspace+space*im for ilayer in range(nlayers[im])]
     positions=[ilayer*lspace+space*im for ilayer in range(nlayers)]
 
     #cmap = get_mtypecolorbar(modelinfo['shortbase'])
     cmap = matplotlib.cm.get_cmap(modelinfo['cmap'])
     for icat in range(ncats):
-        #print(im, icat, nlayers[im])
-        #print(mtype)
-        #print(len(positions))
         bars.append(plt.bar(positions, mtype[:,icat] ,\
                 bottom = mtype[:,:icat].sum(axis=1), width=width,
                 color = cmap(icat*(1-ct)/(nmods-1)),
                 align='edge', hatch=patterns[icat]
                 ))
         
-    #or ibar, bar in enumerate(bars):
-    #   bar.set_hatch(patterns[ibar])
-
     plt.title('Unit Classification')
-    #plt.xticks(np.arange(0,nlayers*lspace,lspace),
-    #        ['Spindles'] + ['Layer %d' %i for i in np.arange(1,nlayers+1)],
-    #        horizontalalignment='center', rotation=45)
     plt.ylabel('Fraction of Neurons')
-    #plt.ylim(-0.1, 1.1)
     plt.ylim(0,1)
 
     #X TICKS
@@ -179,10 +161,7 @@ def unit_classification_plot(modelinfo, runinfo):
     ax.set_xticklabels(['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers)])
 
     #Creating the legend
-    #modelpatches = [mpatches.Patch(color=get_mtypecolorbar(modelinfo['shortbase'])(1), label=mtype)]
     modelpatches = [mpatches.Patch(color=matplotlib.cm.get_cmap(modelinfo['cmap'])(1), label=mtype)]
-    #modellegend = plt.legend(modelpatches, modelnames, loc=(0.78,0.842425))
-    #ax.add_artist(modellegend)
     plt.legend(bars, groupnames[:ncats], loc=1)
 
     plt.tight_layout()
@@ -238,13 +217,9 @@ def unit_classification_plot_combined(modelinfo, runinfo):
     ncats = len(groupnames) - 1
     cats = np.zeros((nlayers, ncats + 1))
     for ilayer, be in enumerate(bes):
-        #print("Layer %d" %ilayer)
-        #be = be.squeeze()
-        #print(be.shape)
         cats[ilayer, ncats] = be[...,0].size
         for irow, _ in np.ndenumerate(be[...,0]):
             b = np.squeeze(be[irow])
-            #print(b.shape)
             if(sum(b[:3]) == sum(b)):
                 if sum(b[:3]) == 1: #We evaluate the labels tuning separately
                     ###ATTENTION! THIS WILL NOT WORK ACCURATELY IF CERTAIN LAYERS ARE TUNED FOR BOTH LABELS AND KIN FEATURES
@@ -281,22 +256,6 @@ def unit_classification_plot_combined(modelinfo, runinfo):
     #nmods = 1
     nmods = ncats
 
-    '''
-    def get_mtypecolorbar(mtype):
-        """returns the needed colorbar for the given model type
-        
-        Arguments
-        ---------
-        mtype : str, one of ['Spatial-Temporal', 'Spatiotemporal']
-        
-        """
-        if mtype=='Spatial-Temporal':
-            cmap = matplotlib.cm.get_cmap('Blues_r') #spatial_temporal
-        if mtype=='Spatiotemporal':
-            cmap = matplotlib.cm.get_cmap('Greens_r') #spatiotemporal
-        return cmap
-    '''
-
     params = {
     'axes.labelsize': 14,
     'legend.fontsize': 10,
@@ -332,45 +291,25 @@ def unit_classification_plot_combined(modelinfo, runinfo):
     #ax.tick_params(axis='x', direction='in')
     ax.tick_params(axis='y', length = 4.5, width=1)
     ax.get_yaxis().tick_left()
-
-    #ax.tick_params(axis='y', length=0)
-    # offset the spines
-    #for spine in ax.spines.values():
-    #  spine.set_position(('outward', 5))
-    # put the grid behind
     ax.set_axisbelow(True)
 
     bars = []
     ct = 0.4
 
-    #patterns = ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
     patterns = ( '\\', 'O', '-', '+','','x','o', '.')
 
-    #for im, mtype in enumerate(modfractions):
-    #    positions=[ilayer*int((nlayers[0]-1)/(nlayers[im]-1))*lspace+space*im for ilayer in range(nlayers[im])]
     positions=[ilayer*lspace+space*im for ilayer in range(nlayers)]
 
-    #cmap = get_mtypecolorbar(modelinfo['shortbase'])
     cmap = matplotlib.cm.get_cmap(modelinfo['cmap'])
     for icat in range(ncats):
-        #print(im, icat, nlayers[im])
-        #print(mtype)
-        #print(len(positions))
         bars.append(plt.bar(positions, mtype[:,icat] ,\
                 bottom = mtype[:,:icat].sum(axis=1), width=width,
                 color = cmap(icat*(1-ct)/(nmods-1)),
                 align='edge', hatch=patterns[icat]
                 ))
-        
-    #or ibar, bar in enumerate(bars):
-    #   bar.set_hatch(patterns[ibar])
 
     plt.title('Unit Classification')
-    #plt.xticks(np.arange(0,nlayers*lspace,lspace),
-    #        ['Spindles'] + ['Layer %d' %i for i in np.arange(1,nlayers+1)],
-    #        horizontalalignment='center', rotation=45)
     plt.ylabel('Fraction of Neurons')
-    #plt.ylim(-0.1, 1.1)
     plt.ylim(0,1)
 
     #X TICKS
@@ -378,10 +317,7 @@ def unit_classification_plot_combined(modelinfo, runinfo):
     ax.set_xticklabels(['Sp.'] + ['L%d' %i for i in np.arange(1, nlayers)])
 
     #Creating the legend
-    #modelpatches = [mpatches.Patch(color=get_mtypecolorbar(modelinfo['shortbase'])(1), label=mtype)]
     modelpatches = [mpatches.Patch(color=matplotlib.cm.get_cmap(modelinfo['cmap'])(1), label=mtype)]
-    #modellegend = plt.legend(modelpatches, modelnames, loc=(0.78,0.842425))
-    #ax.add_artist(modellegend)
     plt.legend(bars, groupnames[:ncats], loc=1)
 
     plt.tight_layout()

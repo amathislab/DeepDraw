@@ -16,17 +16,17 @@ import matplotlib
 from utils import sorted_alphanumeric
 
 try:
-    from savelouts_best_controls import main as modeloutputs_main
+    from savelouts_best import main as modeloutputs_main
     from regression_task_cka import main as regression_task_cka_main
 except ModuleNotFoundError as e:
     print(e)
     print('proceeding without savelouts , this will only work if no data is being generated')
 
-from rowwise_neuron_curves_controls import main as tuningcurves_main
-from combined_violinquantiles_controls import comp_violin_main, comp_tr_reg_violin_main, comp_tr_reg_violin_main_newplots
-from control_comparisons import main as comparisons_main
-from control_comparisons import comparisons_tr_reg_main
-from control_comparisons import generalizations_comparisons_main
+from rowwise_neuron_curves import main as tuningcurves_main
+from combined_violinquantiles import comp_violin_main, comp_tr_reg_violin_main, comp_tr_reg_violin_main_newplots
+from comparisons import main as comparisons_main
+from comparisons import comparisons_tr_reg_main
+from comparisons import generalizations_comparisons_main
 from prefdir_controls import main as prefdir_main
 from generalization import main as generalization_main
 from representational_similarity_analysis import main as rsa_main

@@ -12,11 +12,11 @@ import numpy as np
 import pandas as pd
 from representational_similarity_analysis import models_cka_matrix
 
-from rowwise_neuron_curves_controls import lstring, read_layer_reps
+from rowwise_neuron_curves import lstring, read_layer_reps
 import os, pickle
 import copy
 import matplotlib.pyplot as plt
-from savelouts_best_controls import main as modeloutputs_main
+from savelouts_best import main as modeloutputs_main
 import shutil
 
 from utils import sorted_alphanumeric
