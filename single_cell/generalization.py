@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from rowwise_neuron_curves_controls import *
+from rowwise_neuron_curves import *
 import os
 
 uniquezs = list(np.array([-45., -42., -39., -36., -33., -30., -27., -24., -21., -18., -15.,

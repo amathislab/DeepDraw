@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from rowwise_neuron_curves_controls import *
+from rowwise_neuron_curves import *
 import os
 
 # %% FIND PREFERRED DIRECTIONS

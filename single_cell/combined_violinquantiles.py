@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from rowwise_neuron_curves_controls import *
+from rowwise_neuron_curves import *
 import os
 
 from matplotlib.ticker import FormatStrFormatter

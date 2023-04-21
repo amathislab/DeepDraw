@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from rowwise_neuron_curves_controls import get_centers, X_data, lstring, read_layer_reps
+from rowwise_neuron_curves import get_centers, X_data, lstring, read_layer_reps
 import pickle
 import os
 from scipy.interpolate import griddata
@@ -20,8 +20,6 @@ import time
 muscle_order = ['CORB', 'DELT1', 'DELT2', 'DELT3', 'INFSP', 'LAT1', 'LAT2', 'LAT3', 'PECM1', 
                 'PECM2', 'PECM3', 'SUBSC', 'SUPSP', 'TMAJ', 'TMIN', 'ANC', 'BIClong', 'BICshort', 
                 'BRA', 'BRD', 'ECRL', 'PT', 'TRIlat', 'TRIlong', 'TRImed']
-
-need_to_sleep = False
 
 # %% POLAR TUNING CURVE PLOT
         
@@ -224,9 +222,6 @@ def main(model, runinfo):
     
     print('finding top-performing neurons')
 
-    if need_to_sleep:
-        time.sleep(0.2)
-
     nlayers = model['nlayers'] + 1
     dirmi = []
     dvmi = [] #store max indices in nested list
@@ -269,9 +264,6 @@ def main(model, runinfo):
     ###output 2D polar plots
     print('creating 2D plots...')
 
-    if need_to_sleep:
-        time.sleep(0.2)
-
     for ilayer in np.arange(-1, len(dirmi) - 1):
     
         print(ilayer+1)
@@ -290,9 +282,6 @@ def main(model, runinfo):
     
     ###output 3D polar plots
     print('creating 3D plots...')
-
-    if need_to_sleep:
-        time.sleep(0.2)
         
     for il in np.arange(-1, nlayers - 1):
         layer = lstring(il)

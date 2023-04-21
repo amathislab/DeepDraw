@@ -8,7 +8,7 @@ Created on Thu Mar 26 22:50:22 2020
 
 import numpy as np
 from kornblith_et_al_rsa_colab import *
-from rowwise_neuron_curves_controls import lstring, read_layer_reps
+from rowwise_neuron_curves import lstring, read_layer_reps
 import os, pickle
 import copy
 import matplotlib.pyplot as plt
@@ -61,21 +61,6 @@ def models_cka_matrix(modelA, modelB, runinfo):
     cka_matrix = np.zeros((nlayers + 1,))
 
     for ilayer in np.arange(-1, nlayers):
-        '''
-        layer = lstring(ilayer)  
-        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
-        X = read_layer_reps(ilayer, runinfo, modelA)
-        X = X.reshape((X.shape[0], -1))                    
-        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
-        Y = read_layer_reps(ilayer, runinfo, modelB)
-        Y = Y.reshape((Y.shape[0], -1))
-        
-        print("Layer %d " %(ilayer + 1))
-        print("X Shape: %s, Y Shape: %s" %(X.shape, Y.shape))
-        
-            
-        cka_from_examples = cka(gram_linear(X), gram_linear(Y))
-        '''
 
         cka_from_examples = layer_cka(ilayer, modelA, modelB, runinfo)
             
@@ -105,10 +90,8 @@ def main(trainedmodel, controlmodel, runinfo, trreg= False):
     
     for ilayer in np.arange(-1, nlayers):
         layer = lstring(ilayer)  
-        #X = pickle.load(open(os.path.join(runinfo.datafolder(trainedmodel), layer + '.pkl'), 'rb'))
         X = read_layer_reps(ilayer, runinfo, trainedmodel)
         X = X.reshape((X.shape[0], -1))                    
-        #Y = pickle.load(open(os.path.join(runinfo.datafolder(controlmodel), layer + '.pkl'), 'rb'))
         Y = read_layer_reps(ilayer, runinfo, controlmodel)
         Y = Y.reshape((Y.shape[0], -1))
         

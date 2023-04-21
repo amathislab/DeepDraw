@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import os
 from skimage.transform import resize
 
-from rowwise_neuron_curves_controls import read_layer_reps, X_data
+from rowwise_neuron_curves import read_layer_reps, X_data
 
 # %% SETUP
 #PARS

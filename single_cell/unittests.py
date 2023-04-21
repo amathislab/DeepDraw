@@ -4,7 +4,7 @@
 
 import unittest
 
-from rowwise_neuron_curves_controls import compute_dist_metric
+from rowwise_neuron_curves import compute_dist_metric
 import numpy as np
 
 class TestRowwiseNeuronCurves(unittest.TestCase):

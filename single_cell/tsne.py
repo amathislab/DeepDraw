@@ -22,7 +22,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 import os
 
-from rowwise_neuron_curves_controls import X_data, read_layer_reps
+from rowwise_neuron_curves import X_data, read_layer_reps
 
 char_labels = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'l', 'm', 'n',
                'o', 'p', 'q', 'r', 's', 'u', 'v', 'w', 'y', 'z']
