@@ -1,4 +1,4 @@
-# DeepDraw <img src="https://images.squarespace-cdn.com/content/v1/57f6d51c9f74566f55ecf271/1588528588264-C0AX88HTUWZIUZDBCMVY/ke17ZwdGBToddI8pDm48kI8xML9w6WVF-A8Fd6Xh7CFZw-zPPgdn4jUwVcJE1ZvWhcwhEtWJXoshNdA9f1qD7RyFOMTxaKexDScLPdXmhUBUGoFwIJWq0ElUUZM0MaiSl578qHjAUVYQjaMp75n45A/deepdraw-01.png?format=300w" width="350" title="DeepDraw" alt="DeepDraw" align="right" vspace = "50">
+# Contrasting action and posture coding with hierarchical deep neural network models of proprioception
 
 Highlights:
 
@@ -115,6 +115,6 @@ conda env export > environment.yml
 ```
 ### References
 
-This repository contains code for the manuscript "Task-driven hierarchical deep neural network models of the proprioceptive pathway", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Mackenzie W Mathis, Matthias Bethge and Alexander Mathis.
+This repository contains code for the manuscript "Contrasting action and posture coding with hierarchical deep neural network models of proprioception", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis and Alexander Mathis.
 
 Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v2
