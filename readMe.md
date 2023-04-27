@@ -1,6 +1,8 @@
 # Contrasting action and posture coding with hierarchical deep neural network models of proprioception
 
-Highlights:
+This repository contains code for the manuscript ["Contrasting action and posture coding with hierarchical deep neural network models of proprioception"](https://www.biorxiv.org/content/10.1101/2020.05.06.081372v3), by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis** and Alexander Mathis**.
+
+Highlights of the paper:
 
 - We provide a normative approach to derive neural tuning of proprioceptive features from behaviorally-defined objectives.
 - We propose a method for creating a scalable muscle spindles dataset based on kinematic data and define an action recognition task as a benchmark.
@@ -115,6 +117,6 @@ conda env export > environment.yml
 ```
 ### References
 
-This repository contains code for the manuscript "Contrasting action and posture coding with hierarchical deep neural network models of proprioception", by Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis and Alexander Mathis.
+This repository contains code for the manuscript "Contrasting action and posture coding with hierarchical deep neural network models of proprioception", by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis* and Alexander Mathis*.
 
 Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v2
