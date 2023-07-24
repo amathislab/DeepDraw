@@ -1,6 +1,6 @@
 # Contrasting action and posture coding with hierarchical deep neural network models of proprioception
 
-This repository contains code for the manuscript ["Contrasting action and posture coding with hierarchical deep neural network models of proprioception"](https://www.biorxiv.org/content/10.1101/2020.05.06.081372v3), by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis** and Alexander Mathis**.
+This repository contains code for the manuscript ["Contrasting action and posture coding with hierarchical deep neural network models of proprioception"](https://elifesciences.org/articles/81499), by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis** and Alexander Mathis** eLife 2023. A preprint was available since [2020](https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1).
 
 Highlights of the paper:
 
@@ -117,6 +117,12 @@ conda env export > environment.yml
 ```
 ### References
 
-This repository contains code for the manuscript "Contrasting action and posture coding with hierarchical deep neural network models of proprioception", by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis* and Alexander Mathis*.
+This repository contains code for the manuscript: Kai J Sandbrink, Pranav Mamidanna, Claudio Michaelis, Matthias Bethge, Mackenzie Weygandt Mathis, Alexander Mathis (2023) Contrasting action and posture coding with hierarchical deep neural network models of proprioception eLife 12:e81499
 
-Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v2
+Paper: https://elifesciences.org/articles/81499
+
+
+Preprint: https://www.biorxiv.org/content/10.1101/2020.05.06.081372v3
+
+
+
