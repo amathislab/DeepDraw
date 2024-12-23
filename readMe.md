@@ -1,13 +1,28 @@
-# Contrasting action and posture coding with hierarchical deep neural network models of proprioception
+# Task-driven modeling of proprioception
 
-This repository contains code for the manuscript ["Contrasting action and posture coding with hierarchical deep neural network models of proprioception"](https://elifesciences.org/articles/81499), by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis** and Alexander Mathis** eLife 2023. A preprint was available since [2020](https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1).
+This repository contains code for the manuscript:
 
-Highlights of the paper:
+["Contrasting action and posture coding with hierarchical deep neural network models of proprioception"](https://elifesciences.org/articles/81499), 
+
+by Kai J Sandbrink*, Pranav Mamidanna*, Claudio Michaelis, Matthias Bethge, Mackenzie W Mathis** and Alexander Mathis** eLife 2023. 
+
+A preprint was available since [2020](https://www.biorxiv.org/content/10.1101/2020.05.06.081372v1).
+
+Highlights of the work:
 
 - We provide a normative approach to derive neural tuning of proprioceptive features from behaviorally-defined objectives.
 - We propose a method for creating a scalable muscle spindles dataset based on kinematic data and define an action recognition task as a benchmark.
 - Hierarchical neural networks solve the recognition task from muscle spindle inputs.
 - Individual neural network units resemble neurons in primate somatosensory cortex, and networks make predictions for other areas along the proprioceptive pathway.
+
+We actively build on this work, check out the news section below.
+
+# News 
+
+- 2025: Are these models susceptible to illusions? Stay tuned ... 
+- Dec 2024: We uploaded the data to Zenodo, for long term stability: https://zenodo.org/records/14544688
+- Sep 2024: [Biorxiv 2024] Modeling forlimb motor adaptation in mice: [DeWolf and Schneider et al.](https://www.biorxiv.org/content/10.1101/2024.09.11.612513v1) and https://www.mausspaun.org/
+- Mar 2024: [Cell 2024]: Task-driven neural network models predict neural dynamics of proprioception by Marin Vargas* and Bisi* et al.; [Code](https://github.com/amathislab/Task-driven-Proprioception)
 
 # Structure of the code
 
@@ -39,10 +54,12 @@ Thus, for instance creating the PCRT dataset with 1,000,000 trajectories takes a
 https://www.dropbox.com/sh/afvyg524bakyo4u/AADqeN0uHYFdqfEEGShQeHopa?dl=0
 
 We share the PCRT dataset (contained in 'pcr_data') it has approximately ~30GB.
-
 We share the weights of all the trained networks (contained in 'network-weights'): about ~3.5GB
 
+These data are also available at: https://zenodo.org/records/14544688
+
 We share the data for analysis (activations, etc. contained in 'analysis-data'): about ~88GB.
+Stay tuned for a Zenodo link.
 
 # Installation, software & requirements
 
